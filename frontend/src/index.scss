@@ -1,0 +1,74 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none !important;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  monospace;
+}
+
+
+//############
+// EDITOR
+//############
+.editor {
+  -webkit-line-clamp: 3 !important;
+
+  & > iframe {
+    width: 100%;
+    min-height: 481px;
+    border-radius: 10px;
+  }
+
+  & > p > iframe {
+    width: 100% !important;
+    min-height: 481px;
+    border-radius: 10px;
+  }
+
+  img {
+    border-radius: 10px;
+    text-align: center !important;
+    display: block !important;
+    margin: auto !important;
+  }
+
+  & > .ql-align-center {
+    text-align: center;
+  }
+
+  & > .ql-align-left {
+    text-align: left;
+  }
+
+  & > .ql-align-right {
+    text-align: right;
+  }
+}
+
+.ql-editor{
+  & > p > img{
+    display: flex!important;
+    justify-content: center!important;
+  }
+
+  & > p:has(img) {
+    display: flex!important;
+    justify-content: center!important;
+  }
+}
+
+
+//##########################################
+//##########################################
+//##########################################
+

@@ -1,0 +1,52 @@
+services:
+  database:
+    image: postgres
+    container_name: delivery_db
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=toor
+      - POSTGRES_DB=app
+    volumes:
+      - pgdata:/data/postgres
+  api:
+    build: ./backend
+    container_name: delivery_api
+    restart: always
+    ports:
+      - 5000:5000
+    environment:
+      - DATABASE_URL=postgres://postgres:toor@database/app
+      - PORT=5000
+      - ACCESS_TOKEN=qwertyuio
+      - REFRESH_TOKEN=asdfghjkl
+      - SMTP_HOST="smtp.gmail.com"
+      - SMTP_PORT=587
+      - SMTP_USER=avia.trans.info@gmail.com
+      - SMTP_PASS=Trans.Avia_2020
+      - TSC_COMPILE_ON_ERROR=true
+    volumes:
+      - ./api:/usr/api
+    links:
+      - database
+    depends_on:
+      - database
+
+  # web:
+  #   build: ./web
+  #   container_name: delivery_web
+  #   restart: always
+  #   ports:
+  #     - 3000:3000
+  #   volumes:
+  #     - ./web:/usr/web
+  #   links:
+  #     - api
+  #   depends_on:
+  #     - api
+
+volumes:
+  pgdata:
+    driver: local
