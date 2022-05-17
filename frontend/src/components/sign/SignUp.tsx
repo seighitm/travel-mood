@@ -6,6 +6,7 @@ import {useMutateSignUp} from '../../api/auth/mutations';
 import {useForm} from '@mantine/form';
 import {useNavigate} from 'react-router-dom';
 import {GENDER, RELATIONSHIP_STATUS} from "../../types/enums";
+import {isValidEmail} from "../../utils/utils-func";
 
 const useStyles = createStyles((theme) => ({
   container: {
@@ -39,16 +40,16 @@ const SignUp = () => {
     },
     validate: {
       password: (value) => {
-        if (value?.trim().length <= 8) return 'Password should have at least 8 letters!'
+        if (value?.trim().length < 8) return 'Password should have at least 8 letters!'
       },
       lastName: (value) => {
-        if (value?.trim().length <= 2) return 'Last name should have at least 2 letters!'
+        if (value?.trim().length < 2) return 'Last name should have at least 2 letters!'
       },
       firstName: (value) => {
-        if (value?.trim().length <= 2) return 'First name should have at least 2 letters!'
+        if (value?.trim().length < 2) return 'First name should have at least 2 letters!'
       },
       email: (value) => {
-        if (!(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(value)))
+        if (!isValidEmail(value))
           return 'Invalid email!'
       },
     }

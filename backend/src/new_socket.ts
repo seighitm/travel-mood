@@ -1,5 +1,4 @@
 import {getProfileViews, getUserById} from "./services/user.service";
-import prisma from "../prisma/PrismaClient";
 
 const {server} = require("./server");
 const {instrument} = require("@socket.io/admin-ui");
@@ -40,31 +39,47 @@ const allUser = () => {
 }
 
 io.on("connection", (socket) => {
+  console.log(allUser())
+  console.log(
+    `All connections: ${Array.from(io.sockets.sockets).map(
+      (socket) => socket[0]
+    )}`
+  );
+
   console.log("Connected to socket.io");
   let userData;
 
   socket.on("setup", async (data: any) => {
     userData = data;
-    addUser(data.id, socket.id)
-  console.log(userData)
-    socket.broadcast.emit("connected", allUser())
-    console.log(allUser())
+    addUser(data?.id, socket.id);
+
     if (userData) {
       const us = (await getUserById(userData?.id))
       const userChats = us?.chats?.map((item: any) => item.id)
-      if (userChats)
-        for (let i = 0; i < userChats?.length; i++)
+      if (userChats) {
+        for (let i = 0; i < userChats?.length; i++) {
           socket.join(userChats[i])
+        }
+      }
     }
-    setTimeout(() => {
-      socket.emit("connected", allUser())
-      socket.emit("post-online-users", allUser())
-    }, 1000)
+
+    socket.emit("connected", allUser())
+    socket.broadcast.emit("connected", allUser())
+
+    // setTimeout(() => {
+    //   socket.emit("connected", allUser())
+    //   socket.emit("post-online-users", allUser())
+    // }, 1000)
   });
 
   socket.on("join chat", (room) => {
     socket.join(room);
     console.log("User Joined Room: " + room);
+  });
+
+  socket.on("leave-chat", (room) => {
+    socket.leave(room);
+    console.log("User Leave from Room: " + room);
   });
 
   socket.on("get-online-users", () => {
@@ -127,10 +142,11 @@ io.on("connection", (socket) => {
   })
 
   socket.on("new-message", (newMessageReceived) => {
+    console.log(newMessageReceived)
     let chat = newMessageReceived?.chat;
     socket.in(newMessageReceived.chat.id).emit("message-received", newMessageReceived);
-    if (chat?.users?.length === 0)
-      return console.log("chat.users not defined");
+    // if (chat?.users?.length === 0)
+    //   return console.log("chat.users not defined");
 
     // chat.users.forEach((user) => {
     //   console.log(newMessageReceived?.sender)
@@ -140,28 +156,28 @@ io.on("connection", (socket) => {
     // });
   });
 
-  socket.off("setup", async () => {
-    console.log("USER DISCONNECTED");
-
-    removeUser(socket.id);
-
-    socket.broadcast.emit("disconnected", allUser())
-
-    // if (userData?.id) {
-    //   const dbUser = await findUser(userData?.id)
-    //   if (dbUser) {
-    //     const user = getUser(dbUser?.id)
-    //     let follower = null
-    //     for (let i = 0; i < dbUser.followedBy.length; i++) {
-    //       if (userData?.id != dbUser.followedBy[i].id) {
-    //         follower = getUser(dbUser.followedBy[i].id)
-    //         if (follower)
-    //           socket.to(follower.socketId).emit("disconnected", user)
-    //       }
-    //     }
-    //   }
-    // }
-  });
+  // socket.off("setup", async () => {
+  //   console.log("USER DISCONNECTED");
+  //
+  //   removeUser(socket.id);
+  //
+  //   socket.broadcast.emit("disconnected", allUser())
+  //
+  //   // if (userData?.id) {
+  //   //   const dbUser = await findUser(userData?.id)
+  //   //   if (dbUser) {
+  //   //     const user = getUser(dbUser?.id)
+  //   //     let follower = null
+  //   //     for (let i = 0; i < dbUser.followedBy.length; i++) {
+  //   //       if (userData?.id != dbUser.followedBy[i].id) {
+  //   //         follower = getUser(dbUser.followedBy[i].id)
+  //   //         if (follower)
+  //   //           socket.to(follower.socketId).emit("disconnected", user)
+  //   //       }
+  //   //     }
+  //   //   }
+  //   // }
+  // });
 
   socket.on("send-views", async ({userId, guestId}) => {
     const userInfo = getProfileViews(userId)
@@ -246,56 +262,64 @@ io.on("connection", (socket) => {
     //   }
     // } else {
 
+    console.log(receiveUserId)
+    console.log(allUser())
+
     if (receiveUserId != undefined) {
       if (getUser(receiveUserId)) {
         socket.to(getUser(receiveUserId).socketId).emit("receive-trip-join-request")
       }
-    } else if (tripRequestId) {
-      const user = await prisma.userJoinToTrip.findUnique({
-        where: {
-          id: Number(tripRequestId)
-        },
-        select: {
-          userId: true
-        }
-      })
-      if (user && getUser(user?.userId)) {
-        socket.to(getUser(user?.userId).socketId).emit("receive-trip-join-request")
-      }
-    } else if (!userId) {
-      const user = await prisma.trip.findUnique({
-        where: {
-          id: Number(tripId)
-        },
-        select: {
-          userId: true,
-        }
-      })
-      if (user && getUser(user?.userId)) {
-        socket.to(getUser(user?.userId).socketId).emit("receive-trip-join-request")
-      }
-    } else {
-      const user = await prisma.userJoinToTrip.findFirst({
-        where: {
-          user: {
-            id: Number(userId)
-          },
-          trip: {
-            id: Number(tripId)
-          }
-        },
-        select: {
-          trip: {
-            select: {
-              userId: true
-            }
-          }
-        }
-      })
-      if (user && getUser(user?.trip?.userId)) {
-        socket.to(getUser(user?.trip?.userId).socketId).emit("receive-trip-join-request")
-      }
     }
+    // if (receiveUserId != undefined) {
+    //   if (getUser(receiveUserId)) {
+    //     socket.to(getUser(receiveUserId).socketId).emit("receive-trip-join-request")
+    //   }
+    // } else if (tripRequestId) {
+    //   const user = await prisma.userJoinToTrip.findUnique({
+    //     where: {
+    //       id: Number(tripRequestId)
+    //     },
+    //     select: {
+    //       userId: true
+    //     }
+    //   })
+    //   if (user && getUser(user?.userId)) {
+    //     socket.to(getUser(user?.userId).socketId).emit("receive-trip-join-request")
+    //   }
+    // } else if (!userId) {
+    //   const user = await prisma.trip.findUnique({
+    //     where: {
+    //       id: Number(tripId)
+    //     },
+    //     select: {
+    //       userId: true,
+    //     }
+    //   })
+    //   if (user && getUser(user?.userId)) {
+    //     socket.to(getUser(user?.userId).socketId).emit("receive-trip-join-request")
+    //   }
+    // } else {
+    //   const user = await prisma.userJoinToTrip.findFirst({
+    //     where: {
+    //       user: {
+    //         id: Number(userId)
+    //       },
+    //       trip: {
+    //         id: Number(tripId)
+    //       }
+    //     },
+    //     select: {
+    //       trip: {
+    //         select: {
+    //           userId: true
+    //         }
+    //       }
+    //     }
+    //   })
+    //   if (user && getUser(user?.trip?.userId)) {
+    //     socket.to(getUser(user?.trip?.userId).socketId).emit("receive-trip-join-request")
+    //   }
+    // }
   });
 });
 

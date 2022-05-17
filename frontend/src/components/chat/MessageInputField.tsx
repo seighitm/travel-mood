@@ -4,7 +4,7 @@ import {useGetAllChatMessage} from '../../api/chat/messages/queries';
 import {useMuateteReadMessages, useMutateSendMessage} from '../../api/chat/messages/mutations';
 import chatStore from '../../store/chat.store';
 import {PaperPlaneIcon} from "@modulz/radix-icons";
-import {useMediaQuery} from "@mantine/hooks";
+import {getHotkeyHandler, useMediaQuery} from "@mantine/hooks";
 
 const MessageInputField = ({scrollToBottom}: any) => {
   const [newMessage, setNewMessage] = useState<string>('');
@@ -29,6 +29,8 @@ const MessageInputField = ({scrollToBottom}: any) => {
     setSendButtonHeight(ref.current?.offsetHeight)
   }, [ref.current?.offsetHeight])
 
+  const dat = (event: any) => console.log(event.key)
+
   return (
     <Paper
       radius={'md'}
@@ -41,6 +43,9 @@ const MessageInputField = ({scrollToBottom}: any) => {
         }>
           <div ref={ref}>
             <Textarea
+              onKeyDown={getHotkeyHandler([
+                ['mod+Enter', () => handlerSubmitMessage(selectedChat.id)],
+              ])}
               ml={5}
               minRows={1}
               maxRows={2}

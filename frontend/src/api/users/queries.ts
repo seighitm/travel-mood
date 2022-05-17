@@ -27,7 +27,7 @@ export const useGetUserById = ({id, isEnabled = true}: {
   id: number | string | undefined;
   isEnabled: boolean;
 }) => {
-  return useQuery(['users', 'one'], () => apiGetUserById(id), {
+  return useQuery(['users', 'one', id], () => apiGetUserById(id), {
     enabled: isEnabled,
   });
 }

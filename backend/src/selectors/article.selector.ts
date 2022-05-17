@@ -3,6 +3,7 @@ import {Prisma} from '@prisma/client';
 export const articleSelector = Prisma.validator<Prisma.ArticleSelect>()({
   id: true,
   title: true,
+  isUpdatedByAdmin: true,
   countries: true,
   description: true,
   body: true,

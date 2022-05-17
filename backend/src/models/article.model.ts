@@ -15,6 +15,7 @@ interface Article {
   oldPrimaryImage: any;
   createdAt: Date;
   updatedAt: Date;
+  isUpdatedByAdmin: any,
   primaryImage: string,
   comments: any,
   favoritedBy: ReadonlyArray<FollowersQueryResponse>;
@@ -47,7 +48,7 @@ export interface ArticleFindQuery {
 export interface ArticleQueryResponse {
   countries: any,
   primaryImage: string,
-  isUpdatedByAdmin: boolean,
+  isUpdatedByAdmin: any,
   title: string;
   images?: any;
   id: string | number,
@@ -64,6 +65,7 @@ export interface ArticleQueryResponse {
 export interface ArticleResponse {
   images?: any[];
   primaryImage: string,
+  isUpdatedByAdmin: boolean,
   oldPrimaryImage?: string;
   countries: any,
   title: string;

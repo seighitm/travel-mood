@@ -6,5 +6,5 @@ export const useGetCountOfNonReadMessages = () => {
 };
 
 export const useGetAllChatMessage = (selChat: any) => {
-  return useQuery('fetchMessagesChat', () => allMessages(selChat.id), {enabled: false});
+  return useQuery(['fetchMessagesChat', selChat.id], () => allMessages(selChat.id), {enabled: false});
 };

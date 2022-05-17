@@ -19,6 +19,7 @@ import chatStore from '../../store/chat.store';
 import {useDebouncedValue} from "@mantine/hooks";
 import {ArrowBackUp, ChevronDown, Search} from "../../assets/Icons";
 import {getFullUserName} from "../../utils/utils-func";
+import { isNullOrUndefined } from '../../utils/primitive-checks';
 
 const useStyles = createStyles((theme, _params, getRef) => {
   const icon = getRef('control');
@@ -203,15 +204,16 @@ function UsersList() {
               />
             </Grid.Col>
           </Grid>
-
-          <Group mt={'md'} position={'center'} style={{width: '100%'}}>
-            <Checkbox
-              mb={'lg'}
-              label="Online"
-              checked={isOnline}
-              onChange={(event) => setIsOnline(event.currentTarget.checked)}
-            />
-          </Group>
+          {!isNullOrUndefined(user) &&
+            <Group mt={'md'} position={'center'} style={{width: '100%'}}>
+              <Checkbox
+                mb={'lg'}
+                label="Online"
+                checked={isOnline}
+                onChange={(event) => setIsOnline(event.currentTarget.checked)}
+              />
+            </Group>
+          }
 
           <Group position={'right'}>
             <Button

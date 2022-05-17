@@ -26,6 +26,15 @@ const getTripById = async (tripId: string | number) => {
         select: {
           id: true
         }
+      },
+      usersJoinToTrip: {
+        select: {
+          user: {
+            select: {
+              id: true
+            }
+          }
+        }
       }
     }
   })
@@ -169,50 +178,27 @@ export const joinToTrip = async (
     userId,
     comment,
     receiveUserId,
-  }: JoinRequestPayload,
+    typeOfRequest
+  }: JoinRequestPayload | any,
   tripId: number | string
-): Promise<JoinRequestResponse> => {
-  if (!isNullOrUndefined(receiveUserId)) {
-    const userJoinToTrip = await prisma.userJoinToTrip.upsert({
+): Promise<JoinRequestResponse | any> => {
+  if (typeOfRequest == 'JOIN') {
+    const findJoinRequest = await prisma.userJoinToTrip.findUnique({
       where: {
         userId_tripId: {
-          userId: Number(receiveUserId),
+          userId: Number(userId),
           tripId: Number(tripId)
-        }
-      },
-      update: {
-        status: "RECEIVED"
-      },
-      create: {
-        user: {
-          connect: {
-            id: Number(receiveUserId)
-          }
-        },
-        trip: {
-          connect: {
-            id: Number(tripId)
-          }
-        },
-        status: "RECEIVED"
-      },
-      select: {
-        id: true,
-        status: true,
-        user: {
-          select: {
-            id: true
-          }
-        },
-        trip: {
-          select: {
-            id: true
-          }
         }
       }
     })
-    return {...userJoinToTrip, receiveUserId: receiveUserId}
-  } else {
+
+    if (findJoinRequest && ['APPROVED', 'PENDING', 'RECEIVED'].includes(findJoinRequest.status)) {
+      throw new ApiError(422, {message: "User request is already in pending!"});
+    }
+
+    console.log('JOIN')
+    console.log(userId)
+    console.log(receiveUserId)
     const userJoinToTrip = await prisma.userJoinToTrip.upsert({
       where: {
         userId_tripId: {
@@ -232,16 +218,6 @@ export const joinToTrip = async (
           connect: {id: Number(tripId)}
         },
         comment: comment,
-        // ...(senderId ?
-        //     {
-        //       senderOfInvitation: {
-        //         connect: {
-        //           id: Number(senderId)
-        //         }
-        //       }
-        //     }
-        //     : {}
-        // ),
       },
       select: {
         id: true,
@@ -253,13 +229,174 @@ export const joinToTrip = async (
         },
         trip: {
           select: {
+            user: {
+              select: {
+                id: true
+              }
+            },
             id: true
           }
         }
       }
     })
-    return userJoinToTrip
-  }
+    return {
+      tripId: userJoinToTrip.trip.id,
+      receiveUserId: userJoinToTrip.trip.user.id,
+      status: userJoinToTrip.status,
+      id: userJoinToTrip.id
+    }
+  } else if (typeOfRequest == 'SEND') {
+    console.log('SEND')
+    console.log(userId)
+    console.log(receiveUserId)
+    const findJoinRequest = await prisma.userJoinToTrip.findUnique({
+      where: {
+        userId_tripId: {
+          userId: Number(userId),
+          tripId: Number(tripId)
+        }
+      }
+    })
+
+    if (findJoinRequest && ['APPROVED', 'PENDING', 'RECEIVED'].includes(findJoinRequest.status)) {
+      throw new ApiError(422, {message: "User request is already in pending!"});
+    }
+
+    const userJoinToTrip = await prisma.userJoinToTrip.upsert({
+      where: {
+        userId_tripId: {
+          userId: Number(userId),
+          tripId: Number(tripId)
+        }
+      },
+      update: {
+        status: "RECEIVED",
+      },
+      create: {
+        user: {
+          connect: {id: Number(userId)}
+        },
+        trip: {
+          connect: {id: Number(tripId)}
+        },
+        status: "RECEIVED",
+      },
+      select: {
+        id: true,
+        status: true,
+        user: {
+          select: {
+            id: true
+          }
+        },
+        trip: {
+          select: {
+            user: {
+              select: {
+                id: true
+              }
+            },
+            id: true
+          }
+        }
+      }
+    })
+    return {
+      tripId: userJoinToTrip.trip.id,
+      receiveUserId: userJoinToTrip.user.id,
+      status: userJoinToTrip.status,
+      id: userJoinToTrip.id
+    }
+  } else return
+
+  // if (!isNullOrUndefined(receiveUserId)) {
+  //   const userJoinToTrip = await prisma.userJoinToTrip.upsert({
+  //     where: {
+  //       userId_tripId: {
+  //         userId: Number(receiveUserId),
+  //         tripId: Number(tripId)
+  //       }
+  //     },
+  //     update: {
+  //       status: "RECEIVED"
+  //     },
+  //     create: {
+  //       user: {
+  //         connect: {
+  //           id: Number(receiveUserId)
+  //         }
+  //       },
+  //       trip: {
+  //         connect: {
+  //           id: Number(tripId)
+  //         }
+  //       },
+  //       status: "RECEIVED"
+  //     },
+  //     select: {
+  //       id: true,
+  //       status: true,
+  //       user: {
+  //         select: {
+  //           id: true
+  //         }
+  //       },
+  //       trip: {
+  //         select: {
+  //           id: true
+  //         }
+  //       }
+  //     }
+  //   })
+  //   return {...userJoinToTrip, receiveUserId: receiveUserId}
+  // } else {
+  //   const userJoinToTrip = await prisma.userJoinToTrip.upsert({
+  //     where: {
+  //       userId_tripId: {
+  //         userId: Number(userId),
+  //         tripId: Number(tripId)
+  //       }
+  //     },
+  //     update: {
+  //       status: "PENDING",
+  //       comment: comment
+  //     },
+  //     create: {
+  //       user: {
+  //         connect: {id: Number(userId)}
+  //       },
+  //       trip: {
+  //         connect: {id: Number(tripId)}
+  //       },
+  //       comment: comment,
+  //       // ...(senderId ?
+  //       //     {
+  //       //       senderOfInvitation: {
+  //       //         connect: {
+  //       //           id: Number(senderId)
+  //       //         }
+  //       //       }
+  //       //     }
+  //       //     : {}
+  //       // ),
+  //     },
+  //     select: {
+  //       id: true,
+  //       status: true,
+  //       user: {
+  //         select: {
+  //           id: true
+  //         }
+  //       },
+  //       trip: {
+  //         select: {
+  //           id: true
+  //         }
+  //       }
+  //     }
+  //   })
+  //   return userJoinToTrip
+  // }
 }
 
 export const leaveFromTrip = async (
@@ -345,7 +482,7 @@ export const createTrip = async (
       isAnytime: Boolean(isAnytime || date[0] == null),
       ...((Boolean(isAnytime) == false && date[0] != null) ? {
         dateFrom: new Date(date[0]).toISOString(),
-        dateto: new Date(date[1]).toISOString(),
+        dateTo: new Date(date[1]).toISOString(),
       } : {}),
       ...(!isNullOrUndefined(countries) && !isEmptyArray(countries)
         ? {
@@ -396,16 +533,16 @@ export const getTrips = async (
   const queries: Prisma.TripWhereInput[] = [];
   console.log(destinations)
   // if(findTrip?.user.id != userId || isNullOrUndefined(userId)){
-    queries.push({
-      isHidden: false
-    })
+  queries.push({
+    isHidden: false
+  })
   // }
 
   if (!isNullOrUndefined(destinations)) {
     queries.push({
         destinations: {
           some: {
-            name:{
+            name: {
               in: destinations
             }
           }
@@ -458,7 +595,7 @@ export const getTrips = async (
     endDate.setSeconds(59)
 
     queries.push({
-      dateto: {
+      dateTo: {
         gt: endDate
       },
       dateFrom: {
@@ -472,7 +609,30 @@ export const getTrips = async (
 
   const trips = await prisma.trip.findMany({
     where: {
-      AND: queries
+      // AND: queries
+      OR:[
+        {
+          AND:[
+            {
+              isHidden: true,
+            },
+            {
+              usersJoinToTrip:{
+                some:{
+                  user:{
+                    id:{
+                      in: userId
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          isHidden: false,
+        }
+      ]
     },
     include: {
       gender: {
@@ -647,10 +807,10 @@ export const updateTrip = async (
       isAnytime: Boolean(isAnytime || date?.[0] == null),
       ...((Boolean(isAnytime) == false && date[0] != null) ? {
         dateFrom: new Date(date[0]).toISOString(),
-        dateto: new Date(date[1]).toISOString(),
+        dateTo: new Date(date[1]).toISOString(),
       } : {
         dateFrom: null,
-        dateto: null
+        dateTo: null
       }),
       destinations: {
         connect: destinations.map((item: any) => ({
@@ -711,7 +871,7 @@ export const getOneTrip = async (
   const trip = await prisma.trip.findFirst({
     where: {
       id: Number(tripId),
-      ...(findTrip?.user.id != userId || isNullOrUndefined(userId))
+      ...(!isNullOrUndefined(userId) && findTrip?.user.id != userId && findTrip.usersJoinToTrip.find((item: any) => item.user.id == userId) == undefined)
         ? {isHidden: false} : {}
     },
     include: {
@@ -783,7 +943,7 @@ export const getOneTrip = async (
 
   console.log(trip)
   //
-  if(!trip)
+  if (!trip)
     throw new ApiError(404, {message: "Trip not found!"});
 
   return trip
@@ -826,7 +986,7 @@ export const filtering = async (
 ): Promise<TripFindResponse | any> => {
   const activePage = (Number(page) - 1) * limit || 0
   const totalTripsCount = await prisma.trip.count({
-    where:{
+    where: {
       OR: [
         {
           title: {
@@ -839,7 +999,7 @@ export const filtering = async (
   })
 
   const trips = await prisma.trip.findMany({
-    where:{
+    where: {
       OR: [
         {
           title: {
@@ -953,7 +1113,7 @@ export const switchTripHideStatus = async (
     where: {
       id: Number(tripId)
     },
-    data:{
+    data: {
       isHidden: !trip.isHidden
     }
   });

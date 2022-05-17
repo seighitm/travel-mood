@@ -7,12 +7,14 @@ import CustomPaper from "../../common/CustomPaper";
 import {useFilterUser} from "../../../api/users/queries";
 import {useMutateCreateGroupChat} from "../../../api/chat/mutations";
 import {getFullUserName} from "../../../utils/utils-func";
+import useStore from "../../../store/user.store";
 
 function ModalCreateGroupChat({openedCreateChatGroupModal, handlersCreateChatGroupModal}: any) {
   const {data} = useFilterUser({});
   const {mutate: mutateCreateGroupChat} = useMutateCreateGroupChat()
   const [chatName, setChatName] = useState<string>('')
   const [selectedUsers, setSelectedUsers] = useState<any>([])
+  const {user, setOnlineUsers, fetchUser} = useStore((state: any) => state);
 
   const handlerAddUserToGroup = (user: any) => {
     setSelectedUsers((prev: any) =>
@@ -77,7 +79,9 @@ function ModalCreateGroupChat({openedCreateChatGroupModal, handlersCreateChatGro
                 py={'sm'}
                 variant={'outline'}
                 color={'pink'}
-                leftSection={<Avatar size={'xs'} src={userPicture(user.picture)}/>}
+                leftSection={
+                  <Avatar size={'xs'} src={userPicture(user.picture)}/>
+                }
                 rightSection={
                   <ActionIcon
                     p={0}
@@ -100,7 +104,9 @@ function ModalCreateGroupChat({openedCreateChatGroupModal, handlersCreateChatGro
             style={{height: 400}}
           >
             {!isNullOrUndefined(data) && !isEmptyArray(data) &&
-              data?.map((item: any) =>
+              data
+                // ?.filter((us: any) => us.id !== user.id)
+                ?.map((item: any) =>
                 <CustomPaper key={item?.id}>
                   <Group
                     style={{width: '100%'}}

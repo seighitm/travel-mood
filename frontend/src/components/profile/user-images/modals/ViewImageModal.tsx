@@ -13,7 +13,7 @@ function ViewImageModal({openedModalViewImage, setOpenedModalViewImage, selected
         radius='md'
         src={
           selectedViewImage != null
-            ? `${import.meta.env.VITE_API_URL}uploads/${selectedViewImage}`
+            ? `${import.meta.env.VITE_STORE_AWS}${selectedViewImage}`
             : undefined
         } />
     </Modal>

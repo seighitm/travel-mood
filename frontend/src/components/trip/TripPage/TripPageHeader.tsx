@@ -20,6 +20,7 @@ import {Link, useNavigate, useParams} from 'react-router-dom';
 import SocialSharButtons from '../../common/SocialShare/SocialSharButtons';
 import useStore from '../../../store/user.store';
 import {
+  useMutateChangeJoinRequestStatus,
   useMutateFavoriteTrip,
   useMutateLeaveFromTrip,
   useMutateSwitchTripHiddenStatus,
@@ -88,15 +89,18 @@ function TripPageHeader({trips}: any) {
 
   const onSuccessDeleteEvent = () => navigate('/trips');
 
-  const {data} = useGetUserById({id: user.id, isEnabled: true});
+  const {data} = useGetUserById({id: user?.id, isEnabled: true});
   const {mutate: mutateDeleteTrip} = useMutationDeleteTrip(onSuccessDeleteEvent);
   const {mutate: mutateUnFavorite} = useMutateUnFavoriteTrip();
   const {mutate: mutateFavorite} = useMutateFavoriteTrip();
   const {mutate: mutateLeaveFromTrip} = useMutateLeaveFromTrip();
   const {mutate: mutateSwitchHiddenStatus} = useMutateSwitchTripHiddenStatus();
+  const {mutate: mutateChangeRequestStatus} = useMutateChangeJoinRequestStatus();
 
   const statusCheck = (status: string) => {
-    return trips.usersJoinToTrip.find((request: any) => request.status == status && request.userId == user.id) != undefined
+    if (!isNullOrUndefined(user))
+      return trips.usersJoinToTrip.find((request: any) => request.status == status && request.userId == user.id) != undefined
+    return false
   }
 
   const handlerLeaveFromTrip = () => {
@@ -115,21 +119,28 @@ function TripPageHeader({trips}: any) {
     setHiddenStatus(trips.isHidden)
   }, [trips])
 
+  console.log(trips)
+
   return (
     <Paper className={classes.wrapper}>
-      <JoinTripModal
-        openedJoinModal={openedJoinModal}
-        handlersJoinModal={handlersJoinModal}
-        tripId={trips?.id}
-        userId={user.id}
-      />
+      {!isNullOrUndefined(user) &&
+        <>
+          <JoinTripModal
+            openedJoinModal={openedJoinModal}
+            handlersJoinModal={handlersJoinModal}
+            tripId={trips?.id}
+            userId={user?.id}
+            receiveUserId={trips?.user.id}
+          />
 
-      <SendJoinTripRequest
-        openedInviteModal={openedInviteModal}
-        handlersInviteModal={handlersInviteModal}
-        following={data?.following}
-        tripId={trips?.id}
-      />
+          <SendJoinTripRequest
+            openedInviteModal={openedInviteModal}
+            handlersInviteModal={handlersInviteModal}
+            following={data?.following}
+            tripId={trips?.id}
+          />
+        </>
+      }
 
       <Grid columns={24}>
         <Grid.Col lg={5} xl={5} md={7} sm={8}>
@@ -188,14 +199,15 @@ function TripPageHeader({trips}: any) {
                 </Popover>
               }
               <Badge
-                onClick={() => handlerFavorite()}
                 style={{cursor: 'pointer'}}
                 variant={"light"}
                 color={"gray"}
                 px={'xs'}
                 size="xl"
                 leftSection={
+                  !isNullOrUndefined(user) &&
                   <ActionIcon
+                    onClick={() => handlerFavorite()}
                     disabled={!user}
                     size={'md'}
                     style={{color: theme.colors.red[7]}}
@@ -254,7 +266,7 @@ function TripPageHeader({trips}: any) {
                   </Text>
                 </Group>
               </Popover>
-              {user.id == trips.user.id &&
+              {!isNullOrUndefined(user) && user.id == trips.user.id &&
                 <Switch
                   onLabel="ON" offLabel="OFF"
                   checked={hiddenStatus}
@@ -265,27 +277,49 @@ function TripPageHeader({trips}: any) {
               }
             </Group>
           </Group>
+
           <Group mt={'lg'} position="center" direction="column">
-            {!isNullOrUndefined(trips) && !isEmptyArray(trips.usersJoinToTrip) &&
-              trips.usersJoinToTrip.find((request: any) => request.userId == user.id &&
-                (["PENDING", 'APPROVED', 'RECEIVED'].includes(request.status))) !== undefined &&
+            {statusCheck('APPROVED')
+              ? <Badge color={'pink'} variant={'outline'}>APPROVED</Badge>
+              : statusCheck('CANCELED')
+                ? <Badge color={'pink'} variant={'outline'}>CANCELED</Badge>
+                : statusCheck('PENDING')
+                  ? <Badge color={'pink'} variant={'outline'}>PENDING</Badge>
+                  : statusCheck('RECEIVED')
+                    ? <Badge color={'pink'} variant={'outline'}>RECEIVED</Badge>
+                    : <></>
+            }
+
+            {!isNullOrUndefined(user) && trips.usersJoinToTrip.find((request: any) => request.userId == user.id && request.status == 'RECEIVED') !== undefined &&
               <Button
                 fullWidth
                 color="pink"
                 variant={'light'}
+                onClick={() => mutateChangeRequestStatus({
+                  tripRequestId: trips.usersJoinToTrip.find((request: any) => request.userId == user.id && request.status == 'RECEIVED').id,
+                  status: 'APPROVED'
+                })}
+                leftIcon={<Send size={17}/>}
+              >
+                Accept
+              </Button>
+            }
+
+            {!isNullOrUndefined(user) && !isNullOrUndefined(trips) && !isEmptyArray(trips.usersJoinToTrip) &&
+              trips.usersJoinToTrip.find((request: any) => request.userId == user.id &&
+                (["PENDING", 'APPROVED', 'RECEIVED'].includes(request.status))) !== undefined &&
+              <Button
+                variant={'outline'}
+                fullWidth
+                color="red"
                 onClick={handlerLeaveFromTrip}
                 leftIcon={<Pencil1Icon style={{width: '18px', height: '18px'}}/>}
-                styles={{
-                  inner: {
-                    color: 'teal',
-                  },
-                }}
               >
                 Leave
               </Button>
             }
 
-            {trips.usersJoinToTrip.find((request: any) => request.userId == user.id) == undefined && (user && user?.id != trips.user.id) &&
+            {!isNullOrUndefined(user) && trips.usersJoinToTrip.find((request: any) => request.userId == user.id) == undefined && (user && user?.id != trips.user.id) &&
               <Button
                 fullWidth
                 color="pink"
@@ -295,15 +329,6 @@ function TripPageHeader({trips}: any) {
               >
                 Join
               </Button>
-            }
-
-            {statusCheck('APPROVED')
-              ? <Badge>APPROVED</Badge>
-              : statusCheck('CANCELED')
-                ? <Badge>CANCELED</Badge>
-                : statusCheck('PENDING')
-                  ? <Badge>PENDING</Badge>
-                  : <></>
             }
 
             {(!isNullOrUndefined(user) && user?.id == trips.user.id) &&
@@ -352,7 +377,7 @@ function TripPageHeader({trips}: any) {
               </SimpleGrid>
             }
             <SocialSharButtons faceboocRef={faceboocRef} twitterRef={twitterRef}/>
-            <Group style={{width: '100%'}} grow>
+            <Group style={{width: '100%'}} grow direction={isNullOrUndefined(user) ? 'column' : 'row'}>
               <Button
                 variant={'light'}
                 onClick={() => faceboocRef.current.click()}

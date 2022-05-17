@@ -13,18 +13,17 @@ import {
   ScrollArea,
   Tooltip,
 } from '@mantine/core';
-import {ChevronDown, ChevronLeft, Mail, MessageDots, User} from '../../../assets/Icons';
+import {ChevronDown, ChevronLeft, Key, Mail, MessageDots, User} from '../../../assets/Icons';
 
 import {GlobeIcon} from '@modulz/radix-icons';
 import {ProfileAvatar} from './ProfileAvatar';
 import {useLocation, useNavigate} from 'react-router-dom';
 import ToggleTheme from '../ToggleTheme';
-// import {useMutateReadNotifications, useNotificationsQuery} from '../../../api/notifications.api';
 import chatStore from '../../../store/chat.store';
 import useStore from "../../../store/user.store";
 import {useGetCountOfNonReadMessages} from "../../../api/chat/messages/queries";
 import {useMediaQuery} from "@mantine/hooks";
-import {isEmptyArray} from "../../../utils/primitive-checks";
+import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
 import {useQueryClient} from "react-query";
 
 const useStyles = createStyles((theme) => ({
@@ -90,30 +89,32 @@ export function HeaderComponent({
                                   setOpenedDrawer,
                                   openedDrawer,
                                 }: HeaderSimpleProps | any) {
-  const [active, setActive] = useState(links[0].link);
+  const location = useLocation()
   const {classes, theme, cx} = useStyles();
   const navigate = useNavigate();
-  const menuIconColor = theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 5 : 6];
-  let auxChats: any, auxChatId: any;
-  const {notifications} = chatStore((state: any) => state);
+
+  const queryClient = useQueryClient();
+  const {data: nonReadMessages} = useGetCountOfNonReadMessages();
+
   const {user} = useStore((state: any) => state);
+  const {directSetSelectedChat, selectedChat, setOpenedChatDrawer} = chatStore((state: any) => state);
+  const [active, setActive] = useState(links[0].link);
+
+  const matches = useMediaQuery('(min-width: 768px)');
+
+  let auxChats: any, auxChatId: any;
+  const menuIconColor = theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 5 : 6];
+  const requests = userTrips?.find((request: any) => (request.status === 'PENDING' || request.status === 'RECEIVED'));
 
   useEffect(() => {
     setActive('/' + window.location.href.split('/').reverse()[0]);
   }, []);
 
-  const location = useLocation()
-
-  const {directSetSelectedChat, selectedChat, setOpenedChatDrawer} = chatStore((state: any) => state);
-
-  const matches = useMediaQuery('(min-width: 768px)');
-
-
   const items = links.map((link: any) => (
     <a
       key={link.label}
       href={link.link}
-      className={cx(classes.link, {[classes.linkActive]: active === link.link})}
+      className={cx(classes.link, {[classes.linkActive]: active === link.link && location?.pathname.includes(link.link)})}
       onClick={(event) => {
         event.preventDefault();
         setActive(link.link);
@@ -124,24 +125,6 @@ export function HeaderComponent({
     </a>
   ));
 
-  // const {mutate: mutateRead} = useMutation("readNotift",
-  //     (chats: any) => readChatNotifications(chats), {
-  //         onSettled: async () => {
-  //             await refetchNotifications()
-  //         },
-  //         onSuccess: () => {
-  //             setNotifications(notifications.filter((item: any) => item.chat.id != auxChatId))
-  //         }
-  //     });
-
-  const requests = userTrips?.find((request: any) => (request.status === 'PENDING' || request.status === 'RECEIVED'));
-  // const {mutate: mutateRead} = useMutateReadNotifications();
-  // const {data: dbNotifications} = useNotificationsQuery('all');
-  const {data: nonReadMessages} = useGetCountOfNonReadMessages();
-  console.log(location)
-  const queryClient = useQueryClient();
-
-  console.log(nonReadMessages)
   return (
     <Header height={60} mb={120}>
       <Container className={classes.header}>
@@ -155,24 +138,30 @@ export function HeaderComponent({
           <ActionIcon className={classes.profileAvatar} onClick={() => navigate('/')}>
             <GlobeIcon style={{width: '20px', height: '20px'}}/>
           </ActionIcon>
-          {(location.pathname != '/' && !isNaN(Number(location.pathname.split('/').reverse()[0]))) &&
-            <Button leftIcon={<ChevronLeft size={13}/>} compact onClick={() => navigate(-1)}>
+          {!openedDrawer && (location.pathname != '/' && !isNaN(Number(location.pathname.split('/').reverse()[0]))) &&
+            <Button leftIcon={<ChevronLeft size={13}/>}
+                    compact onClick={() => navigate(-1)}
+            >
               Back
             </Button>
           }
         </Group>
-          {!matches && selectedChat.id != -1 && !isEmptyArray(queryClient.getQueryData('fetchMyChats')) &&
-            <Button variant={'outline'} rightIcon={<MessageDots size={13}/>} compact onClick={() => setOpenedChatDrawer(true)}>
-              Chats
-            </Button>
-          }
+        {!matches && selectedChat.id != -1 && !isEmptyArray(queryClient.getQueryData('fetchMyChats')) &&
+          <Button variant={'outline'}
+                  rightIcon={<MessageDots size={13}/>}
+                  compact
+                  onClick={() => setOpenedChatDrawer(true)}
+          >
+            Chats
+          </Button>
+        }
         <Group spacing={5} className={classes.links}>
           {items}
           <Group spacing={0}>
             <a
               href={'/chat'}
               style={{borderRadius: `5px ${!user ? '5px 5px' : '0px 0px'} 5px`}}
-              className={cx(classes.link, {[classes.linkActive]: active === '/chat' && location.pathname == '/chat'})}
+              className={cx(classes.link, {[classes.linkActive]: active === '/chat' && location.pathname?.split('/').includes('chat')})}
               onClick={(event) => {
                 event.preventDefault();
                 setActive('/chat');
@@ -182,7 +171,7 @@ export function HeaderComponent({
               Chat
             </a>
             <Box mr={16} sx={{position: 'relative'}}>
-              {user && nonReadMessages && nonReadMessages?.length != 0 &&
+              {!isNullOrUndefined(user) && !isNullOrUndefined(nonReadMessages) && !isEmptyArray(nonReadMessages) &&
                 <Indicator
                   color={'pink'}
                   size={15}
@@ -235,16 +224,21 @@ export function HeaderComponent({
         </Group>
         <Group>
           <div className={classes.profileAvatar}>
-            {!!user
-              ? <ProfileAvatar
+            {!isNullOrUndefined(user) &&
+              <ProfileAvatar
                 guestsCounter={data?.guests?.filter((item: any) => item.seen == false).length}
                 travelRequestsCounter={requests != undefined ? requests._count : 0}
               />
-              : <Button onClick={() => navigate('/auth/login')}>
-                Login
-              </Button>
             }
           </div>
+          {isNullOrUndefined(user) &&
+            <Button rightIcon={<Key size={17}/>}
+                    onClick={() => navigate('/auth/login')}
+                    size={'sm'}
+            >
+              Login
+            </Button>
+          }
           <ToggleTheme/>
         </Group>
       </Container>

@@ -29,7 +29,7 @@ const UploadImagesComponent = React.memo(
               height={60}
               sx={{cursor: 'pointer'}}
               alt={`file preview ${index}`}
-              src={import.meta.env.VITE_API_URL + 'uploads/' + (file?.name ?? file)}
+              src={import.meta.env.VITE_STORE_AWS + (file?.name ?? file)}
             />
           </Grid.Col>
         )}

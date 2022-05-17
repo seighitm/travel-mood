@@ -1,9 +1,9 @@
 import {RichTextEditor} from '@mantine/rte';
-import React, {useCallback, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 import {TypographyStylesProvider} from '@mantine/core';
+import {useForceUpdate} from "@mantine/hooks";
 
-const Editor = React.memo(({value, onChange, setEditorImages}: any) => {
-
+const Editor = (({value, onChange, setEditorImages, initialContent}: any) => {
   const handleImageUpload = useCallback((file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const formData = new FormData();
@@ -25,11 +25,12 @@ const Editor = React.memo(({value, onChange, setEditorImages}: any) => {
         })
         .catch(() => reject(new Error('Upload failed')));
     }), [value])
+  console.log(value)
   console.log(typeof value)
   return (
     <TypographyStylesProvider mt={'md'} mb={'md'}>
       <RichTextEditor
-        value={value}
+        value={(value != '<p><br></p>' && value != '') ? value : initialContent}
         onChange={onChange}
         onImageUpload={useMemo(() => handleImageUpload, [value])}
       />

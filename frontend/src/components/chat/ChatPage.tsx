@@ -2,19 +2,21 @@ import React, {useCallback} from 'react';
 import {Button, Grid, Stack, Text, Title} from '@mantine/core';
 import chatStore from '../../store/chat.store';
 import {useGetAllMyChats} from '../../api/chat/queries';
-import {useMediaQuery} from "@mantine/hooks";
+import {useDisclosure, useMediaQuery} from "@mantine/hooks";
 import MyChat from "./MyChat";
 import ChatBox from "./ChatBox";
-import {ChevronRight} from "../../assets/Icons";
+import {ChevronRight, CirclePlus, MessageDots} from "../../assets/Icons";
 import {useNavigate} from "react-router-dom";
 import {isEmptyArray, isNullOrUndefined} from "../../utils/primitive-checks";
 import ChatDrawer from "./ChatDrawer";
+import ModalCreateGroupChat from "./modals/ModalCreateGroupChat";
 
 function ChatPage() {
   const navigate = useNavigate();
   const {socket} = chatStore((state: any) => state);
-  const matches = useMediaQuery('(min-width: 768px)');
+  const matches = useMediaQuery('(min-width: 769px)');
   const {data: dataFetchMyChats, isLoading: isLoadingChats} = useGetAllMyChats();
+  const [openedCreateChatGroupModal, handlersCreateChatGroupModal] = useDisclosure(false);
 
   useCallback(() => {
     if (!isNullOrUndefined(socket)) {
@@ -23,32 +25,54 @@ function ChatPage() {
   }, [socket]);
 
   if (!isLoadingChats && isEmptyArray(dataFetchMyChats))
-    return <Stack
-      justify={'center'}
-      align='center'
-      sx={{height: 'calc(100vh - 200px)'}}
-    >
-      <Title order={2}>
-        <Text
-          color='blue'
-          inherit
-          component='span'
-        >
-          You haven't started any conversations
-        </Text>
-      </Title>
-      <Button
-        variant={'subtle'}
-        rightIcon={<ChevronRight size={17}/>}
-        onClick={() => navigate('/users')}
+    return <>
+      <ModalCreateGroupChat
+        openedCreateChatGroupModal={openedCreateChatGroupModal}
+        handlersCreateChatGroupModal={handlersCreateChatGroupModal}
+      />
+      <Stack
+        justify={'center'}
+        align='center'
+        sx={{height: 'calc(100vh - 200px)'}}
       >
-        Start new conversation
-      </Button>
-    </Stack>;
+        <Title align={'center'} order={2}>
+          <Text
+            align={'center'}
+            color='blue'
+            inherit
+            component='span'
+          >
+            You haven't started any conversations
+          </Text>
+        </Title>
+        <Button
+          color={'gray'}
+          variant={'outline'}
+          rightIcon={<MessageDots size={17}/>}
+          onClick={() => navigate('/users')}
+        >
+          Start new conversation
+        </Button>
+        <Button
+          color={'blue'}
+          variant={'subtle'}
+          rightIcon={<CirclePlus size={17}/>}
+          onClick={() => handlersCreateChatGroupModal.open()}
+        >
+          Create new Group
+        </Button>
+      </Stack>
+    </>
 
   return <>
+    <ModalCreateGroupChat
+      openedCreateChatGroupModal={openedCreateChatGroupModal}
+      handlersCreateChatGroupModal={handlersCreateChatGroupModal}
+    />
     {!matches &&
       <ChatDrawer
+        openedCreateChatGroupModal={openedCreateChatGroupModal}
+        handlersCreateChatGroupModal={handlersCreateChatGroupModal}
         dataFetchMyChats={dataFetchMyChats}
         isLoadingChats={isLoadingChats}
       />
@@ -57,6 +81,8 @@ function ChatPage() {
       {matches &&
         <Grid.Col xs={0} sm={5} md={8} lg={7} xl={6}>
           <MyChat
+            openedCreateChatGroupModal={openedCreateChatGroupModal}
+            handlersCreateChatGroupModal={handlersCreateChatGroupModal}
             dataFetchMyChats={dataFetchMyChats}
             isLoadingChats={isLoadingChats}
           />

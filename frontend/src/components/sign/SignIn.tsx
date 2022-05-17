@@ -16,6 +16,7 @@ import {useForm} from '@mantine/form';
 import {useNavigate} from 'react-router-dom';
 import {useMutateSignIn} from '../../api/auth/mutations';
 import {At, Key, Lock} from '../../assets/Icons';
+import {isValidEmail} from "../../utils/utils-func";
 
 const useStyles = createStyles((theme) => ({
   container: {
@@ -47,8 +48,7 @@ const SignIn = () => {
         if (value?.trim().length <= 8) return 'Password should have at least 8 letters!'
       },
       email: (value) => {
-        if (!(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(value)))
-          return 'Invalid email!'
+        if (!isValidEmail(value)) return 'Invalid email!'
       },
     }
   });

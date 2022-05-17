@@ -51,6 +51,10 @@ export const CustomLoader = () =>
 
 const hostRoutes = [
   {
+    path: '/article/:id',
+    component: <ArticlePage/>,
+  },
+  {
     path: '/auth/signup',
     component: <SignUpForm/>,
   },
@@ -71,11 +75,11 @@ const hostRoutes = [
     component: <Verify/>,
   },
   {
-    path: 'all-articles',
+    path: 'articles',
     component: <AllArticlesLayout/>,
   },
   {
-    path: 'all-articles/:page',
+    path: 'articles/:page',
     component: <AllArticlesLayout/>,
   },
   {
@@ -97,10 +101,6 @@ const hostRoutes = [
   {
     path: '/trip/:id',
     component: <TripPage/>,
-  },
-  {
-    path: '/articles/:id',
-    component: <ArticlePage/>,
   },
   {
     path: '/user/:id',
@@ -152,6 +152,10 @@ const authRoutes = [
 ];
 
 const adminRoutes = [
+  {
+    path: 'admin/article/:id',
+    component: <ArticlePage/>,
+  },
   {
     path: 'admin/article/edit/:id',
     component: <UpdateArticleComponent/>,

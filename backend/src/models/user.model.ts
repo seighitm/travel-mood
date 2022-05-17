@@ -9,13 +9,13 @@ export interface User {
   updatedAt: Date;
   accessToken: string;
   refreshToken: string;
-  followedBy: any;
-  following: any,
+  followedBy?: any;
+  following?: any,
   oldPassword: string
   country: any
   date: Date
   languages?: any[]
-  gender: any,
+  gender?: any,
   role: any,
   lastName: any,
   firstName: any,
@@ -39,11 +39,11 @@ export type UserResponse = Pick<User, "accessToken" | "refreshToken" | 'id' | 'r
 
 export type UserSwitchRoleResponse = Pick<User, 'id' | 'role'>;
 
-export type AuthorQueryResponse = Pick<User, 'picture' | 'id' | 'firstName' | 'lastName' | 'gender'>;
+export type AuthorQueryResponse = Pick<User, 'picture' | 'id' | 'firstName' | 'lastName' | 'gender' | 'followedBy' | 'following'>;
 
 export type FollowersQueryResponse = Pick<User, 'id'>;
 
-export type Profile = Pick<User, 'picture' | 'id' | 'firstName' | 'lastName' | 'gender'>;
+export type Profile = Pick<User, 'picture' | 'id' | 'firstName' | 'lastName' | 'following' | 'gender'>;
 
 export type UserLofinResponse = Pick<User, 'id' | 'firstName' | 'lastName' | 'role' | 'picture' | 'accessToken' | 'refreshToken'>;
 

@@ -3,7 +3,7 @@ import {Drawer} from "@mantine/core";
 import MyChat from "./MyChat";
 import chatStore from "../../store/chat.store";
 
-function ChatDrawer({dataFetchMyChats, isLoadingChats}: any) {
+function ChatDrawer({dataFetchMyChats, isLoadingChats, openedCreateChatGroupModal, handlersCreateChatGroupModal}: any) {
   const {isOpenChatDrawer, setOpenedChatDrawer} = chatStore((state: any) => state);
   return (
     <Drawer
@@ -14,6 +14,8 @@ function ChatDrawer({dataFetchMyChats, isLoadingChats}: any) {
       onClose={() => setOpenedChatDrawer(false)}
     >
       <MyChat
+        openedCreateChatGroupModal={openedCreateChatGroupModal}
+        handlersCreateChatGroupModal={handlersCreateChatGroupModal}
         setOpenedDrawer={setOpenedChatDrawer}
         isLoadingChats={isLoadingChats}
         isDrawer={true}

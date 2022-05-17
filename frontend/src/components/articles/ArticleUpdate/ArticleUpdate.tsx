@@ -23,6 +23,7 @@ import {useMutationUpdateArticle} from "../../../api/articles/mutations";
 import {useOneArticleQuery} from "../../../api/articles/queries";
 import {removeFiles} from "../../../api/utils/axios";
 import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
+import {useQueryClient} from "react-query";
 
 function ArticleUpdate() {
   let {id} = useParams();
@@ -39,8 +40,12 @@ function ArticleUpdate() {
   const [initEditorContent, setInitEditorContent] = useState<boolean>(false)
 
   const {data: dbTags} = useTagsQuery({});
-  const {data: dbArticle, refetch: refetchArticle} = useOneArticleQuery({id});
+  const {data: dbArticle, refetch: refetchArticle, isLoading: isLoadingArticle} = useOneArticleQuery({id});
   const {data: dbCountries} = useGetLocations({})
+
+  useEffect(() => {
+    refetchArticle()
+  }, [initEditorContent])
 
   const form = useForm({
     initialValues: {
@@ -93,20 +98,19 @@ function ArticleUpdate() {
     }
     setNewImages(newImages.filter((item: any) => item.name != name));
   }
-
   const handlerRemoveUnusedEditorImages = async () => {
-    const allImages: any = editorContent
-      ?.match(/http:\/\/localhost([^"]*)/g)
-      ?.map((item: any) => item.split('/')[item.split('/').length - 1])
-
-    if (editorImages) {
-      let imagesToRemove: string[] = editorImages.filter((image: string) => !allImages?.includes(image))
-      if (imagesToRemove) {
-        await removeFiles(imagesToRemove)
-      }
-      imagesToRemove = []
-      setEditorImages([])
-    }
+    // const allImages: any = editorContent
+    //   ?.match(/http:\/\/localhost([^"]*)/g)
+    //   ?.map((item: any) => item.split('/')[item.split('/').length - 1])
+    //
+    // if (editorImages) {
+    //   let imagesToRemove: string[] = editorImages.filter((image: string) => !allImages?.includes(image))
+    //   if (imagesToRemove) {
+    //     await removeFiles(imagesToRemove)
+    //   }
+    //   imagesToRemove = []
+    //   setEditorImages([])
+    // }
   }
 
   const {mutate: mutateUserUpdate, isLoading} = useMutationUpdateArticle({
@@ -156,6 +160,8 @@ function ArticleUpdate() {
   };
 
   useEffect(() => {
+    setInitEditorContent(((prev: boolean) => !prev))
+
     refetchArticle();
   }, [id]);
 
@@ -189,7 +195,7 @@ function ArticleUpdate() {
           src={
             file
               ? URL.createObjectURL(file)
-              : `${import.meta.env.VITE_API_URL}uploads/` + oldTitleImage
+              : `${import.meta.env.VITE_STORE_AWS}` + oldTitleImage
           }
           mt={'sm'}
           mb={'sm'}
@@ -295,10 +301,11 @@ function ArticleUpdate() {
 
     {useMemo(() => <Editor
         value={editorContent}
+        initialContent={dbArticle?.body}
         setEditorImages={setEditorImages}
         onChange={setEditorContent}
       />,
-      [initEditorContent, editorImages])
+      [initEditorContent, editorImages, isLoadingArticle, dbArticle?.body])
     }
 
     <DropzoneArea titleImage={file} files={newImages} setFiles={setNewImages}/>

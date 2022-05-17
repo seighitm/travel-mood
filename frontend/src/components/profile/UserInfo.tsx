@@ -69,6 +69,7 @@ const UserInfo = ({data, id}: any) => {
             color={isOnline ? 'green' : 'pink'}
             label={isOnline ? 'online' : 'offline'}
             withBorder
+            disabled={isNullOrUndefined(user)}
             position="bottom-center"
           >
             <Image

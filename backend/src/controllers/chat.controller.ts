@@ -3,11 +3,12 @@ import {NextFunction, Response, Router} from "express";
 import {authM} from "../middlewares/auth.middleware";
 import {
   accessChat,
-  addUserToGroupChat,
+  addUsersToGroupChat,
   createGroupChat,
   deleteGroupChat,
   getMyChats,
-  updateGroupChat
+  removeUsersFromGroupChat,
+  updateGroupChatName
 } from "../services/chat.service";
 import {asyncHandler} from "../utils/asyncHandler";
 
@@ -59,7 +60,7 @@ router.post('/chat/group',
 )
 
 /**
- * Update group chat
+ * Update group chat name
  * @auth required
  * @route {POST} /chat
  * @bodyparam  chatId
@@ -70,7 +71,7 @@ router.put('/chat/group',
   [authM.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const {chatId, chatName} = req.body;
-    const groupChat = await updateGroupChat(chatName, chatId, req?.user?.id)
+    const groupChat = await updateGroupChatName(chatName, chatId, req?.user?.id)
     res.json(groupChat);
   })
 )
@@ -86,8 +87,8 @@ router.put('/chat/group',
 router.delete('/chat/group',
   [authM.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const {chatId, userId} = req.body;
-    const groupChat = await deleteGroupChat(chatId, userId)
+    const {chatId, usersId} = req.body;
+    const groupChat = await deleteGroupChat(chatId, usersId)
     res.json(groupChat);
   })
 )
@@ -100,11 +101,26 @@ router.delete('/chat/group',
  * @bodyparam  chat name
  * @returns updated group chat
  */
-router.put('/chat/groupadd',
+router.put('/chat/group/users',
   authM.required,
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const {chatId, userId} = req.body;
-    const groupChat = await addUserToGroupChat(chatId, userId)
+    const groupChat = await addUsersToGroupChat(req.body)
+    res.json(groupChat)
+  })
+)
+
+/**
+ * Remove users from group chat
+ * @auth required
+ * @route {POST} /chat
+ * @bodyparam  chatId
+ * @bodyparam  chat name
+ * @returns updated group chat
+ */
+router.delete('/chat/group/users',
+  authM.required,
+  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    const groupChat = await removeUsersFromGroupChat(req.body)
     res.json(groupChat)
   })
 )

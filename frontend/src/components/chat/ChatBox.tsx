@@ -1,12 +1,14 @@
 import React, {useEffect, useRef, useState} from 'react';
 import chatStore from '../../store/chat.store';
-import {Box, Button, Divider, Group, LoadingOverlay, Paper, ScrollArea, Stack} from '@mantine/core';
+import {Box, Button, Divider, Group, LoadingOverlay, ScrollArea, Stack} from '@mantine/core';
 import {useIsFetching, useQueryClient} from 'react-query';
 import {useGetAllChatMessage} from '../../api/chat/messages/queries';
 import MessageItem from './MessageItem';
 import MessageInputField from './MessageInputField';
 import {Check, MessageDots} from "../../assets/Icons";
-import {isEmptyArray} from "../../utils/primitive-checks";
+import {isEmptyArray, isNullOrUndefined} from "../../utils/primitive-checks";
+import {allMessages} from "../../api/chat/messages/axios";
+import {useMuateteReadMessages} from "../../api/chat/messages/mutations";
 
 export const MessageDivider = ({messages, index}: any) => {
   return <>
@@ -21,9 +23,8 @@ export const MessageDivider = ({messages, index}: any) => {
               {new Date(messages[index]?.createdAt).toISOString().split('T')[0]}
             </Group>
           }
+          my={'lg'}
           labelPosition="center"
-          mt={'lg'}
-          mb={'lg'}
           style={{width: '100%'}}
         />
       )}
@@ -35,44 +36,19 @@ let selChat: any;
 const ChatBox = () => {
   const viewport: any = useRef<HTMLDivElement>();
   const queryClient = useQueryClient();
-  const {socket, selectedChat, notifications, setOpenedChatDrawer} = chatStore((state: any) => state);
+  const {selectedChat, notifications, setOpenedChatDrawer} = chatStore((state: any) => state);
+
   const [selectedMessage, setSelectedMessage] = useState<any>(-1);
+  const [isVisibleLoadMoreButton, setIsVisibleLoadMoreButton] = useState(false)
 
   const scrollToBottom = () => viewport?.current?.scrollTo({top: viewport.current.scrollHeight, behavior: 'smooth'});
-  const {data: messages, refetch: refetchMessages, isFetching: isFetchingMessages}
-    = useGetAllChatMessage(selectedChat);
+  const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState<boolean>(false)
+  const {
+    data: messages,
+    refetch: refetchMessages,
+    isFetching: isFetchingMessages
+  } = useGetAllChatMessage(selectedChat);
   const isLoading = useIsFetching('fetchMessagesChat');
-
-  const initSocket = async () => {
-    // if (socket?._callbacks['$message-received'] == undefined)
-    socket.on('message-received', async (newMessageRecieved: any) => {
-      if (selChat.id == newMessageRecieved.chat.id) {
-        const prevAllMessages = await queryClient.getQueryData('fetchMessagesChat');
-        if (prevAllMessages) {
-          await queryClient.cancelQueries('fetchMessagesChat');
-          const prevMessages: any = queryClient.getQueryData('fetchMessagesChat');
-          prevMessages.push({...newMessageRecieved, readBy: []});
-          queryClient.setQueryData('fetchMessagesChat', () => prevMessages);
-        }
-      } else {
-        await refetchMessages();
-      }
-
-      scrollToBottom();
-
-      const prevAllChats: any = queryClient.getQueryData('fetchMyChats');
-      if (prevAllChats) {
-        await queryClient.cancelQueries('fetchMyChats');
-        let foundIndex = prevAllChats.findIndex((chat: any) => chat.id == newMessageRecieved.chat.id);
-        prevAllChats[foundIndex].latestMessage = {...newMessageRecieved};
-        if (selChat.id != newMessageRecieved.chat.id)
-          prevAllChats[foundIndex].countNonReadmessages += 1;
-        queryClient.setQueryData('fetchMyChats', () => prevAllChats);
-      }
-      setTimeout(() => scrollToBottom(), 200)
-    });
-    setTimeout(() => scrollToBottom(), 200)
-  };
 
   const checkIsRead = (notificationDate: any, messageDate: any) => {
     if (!notificationDate) return true;
@@ -82,18 +58,67 @@ const ChatBox = () => {
   };
 
   useEffect(() => {
-    initSocket();
-  }, []);
+    selChat = selectedChat
+  }, [selectedChat])
+
+  // useEffect(() => {
+  //   socket.on('message-received', async (newMessageRecieved: any) => {
+  //     if (selChat.id == newMessageRecieved.chat.id) {
+  //       const prevAllMessages = await queryClient.getQueryData('fetchMessagesChat');
+  //       if (prevAllMessages) {
+  //         await queryClient.cancelQueries('fetchMessagesChat');
+  //         const prevMessages: any = queryClient.getQueryData('fetchMessagesChat');
+  //         prevMessages.push({...newMessageRecieved, readBy: []});
+  //         queryClient.setQueryData('fetchMessagesChat', () => prevMessages);
+  //       }
+  //     }
+  //     setTimeout(() => scrollToBottom(), 10)
+  //
+  //     const prevAllChats: any = queryClient.getQueryData('fetchMyChats');
+  //     if (prevAllChats) {
+  //       await queryClient.cancelQueries('fetchMyChats');
+  //       let foundIndex = prevAllChats.findIndex((chat: any) => chat.id == newMessageRecieved.chat.id);
+  //       prevAllChats[foundIndex].latestMessage = {...newMessageRecieved};
+  //       if (selChat.id != newMessageRecieved.chat.id)
+  //         prevAllChats[foundIndex].countNonReadmessages += 1;
+  //       queryClient.setQueryData('fetchMyChats', () => prevAllChats);
+  //     }
+  //   });
+  // }, [socket]);
 
   useEffect(() => {
-    if (!isLoading) scrollToBottom();
+    if (!isLoading)
+      setTimeout(() => scrollToBottom(), 10)
+  }, [notifications])
+
+
+  useEffect(() => {
+    if (!isLoading) {
+      scrollToBottom();
+    }
   }, [isLoading]);
 
   useEffect(() => {
     selChat = selectedChat;
     refetchMessages();
-    scrollToBottom();
+    // console.log(queryClient.getQueryData('fetchMessagesChat').length)
+    // if (queryClient.getQueryData('fetchMessagesChat')?.length >= 10)
+    setIsVisibleLoadMoreButton(true)
   }, [selectedChat, selChat]);
+
+  // console.log(queryClient.getQueryData(['fetchMessagesChat']))
+  const fc = async () => {
+    let prevAllMessages: any = await queryClient.getQueryData(['fetchMessagesChat', selectedChat.id]);
+    setIsLoadingMoreMessages(true)
+    const newLoadMessages = await allMessages(selectedChat.id, prevAllMessages?.length + 15)
+    if (newLoadMessages.length < 15) setIsVisibleLoadMoreButton(false)
+    if (prevAllMessages) {
+      await queryClient.cancelQueries(['fetchMessagesChat', selectedChat.id]);
+      prevAllMessages = [...newLoadMessages, ...prevAllMessages]
+      queryClient.setQueryData(['fetchMessagesChat', selectedChat.id], () => prevAllMessages);
+    }
+    setIsLoadingMoreMessages(false)
+  }
 
   return (
     <Group style={{height: '87vh'}} grow direction={'row'}>
@@ -114,10 +139,17 @@ const ChatBox = () => {
               borderRadius: theme.radius.md,
             })}
           >
-            <LoadingOverlay visible={isFetchingMessages}/>
+            <LoadingOverlay visible={isFetchingMessages || isLoadingMoreMessages}/>
+            {isVisibleLoadMoreButton && !isEmptyArray(queryClient.getQueryData(['fetchMessagesChat', selectedChat.id])) &&
+              <Group mb={'sm'} position={'center'}>
+                <Button compact disabled={isLoadingMoreMessages} onClick={() => fc()}>
+                  Load more...
+                </Button>
+              </Group>
+            }
             <Box mb={40}>
               {messages && messages.map((item: any, index: number) => (
-                <Box key={item.createdAt}>
+                <Box key={item?.id}>
                   <MessageDivider messages={messages} index={index}/>
                   <MessageItem
                     selectedMessage={selectedMessage}
@@ -142,7 +174,7 @@ const ChatBox = () => {
             pl={'sm'}
             sx={(theme) => ({
               borderRadius: theme.radius.md,
-              width:'100%',
+              width: '100%',
               height: '87vh',
               border: '2px solid ',
               borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[2],

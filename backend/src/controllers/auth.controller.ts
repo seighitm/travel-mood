@@ -44,7 +44,7 @@ router.post('/auth/login',
  * @body-param localRefreshToken
  * @returns {accessToken, refreshToken, user}
  */
-router.post('/refresh',
+router.post('/refresh-token',
   [authM.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const userData = await refreshTokenService(req?.body?.localRefreshToken);

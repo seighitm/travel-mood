@@ -19,6 +19,7 @@ import {isEmptyArray, isEmptyString, isLongArrayLengthThan, isNullOrUndefined} f
 import {ArticleCreateOrUpdateValidator} from "../validators/article.validator";
 import {removeFiles} from "./file-upload.services";
 import {ROLE} from "./auth.service";
+import {s3} from "../middlewares/aws-multer";
 
 export const getArticles = async (
   query: ArticleFindQuery | any,
@@ -39,7 +40,7 @@ export const removeUnusedImages = async (
   imagesToRemove: any
 ): Promise<void> => {
   if (!isNullOrUndefined(imagesToRemove) && !isEmptyArray(imagesToRemove)) {
-    await removeFiles(imagesToRemove.map((image: any) => image?.name))
+    // await removeFiles(imagesToRemove.map((image: any) => image?.name))
 
     for (let i = 0; i < imagesToRemove.length; i++) {
       await prisma.articleImage.delete({
@@ -117,7 +118,7 @@ export const createArticle = async (
         },
       } : []),
       ...(isPrimaryImage != 'false' ? {
-        primaryImage: images[0]?.filename
+        primaryImage: images[0]?.key
       } : {}),
       countries: {
         connect: countries.map((item: string) => ({code: item}))
@@ -129,7 +130,7 @@ export const createArticle = async (
       },
       ...((!isNullOrUndefined(images) && !isEmptyArray(images)) ? {
         images: {
-          create: images.map((file: { filename: string }) => ({name: file.filename}))
+          create: images.map((file: { filename: string }) => ({name: file.key}))
         }
       } : []),
     },
@@ -205,12 +206,12 @@ export const updateArticle = async (
       ...(!isNullOrUndefined(files) && {
         images: {
           createMany: {
-            data: files?.map((item: { filename: string }) => ({name: item.filename})),
+            data: files?.map((item: { filename: string }) => ({name: item.key})),
           }
         }
       }),
       ...(isPrimaryImage != 'false' ? {
-          primaryImage: files[0]?.filename,
+          primaryImage: files[0]?.key,
         }
         : {
           primaryImage: (oldPrimaryImage != "null" && oldPrimaryImage != "" && oldPrimaryImage != null)

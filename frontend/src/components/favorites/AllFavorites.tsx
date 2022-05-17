@@ -111,7 +111,7 @@ const AllFavorites = () => {
           />
         </Group>
       </Group>
-      {(isFetching && !queryClient.getQueryData(['favorites', 'all']))
+      {(isFetching && !queryClient.getQueryData(['favorites', 'all', typeOfFavoriteItems]))
         ? <CustomLoader/>
         : <>
           {typeOfFavoriteItems.toLowerCase() == 'trips'

@@ -1,6 +1,9 @@
+import { UserImage } from "@prisma/client";
+
 export interface ProfileResponse {
-  name: string;
-  id?: any,
-  picture: any;
-  followedBy: any;
+  id?: number,
+  picture: string | UserImage;
+  firstName: string;
+  lastName: string;
+  followedBy: any[];
 }

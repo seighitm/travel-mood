@@ -29,7 +29,7 @@ $authHost.interceptors.response.use(
       // if (window.location.href.split('/').reverse()[0] != 'login')
       try {
         const localRefreshToken = localStorage.getItem('refreshToken');
-        const response = await $host.post<any>(`${import.meta.env.VITE_API_URL}api/refresh`, {
+        const response = await $host.post<any>(`${import.meta.env.VITE_API_URL}api/refresh-token`, {
           localRefreshToken: localRefreshToken,
         });
         localStorage.setItem('accessToken', response.data.accessToken);

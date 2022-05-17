@@ -46,7 +46,7 @@ function UserImages({images}: any) {
                         setSelectedViewImage(image.image);
                         setOpenedModalViewImage(true);
                       }}
-                      src={`${import.meta.env.VITE_API_URL}uploads/${image.image}`}
+                      src={`${import.meta.env.VITE_STORE_AWS}${image.image}`}
                     />
                   </Grid.Col>
                 ))}

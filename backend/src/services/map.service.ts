@@ -3,6 +3,11 @@ import prisma from "../../prisma/PrismaClient";
 
 export const getAllMarkers = async (): Promise<{ places: any[], destinations: any[] }> => {
   const places = await prisma.marker.findMany({
+    where:{
+      trip:{
+        isHidden: false
+      }
+    },
     include: {
       trip: {
         select: {

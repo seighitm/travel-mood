@@ -9,3 +9,4 @@ export const removeFiles = async (files: any) => {
   const {data} = await $authHost.delete('files/remove', {data: {files: files}});
   return data;
 }
+

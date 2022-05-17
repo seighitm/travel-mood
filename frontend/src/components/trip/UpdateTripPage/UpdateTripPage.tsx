@@ -63,7 +63,7 @@ function UpdateTripPage() {
   useEffect(() => {
     if (dbTrip) {
       if (dbTrip.dateFrom != null) { // @ts-ignore
-        form.setFieldValue('date', [new Date(dbTrip.dateFrom), new Date(dbTrip.dateto)]);
+        form.setFieldValue('date', [new Date(dbTrip.dateFrom), new Date(dbTrip.dateTo)]);
       }
       form.setFieldValue('title', dbTrip.title);
       form.setFieldValue('description', dbTrip.description);

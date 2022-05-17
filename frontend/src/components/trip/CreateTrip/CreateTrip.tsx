@@ -12,7 +12,8 @@ import {
   MultiSelect,
   Select,
   Textarea,
-  TextInput, ThemeIcon,
+  TextInput,
+  ThemeIcon,
 } from '@mantine/core';
 import {DateRangePicker} from '@mantine/dates';
 import {useMutateAddTrip} from '../../../api/trips/mutations';
@@ -34,7 +35,6 @@ import {useGetLanguages} from '../../../api/languages/queries';
 import {isEmptyArray, isEmptyString, isNullOrUndefined} from "../../../utils/primitive-checks";
 import dayjs from "dayjs";
 import {useMediaQuery} from "@mantine/hooks";
-import {CheckIcon, Cross2Icon} from "@modulz/radix-icons";
 
 function CreateTrip() {
   const [destinations, setDestinations] = useState<any>([]);
@@ -147,13 +147,7 @@ function CreateTrip() {
           label="Transports"
           placeholder="Select transports"
           searchable
-          data={!isNullOrUndefined(dbTransports) && !isEmptyArray(dbTransports)
-            ? dbTransports?.map((item: any) => ({
-              value: item.name,
-              label: item.name,
-            }))
-            : [{value: 'CAR', label: 'Car'}]
-          }
+          data={[{value: 'CAR', label: 'Car'}, {value: 'PLANE', label: 'Plane'}]}
           {...form.getInputProps('transports')}
         />
 
@@ -163,8 +157,8 @@ function CreateTrip() {
           label="Select itinerary ..."
           {...form.getInputProps('itinerary')}
           data={[
-            {value: 'Fixed', label: 'Fixed'},
-            {value: 'Flexible', label: 'Flexible'},
+            {value: 'FIXED', label: 'Fixed'},
+            {value: 'FLEXIBLE', label: 'Flexible'},
           ]}
         />
 

@@ -114,7 +114,7 @@ const UserTripCard = React.memo(({trip}: any) => {
               mb={0}
               weight={'bold'}
               variant="gradient"
-              style={{fontSize: '30px'}}
+              style={{fontSize: '30px', cursor: 'pointer'}}
               gradient={{from: 'indigo', to: 'orange', deg: 15}}
         >
           {trip.title?.toUpperCase().slice(0, 17) +

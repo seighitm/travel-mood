@@ -18,7 +18,7 @@ function TripPage() {
   const {id} = useParams();
   const {user} = useStore((state: any) => state);
   const {mutate: mutateCommentRemoveFromTrip} = useMutationRemoveCommentFromTrip();
-  console.log(user.role)
+
   const onErrorEvent = () => {
     if (user.role == 'USER')
       navigate('/trips')

@@ -9,7 +9,7 @@ import {
   Directions,
   Eye,
   Heart,
-  Logout,
+  Logout, MessageDots,
   Pencil,
   Plane,
   Selector,
@@ -20,6 +20,9 @@ import {UserButton} from './UserButton';
 import {useNavigate} from 'react-router-dom';
 import {HEADER_LINKS} from '../../../../data/Constants';
 import {useMutateLogout} from '../../../../api/auth/mutations';
+import {useGetCountOfNonReadMessages} from "../../../../api/chat/messages/queries";
+import {isEmptyArray, isNullOrUndefined} from "../../../../utils/primitive-checks";
+import useStore from "../../../../store/user.store";
 
 const useStyles = createStyles((theme) => ({
   navbar: {
@@ -161,6 +164,8 @@ const collections = [
 const CustomNavbar = ({setOpenedDrawer, links, guestsCounter, travelRequestsCounter}: any) => {
   const {classes, theme, cx} = useStyles();
   const navigate = useNavigate();
+  const {data: nonReadMessages} = useGetCountOfNonReadMessages();
+  const {user} = useStore((state: any) => state);
 
   const {mutate: mutateLogout} = useMutateLogout();
 
@@ -254,12 +259,31 @@ const CustomNavbar = ({setOpenedDrawer, links, guestsCounter, travelRequestsCoun
           label={
             <>
               <Check size={17}/>
-              <Box ml={5}>Settings:</Box>
+              <Box ml={5}>Profile:</Box>
             </>
           }
         />
 
         <div className={classes.mainLinks}>
+          <UnstyledButton
+            className={classes.mainLink}
+            onClick={() => {
+              setOpenedDrawer(false);
+              navigate('/chat');
+            }}
+          >
+            <div className={classes.mainLinkInner}>
+              <MessageDots color={theme.colors.violet[6]} size={20} className={classes.mainLinkIcon}/>
+              <span>Chat</span>
+            </div>
+
+            {!isNullOrUndefined(user) && !isNullOrUndefined(nonReadMessages) && !isEmptyArray(nonReadMessages) &&
+              <Badge size="sm" variant="filled" className={classes.mainLinkBadge}>
+                {nonReadMessages.length}
+              </Badge>
+            }
+          </UnstyledButton>
+
           <UnstyledButton
             onClick={() => {
               setOpenedDrawer(false);

@@ -38,6 +38,7 @@ import {
 } from "../../../api/articles/mutations";
 import {Pencil, Star, Trash} from "../../../assets/Icons";
 import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
+import {getFullUserName} from "../../../utils/utils-func";
 
 function ArticlePage() {
   const {id} = useParams();
@@ -74,6 +75,7 @@ function ArticlePage() {
   if (!queryClient.getQueryData(['articles', 'one']) && isFetchingDbArticle) {
     return <CustomLoader/>;
   }
+  console.log(dbArticle?.author)
 
   return <>
     <TypographyStylesProvider>
@@ -103,7 +105,7 @@ function ArticlePage() {
                 src={userPicture(dbArticle?.author)}
                 radius="xl"
               >
-                {creteAuthorShortName(dbArticle?.author?.firstName + ' ' + dbArticle?.author?.lastName)}
+                {creteAuthorShortName(getFullUserName(dbArticle?.author))}
               </Avatar>
             </UnstyledButton>
             <div>
@@ -112,7 +114,7 @@ function ArticlePage() {
                 weight={700}
                 sx={{textTransform: 'uppercase'}}
               >
-                {dbArticle?.author.name}
+                {getFullUserName(dbArticle?.author)}
               </Text>
               <Text size="xs" color="dimmed">
                 {dateFormatedToIsoString(dbArticle?.createdAt)}
@@ -205,9 +207,9 @@ function ArticlePage() {
                   height={80}
                   sx={{cursor: 'pointer'}}
                   alt={`file preview ${index}`}
-                  src={`${import.meta.env.VITE_API_URL}uploads/` + file.name}
+                  src={`${import.meta.env.VITE_STORE_AWS}` + file.name}
                   onClick={() => {
-                    setSelectedModalImage(`${import.meta.env.VITE_API_URL}uploads/` + file.name);
+                    setSelectedModalImage(`${import.meta.env.VITE_STORE_AWS}` + file.name);
                     setOpenedModal(true);
                   }}
                 />

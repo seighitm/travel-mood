@@ -13,14 +13,6 @@ import {asyncHandler} from "../utils/asyncHandler";
 
 const router = Router();
 
-router.put('/messages/read',
-  [authM.required],
-  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const messages = await readMessages(req.body?.firstMessageId, req.body?.chatId, req.user?.id)
-    res.json(messages);
-  })
-)
-
 router.get('/messages/non-read',
   [authM.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
@@ -32,16 +24,8 @@ router.get('/messages/non-read',
 router.get('/message/:chatId',
   [authM.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const messages = await getMessagesByChatId(req.params?.chatId, req.user?.id)
+    const messages = await getMessagesByChatId(req.params?.chatId, req.user?.id, req.query.massagesCount)
     res.json(messages);
-  })
-)
-
-router.get('/message/single/:id',
-  [authM.required],
-  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const message = getMessageById(req.params?.id)
-    res.json(message);
   })
 )
 
@@ -62,4 +46,30 @@ router.get('/message/read/:chatId',
   })
 )
 
+
+
 export default router;
+
+
+
+//#######################################################################
+//#######################################################################
+// RAU
+//#######################################################################
+
+router.get('/message/single/:id',
+  [authM.required],
+  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    const message = getMessageById(req.params?.id)
+    res.json(message);
+  })
+)
+
+
+router.put('/messages/read',
+  [authM.required],
+  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    const messages = await readMessages(req.body?.firstMessageId, req.body?.chatId, req.user?.id)
+    res.json(messages);
+  })
+)

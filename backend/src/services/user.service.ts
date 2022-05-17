@@ -14,14 +14,24 @@ import {
 } from "../models/user.model";
 import {isEmptyArray, isEmptyString, isNullOrUndefined, isShortStringThan} from "../utils/primitive-checks";
 import {UserPayloadValidator} from "../validators/user.validator";
+import {s3} from "../middlewares/aws-multer";
 
 const removeUnusedImages = async (imagesToRemove: any[]) => {
+
+
   if (!isNullOrUndefined(imagesToRemove) && !isEmptyArray(imagesToRemove)) {
-    for (let i = 0; i < imagesToRemove.length; i++)
+    for (let i = 0; i < imagesToRemove.length; i++) {
       fs.remove(path.resolve(__dirname, '..', 'uploads', imagesToRemove[i].image), (err) => {
         if (err) console.log(err);
         console.log('File deleted successfully!');
       })
+
+      console.log(imagesToRemove[i].image)
+      s3.deleteObject({Bucket: process.env.AWS_BUCKET_NAME, Key: imagesToRemove[0].image}, (err, data) => {
+        if (err) console.log(err, err.stack);
+        else console.log('delete', data);
+      })
+    }
   }
 
   for (let i = 0; i < imagesToRemove.length; i++) {
@@ -207,6 +217,8 @@ export const updateUserImages = async (
   }: any,
   files: any
 ): Promise<any> => {
+  console.log(files)
+
   const dbUser = await prisma.user.findUnique({
     where: {
       id: Number(userId),
@@ -223,12 +235,17 @@ export const updateUserImages = async (
 
   if (!isNullOrUndefined(dbUser)) {
     if (!isNullOrUndefined(oldImages) && !isEmptyArray(oldImages)) {
+
       const imagesToRemove: Array<any> = dbUser?.images?.filter((item: any) => !oldImages?.includes(item.image));
+      console.log(imagesToRemove)
       await removeUnusedImages(imagesToRemove)
     } else {
       await removeUnusedImages(dbUser?.images)
     }
   }
+  console.log(files?.map((imageName: any) => ({
+    image: imageName.filename
+  })))
 
   const user = await prisma.user.update({
     where: {id: Number(userId)},
@@ -266,7 +283,6 @@ export const updateUserImages = async (
     select: Prisma.validator<Prisma.UserSelect>()({
       id: true,
       email: true,
-      name: true,
       picture: true,
       images: true,
       role: {
@@ -688,6 +704,8 @@ export const getAllFavoriteItems = async (
       include: {
         tripFavoritedBy: true,
         destinations: true,
+        gender: true,
+        languages: true,
         user: true
       }
     },

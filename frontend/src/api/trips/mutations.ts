@@ -7,7 +7,8 @@ import {
   favoriteTrip,
   joinToTrip,
   leaveFromTrip,
-  removeCommentFromTrip, switchTripHiddenStatus,
+  removeCommentFromTrip,
+  switchTripHiddenStatus,
   unFavoriteTrip,
   updateTrip
 } from "./axios";
@@ -198,27 +199,40 @@ export const useMutateJoinToTrip = () => {
   const queryClient = useQueryClient();
   const {socket} = chatStore((state: any) => state);
 
-  return useMutation(({tripId, comment, userId, receiveUserId}: any) => joinToTrip({
+  return useMutation(({tripId, comment, userId, receiveUserId, typeOfRequest}: any) => joinToTrip({
       tripId,
       comment,
       userId,
-      receiveUserId
+      receiveUserId,
+      typeOfRequest
     }), {
       onSuccess: async (data: any) => {
-        if (data && data.receiveUserId) {
-          socket.emit('send-trip-join-request', {receiveUserId: Number(data.receiveUserId)});
-        }
+        console.log(data)
+        await queryClient.invalidateQueries(['userTrips', 'ALL']);
+        await queryClient.invalidateQueries(['trips', 'one']);
 
-        const prevOneTrip: any = queryClient.getQueryData(['trips', 'one']);
-        if (prevOneTrip
-          && (prevOneTrip.usersJoinToTrip.find((request: any) => request.userId == data.id) != undefined
-            || prevOneTrip.usersJoinToTrip?.length == 0)
-        ) {
-          await queryClient.cancelQueries(['trips', 'one']);
-          prevOneTrip.usersJoinToTrip.push(data)
-          queryClient.setQueryData(['trips', 'one'], () => prevOneTrip);
-        }
-        socket.emit('send-trip-join-request', {userId: Number(data.user.id), tripId: Number(data.trip.id)});
+        socket.emit('send-trip-join-request', {receiveUserId: Number(data.receiveUserId)});
+
+        // if (data && data.receiveUserId) {
+        // }
+
+        // const prevOneTrip: any = queryClient.getQueryData(['trips', 'one']);
+        // if (prevOneTrip
+        //   && (prevOneTrip.usersJoinToTrip.find((request: any) => request.userId == data.id) != undefined
+        //     || prevOneTrip.usersJoinToTrip?.length == 0)
+        // ) {
+        //   await queryClient.cancelQueries(['trips', 'one']);
+        //   prevOneTrip.usersJoinToTrip.push(data)
+        //   queryClient.setQueryData(['trips', 'one'], () => prevOneTrip);
+        // }
+        // socket.emit('send-trip-join-request', {userId: Number(data.user.id), tripId: Number(data.trip.id)});
+      },
+      onError: (err: any) => {
+        showNotification({
+          title: 'Error DELETE',
+          color: 'red',
+          message: err.response?.data?.message,
+        });
       }
     }
   );
@@ -237,6 +251,9 @@ export const useMutateLeaveFromTrip = () => {
         console.log(data)
 
         socket.emit("send-trip-join-request", ({tripId: Number(data.trip.id)}));
+
+        await queryClient.invalidateQueries(['userTrips', 'ALL']);
+
         // if (prevOneTrip) {
         //   await queryClient.cancelQueries(['trips', 'one'])
         //   prevOneTrip.usersJoinToTrip = prevOneTrip.usersJoinToTrip.filter((user: any) => user.userId != data.user.id)
@@ -255,7 +272,7 @@ export const useMutateChangeJoinRequestStatus = () => {
   const {socket} = chatStore((state: any) => state);
   return useMutation(({tripRequestId, status}: any) => changeJoinRequestStatus({tripRequestId, status}), {
       onSuccess: async (data: any) => {
-        await queryClient.invalidateQueries(['userTrips', 'ALL']);
+        console.log(data)
         if (data.status === 'APPROVED') {
           await queryClient.invalidateQueries(['userTrips', 'PENDING']);
           await queryClient.invalidateQueries(['userTrips', 'CANCELED']);
@@ -265,6 +282,11 @@ export const useMutateChangeJoinRequestStatus = () => {
           await queryClient.invalidateQueries(['userTrips', 'APPROVED']);
           await queryClient.invalidateQueries(['userTrips', 'RECEIVED']);
         }
+        await queryClient.invalidateQueries(['trips', 'one']);
+
+        await queryClient.invalidateQueries(['userTrips', 'ALL']);
+
+        socket.emit('send-trip-join-request', {receiveUserId: Number(data.receiveUserId)});
 
         // await queryClient.invalidateQueries(['userTrips', 'APPROVED', 'PENDING', 'CANCELED']);
 
@@ -289,7 +311,14 @@ export const useMutateChangeJoinRequestStatus = () => {
         //       : '',
         // ]);
         // await queryClient.invalidateQueries(['PENDING', 'APPROVED', 'RECEIVED', 'CANCELED']);
-        socket.emit('send-trip-join-request', {tripRequestId: Number(data.id)});
+        // socket.emit('send-trip-join-request', {tripRequestId: Number(data.id)});
+      },
+      onError: (err: any) => {
+        showNotification({
+          title: 'Error DELETE',
+          color: 'red',
+          message: err.response?.data?.message,
+        });
       }
     }
   );

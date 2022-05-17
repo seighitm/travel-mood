@@ -5,6 +5,7 @@ import TabItemComponent from './TabItemComponent';
 import {CustomLoader} from '../common/engine/Routes';
 import {useIsFetching, useQueryClient} from "react-query";
 import CardTripRequest from "./CardTripRequest";
+import useStore from "../../store/user.store";
 
 const AllTripRequests = () => {
   const queryClient = useQueryClient();
@@ -26,6 +27,9 @@ const AllTripRequests = () => {
       ? allRequestsCount?.find((request: any) => request.status === status)._count
       : 0
   }
+  const {user, onlineUsers} = useStore((state: any) => state);
+
+  console.log(allRequestsCount)
 
   return (
     <Container>
@@ -36,14 +40,20 @@ const AllTripRequests = () => {
             setJoinRequestStatus={setJoinRequestStatus}
             joinRequestStatus={joinRequestStatus}
             item={'PENDING'}
-            count={getCountOfRequestType('PENDING')}
+            count={allRequestsCount?.find((request: any) =>
+              (request.status === 'PENDING' && user?.id == request?.userId) ||
+              (request.status === 'RECEIVED' && user?.id !== request?.userId)
+            )?._count ?? 0}
           />
 
           <TabItemComponent
             setJoinRequestStatus={setJoinRequestStatus}
             joinRequestStatus={joinRequestStatus}
             item={'APPROVED'}
-            count={getCountOfRequestType('APPROVED')}
+            count={allRequestsCount?.find((request: any) =>
+              (request.status === 'APPROVED' && user?.id == request?.userId) ||
+              (request.status === 'APPROVED' && user?.id !== request?.userId)
+            )?._count ?? 0 }
           />
 
           {/*<TabItemComponent*/}
@@ -57,7 +67,9 @@ const AllTripRequests = () => {
             setJoinRequestStatus={setJoinRequestStatus}
             joinRequestStatus={joinRequestStatus}
             item={'RECEIVED'}
-            count={getCountOfRequestType('RECEIVED')}
+            count={allRequestsCount?.find((request: any) => (request.status === 'PENDING' && user?.id !== request?.userId)
+              || (request.status === 'RECEIVED' && user?.id == request?.userId)
+            )?._count ?? 0}
           />
 
         </Group>

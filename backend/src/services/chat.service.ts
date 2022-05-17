@@ -1,6 +1,8 @@
 import {ArticleResponse} from "../models/article.model";
 import ApiError from "../utils/api-error";
 import prisma from "../../prisma/PrismaClient";
+import {isEmptyArray, isNullOrUndefined} from "../utils/primitive-checks";
+import {other_ReadMessage} from "./message.service";
 
 export const findChatByQuery = async (
   chatPayload: any,
@@ -39,8 +41,8 @@ export const accessChat = async (
 
   const chat = await findChatByQuery(chatPayload, userId)
 
-  if (chat) return chat
-  else return await createChat(chatPayload, userId)
+  if (chat) return {...chat, receiveUserId: chatPayload.userId}
+  else return {...(await createChat(chatPayload, userId)), receiveUserId: chatPayload.userId}
 };
 
 export const getMyChats = async (
@@ -54,7 +56,9 @@ export const getMyChats = async (
     where: {
       users: {
         some: {
-          id: {equals: Number(userId)}
+          id: {
+            equals: Number(userId)
+          }
         }
       }
     },
@@ -70,9 +74,12 @@ export const getMyChats = async (
       },
       chatName: true,
       isGroupChat: true,
-      groupAdmin: true,
+      groupAdmin: {
+        select: {
+          id: true
+        }
+      },
       latestMessage: true,
-      // messageNotification: true
     }
   })
 
@@ -167,7 +174,7 @@ export const createGroupChat = async (
   })
 };
 
-export const updateGroupChat = async (
+export const updateGroupChatName = async (
   chatName: string,
   chatId: number,
   userId: number,
@@ -178,6 +185,22 @@ export const updateGroupChat = async (
 
   if (!chatName) {
     throw new ApiError(400, {message: "ChatName can't be blank"});
+  }
+
+  const chat = await prisma.chat.findFirst({
+    where:{
+      id: Number(chatId),
+      groupAdmin:{
+        id: Number(userId)
+      }
+    },
+    select:{
+      id: true
+    }
+  })
+
+  if (isNullOrUndefined(chat)) {
+    throw new ApiError(400, {message: "You not Admin of this chat!"});
   }
 
   return await prisma.chat.update({
@@ -233,11 +256,13 @@ export const deleteGroupChat = async (
   })
 };
 
-export const addUserToGroupChat = async (
-  chatId: number,
-  userId: number,
+export const addUsersToGroupChat = async (
+  {
+    chatId,
+    usersId,
+  }: any
 ): Promise<any> => {
-  if (!userId) {
+  if (isNullOrUndefined(usersId) || isEmptyArray(usersId)) {
     throw new ApiError(400, {message: "UserId param not sent with request"});
   }
 
@@ -251,17 +276,16 @@ export const addUserToGroupChat = async (
   })
 
   if (!chatUsers) {
-    throw new ApiError(400, {message: "ChatUsers field not found!"});
+    throw new ApiError(400, {message: "Chat not found!"});
   }
 
-  return await prisma.chat.update({
+  const chat = await prisma.chat.update({
     where: {
       id: chatId
     },
     data: {
       users: {
-        connect:
-          {id: userId}
+        connect: usersId.map((usId: any) => ({id: usId})),
       },
     },
     select: {
@@ -273,7 +297,73 @@ export const addUserToGroupChat = async (
       latestMessage: true
     }
   })
+
+  for (let i = 0; i < usersId.length; i++)
+    await other_ReadMessage(chatId, usersId[i])
+
+  return {
+    ...chat,
+    newUsers: usersId
+  }
 };
+
+
+// #################################################3
+// #################################################3
+// #################################################3
+
+
+export const removeUsersFromGroupChat = async (
+  {
+    chatId,
+    usersId,
+  }: any
+): Promise<any> => {
+  if (isNullOrUndefined(usersId) || isEmptyArray(usersId)) {
+    throw new ApiError(400, {message: "UserId param not sent with request"});
+  }
+
+  const chatUsers = await prisma.chat.findMany({
+    where: {
+      id: chatId
+    },
+    select: {
+      id: true,
+    }
+  })
+
+  if (!chatUsers) {
+    throw new ApiError(400, {message: "Chat not found!"});
+  }
+
+  const chat = await prisma.chat.update({
+    where: {
+      id: chatId
+    },
+    data: {
+      users: {
+        disconnect: usersId.map((usId: any) => ({id: usId})),
+      },
+    },
+    select: {
+      id: true,
+      users: true,
+      chatName: true,
+      isGroupChat: true,
+      groupAdmin: true,
+      latestMessage: true
+    }
+  })
+
+  return {
+    ...chat,
+    newUsers: usersId
+  }
+};
+
+
+
+
 
 
 // #################################################3

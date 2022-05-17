@@ -8,12 +8,15 @@ import * as path from "path";
 
 const router = Router();
 const upload = require("../middlewares/fileUpload.middleware");
+// import {upload}  from "../middlewares/aws-multer"
 
 router.post('/upload',
   [authM.optional, upload.single("image")],
   asyncHandler(async (req: IGetUserAuthInfoRequest | any, res: Response, next: NextFunction) => {
+    console.log(req.file)
+
     res.status(200).json({
-      url: `http://localhost:5000/uploads/${req.file.filename}`
+      url: req.file.location
     });
   })
 )
@@ -21,7 +24,9 @@ router.post('/upload',
 router.delete('/files/remove',
   [authM.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest | any, res: Response, next: NextFunction) => {
-    await removeFiles(req.body.files)
+    const data = await removeFiles(req.body.files)
+    console.log(data)
+    res.send(data);
   })
 )
 

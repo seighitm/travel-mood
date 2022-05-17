@@ -15,11 +15,19 @@ export const createNewGroup = async ({users, chatName}: { users: any; chatName: 
   return data;
 };
 
-export const addUserFromGroup = async ({chatId, userId,}: {
+export const addUsersToGroup = async ({chatId, usersId}: {
   chatId: string | number;
-  userId: string | number;
+  usersId: string[] | number[];
 }) => {
-  const {data} = await $authHost.put('/chat/groupadd', {chatId: chatId, userId: userId});
+  const {data} = await $authHost.put('/chat/group/users', {chatId: chatId, usersId: usersId});
+  return data;
+};
+
+export const removeUsersFromGroup = async ({chatId, usersId}: {
+  chatId: string | number;
+  usersId: string[] | number[];
+}) => {
+  const {data} = await $authHost.delete('/chat/group/users', {data: {chatId: chatId, usersId: usersId}});
   return data;
 };
 

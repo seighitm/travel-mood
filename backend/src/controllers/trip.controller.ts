@@ -7,13 +7,15 @@ import {
   addCommentToTrip,
   addTripToFavorite,
   createTrip,
-  deleteTrip, filtering,
+  deleteTrip,
+  filtering,
   getOneTrip,
   getTrips,
   joinToTrip,
   leaveFromTrip,
   removeCommentToTrip,
-  removeTripFromFavorite, switchTripHideStatus,
+  removeTripFromFavorite,
+  switchTripHideStatus,
   updateTrip
 } from "../services/trip.service";
 
@@ -102,6 +104,7 @@ router.delete('/trip/:id/comment',
 router.post('/trip/:id/join',
   [authM.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    console.log(req?.body)
     const user = await joinToTrip(req?.body, req.params.id)
     res.json(user);
   })
@@ -203,7 +206,26 @@ router.put('/trip/joinRequest/:id/changeStatus',
           }
         }
       })
-      res.json(userJoinning);
+
+      // const userJoinning = await prisma.userJoinToTrip.findFirst({
+      //   where: {
+      //     id: Number(req.body?.tripRequestId)
+      //   },
+      //     include: {
+      //       user: true,
+      //       trip: {
+      //         include: {
+      //           user: true
+      //         }
+      //       }
+      //     }
+      // })
+
+      res.json({
+        newStatus: req.body.status,
+        status: userJoinning.status,
+        receiveUserId: userJoinning.status == 'PENDING' ? userJoinning.user.id : userJoinning.trip.user.id
+      });
     } catch (error) {
       console.log(error)
       next(error);
@@ -218,45 +240,93 @@ router.get('/trips/requests',
     try {
       if (req.query?.status == 'ALL') {
         const userJoinning = await prisma.userJoinToTrip.groupBy({
-          by: ['status'],
+          by: ['status', 'userId'],
           where: {
-            OR:[
+            OR: [
               {
+                status: 'APPROVED',
+                userId: Number(req.user.id)
+              },
+              {
+                status: {
+                  in: 'APPROVED'
+                },
                 trip: {
                   user: {
                     id: Number(req.user.id)
                   }
-                }
+                },
               },
               {
                 status: 'RECEIVED',
                 userId: Number(req.user.id)
+              },
+              {
+                status: {
+                  in: 'RECEIVED'
+                },
+                trip: {
+                  user: {
+                    id: Number(req.user.id)
+                  }
+                },
+              },
+              {
+                status: 'PENDING',
+                userId: Number(req.user.id)
+              },
+              {
+                status: 'PENDING',
+                trip: {
+                  user: {
+                    id: Number(req.user.id)
+                  }
+                },
               }
             ]
           },
           _count: true
         })
+        console.log('%%%%%%%%%%%%%')
+        console.log(userJoinning)
+        console.log('%%%%%%%%%%%%%')
         res.json(userJoinning);
-      } else {
+      } else if (req.query?.status == 'PENDING') {
+        console.log('PPPPPPPPPPPPPPP')
         const userJoinning = await prisma.userJoinToTrip.findMany({
           where: {
-            OR:[
-              {
-                status: {
-                  in: req.query?.status
-                },
-                trip: {
-                  user: {
-                    id: Number(req.user.id)
-                  }
-                }
-              },
+            OR: [
+              // {
+              //   status: {
+              //     in: req.query?.status
+              //   },
+              //   trip: {
+              //     user: {
+              //       id: Number(req.user.id)
+              //     }
+              //   },
+              //   // user:{
+              //   //   id: {
+              //   //     not: Number(req.user.id)
+              //   //   }
+              //   // }
+              // },
               {
                 status: {
                   in: req.query?.status
                 },
                 userId: Number(req.user.id)
-              }
+              },
+              {
+                status: {
+                  in: 'RECEIVED'
+                },
+                trip: {
+                  user: {
+                    id: Number(req.user.id)
+                  }
+                },
+              },
             ]
           },
           include: {
@@ -269,8 +339,135 @@ router.get('/trips/requests',
           }
         })
         res.json(userJoinning);
-      }
+      } else if (req.query?.status == 'RECEIVED') {
+        console.log('cvcccccccccccccccc')
+        const userJoinning = await prisma.userJoinToTrip.findMany({
+          where: {
+            OR: [
+              {
+                status: {
+                  in: 'PENDING'
+                },
+                trip: {
+                  user: {
+                    id: Number(req.user.id)
+                  }
+                }
+              },
+              {
+                status: {
+                  in: 'RECEIVED'
+                },
+                user: {
+                  id: Number(req.user.id)
+                }
+              },
+              //   // user:{
+              //   //   id: {
+              //   //     not: Number(req.user.id)
+              //   //   }
+              //   // }
+              // },
+              // {
+              //   status: {
+              //     in: req.query?.status
+              //   },
+              //   userId: Number(req.user.id)
+              // }
+            ]
+          },
+          include: {
+            user: true,
+            trip: {
+              include: {
+                user: true
+              }
+            }
+          }
+        })
+        res.json(userJoinning);
+      } else if (req.query?.status == 'APPROVED') {
+        console.log('cvcccccccccccccccc')
+        const userJoinning = await prisma.userJoinToTrip.findMany({
+          where: {
+            OR: [
+              {
+                status: {
+                  in: 'APPROVED'
+                },
+                trip: {
+                  user: {
+                    id: Number(req.user.id)
+                  }
+                }
+              },
+              {
+                status: {
+                  in: 'APPROVED'
+                },
+                user: {
+                  id: Number(req.user.id)
+                }
+              },
+              //   // user:{
+              //   //   id: {
+              //   //     not: Number(req.user.id)
+              //   //   }
+              //   // }
+              // },
+              // {
+              //   status: {
+              //     in: req.query?.status
+              //   },
+              //   userId: Number(req.user.id)
+              // }
+            ]
+          },
+          include: {
+            user: true,
+            trip: {
+              include: {
+                user: true
+              }
+            }
+          }
+        })
+        res.json(userJoinning);
+      } else res.json([]);
 
+      // else {
+      //   const userJoinning = await prisma.userJoinToTrip.findMany({
+      //     where: {
+      //       OR:[
+      //         {
+      //           status: {
+      //             in: req.query?.status
+      //           },
+      //           trip: {
+      //             user: {
+      //               id: Number(req.user.id)
+      //             }
+      //           }
+      //         },
+      //         {
+      //           status: {
+      //             in: req.query?.status
+      //           },
+      //           userId: Number(req.user.id)
+      //         }
+      //       ]
+      //     },
+      //     include: {
+      //       user: true,
+      //       trip: {
+      //         include: {
+      //           user: true
+      //         }
+      //       }
+      //     }
+      //   })
+      //   res.json(userJoinning);
+      // }
       // console.log('%%%%%%%%%%%')
       // console.log(req.query.status)
       // console.log(req.query?.status?.filter((item: any) => item == 'RECEIVED').length != 0)
@@ -355,7 +552,6 @@ router.put('/trip/:id',
 )
 
 
-
 /**
  * Delete trip
  * @auth required
@@ -383,7 +579,6 @@ router.put('/trip/:id/hide',
     res.json(trips);
   })
 )
-
 
 
 export default router;

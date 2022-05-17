@@ -158,7 +158,7 @@ export const getCurrentUser = async (
 
   return {
     ...user,
-    role: user.role.role,
+    role: user?.role.role,
     accessToken: generateTokens(user).accessToken,
     refreshToken: generateTokens(user).refreshToken,
   };

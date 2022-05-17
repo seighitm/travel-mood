@@ -167,7 +167,7 @@ function UpdateProfile() {
                   }}
                   radius='md'
                   height={150}
-                  src={`${import.meta.env.VITE_API_URL}uploads/${image.image}`}
+                  src={`${import.meta.env.VITE_STORE_AWS}${image.image}`}
                 />
 
                 <Menu size='sm'

@@ -3,6 +3,7 @@ import authorMapper from './author.mapper';
 
 export const articleMapper = (article: ArticleQueryResponse, id?: string | number): ArticleResponse => ({
   id: article.id,
+  isUpdatedByAdmin: article.isUpdatedByAdmin,
   title: article.title,
   countries: article.countries,
   description: article.description,

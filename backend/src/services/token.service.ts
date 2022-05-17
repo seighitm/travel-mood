@@ -27,8 +27,8 @@ export const saveToken = async (userId: number, refreshToken: string): Promise<S
 }
 
 export const generateTokens = (user: Partial<User>): GenerateTokenResponse => {
-  const accessToken = jwt.sign({...user, role: user.role.role}, process.env.ACCESS_TOKEN, {expiresIn: '60d'});
-  const refreshToken = jwt.sign({...user, role: user.role.role}, process.env.REFRESH_TOKEN, {expiresIn: '60d'});
+  const accessToken = jwt.sign({...user, role: user?.role.role}, process.env.ACCESS_TOKEN, {expiresIn: '60d'});
+  const refreshToken = jwt.sign({...user, role: user?.role.role}, process.env.REFRESH_TOKEN, {expiresIn: '60d'});
   return {
     accessToken,
     refreshToken

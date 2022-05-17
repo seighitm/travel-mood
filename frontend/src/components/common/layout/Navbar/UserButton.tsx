@@ -1,16 +1,9 @@
 import React from 'react';
-import {
-  ActionIcon,
-  Avatar,
-  createStyles,
-  Group,
-  Text,
-  UnstyledButton,
-  UnstyledButtonProps,
-} from '@mantine/core';
-import { useNavigate } from 'react-router-dom';
+import {ActionIcon, Avatar, createStyles, Group, Text, UnstyledButton,} from '@mantine/core';
+import {useNavigate} from 'react-router-dom';
 import useStore from '../../../../store/user.store';
-import { ChevronRight } from '../../../../assets/Icons';
+import {ChevronRight} from '../../../../assets/Icons';
+import {userPicture} from "../../Utils";
 
 const useStyles = createStyles((theme) => ({
   user: {
@@ -34,16 +27,16 @@ interface UserButtonProps {
 }
 
 export function UserButton({
-  image,
-  name,
-  email,
-  icon,
-  setOpenedDrawer,
-  ...others
-}: UserButtonProps) {
-  const { classes } = useStyles();
+                             image,
+                             name,
+                             email,
+                             icon,
+                             setOpenedDrawer,
+                             ...others
+                           }: UserButtonProps) {
+  const {classes} = useStyles();
   const navigate = useNavigate();
-  const { user } = useStore((state: any) => state);
+  const {user} = useStore((state: any) => state);
 
   return (
     <UnstyledButton
@@ -58,7 +51,7 @@ export function UserButton({
         <Group>
           <Avatar
             radius="xl"
-            src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=255&q=80"
+            src={userPicture(user)}
           />
 
           <div>
@@ -69,7 +62,7 @@ export function UserButton({
           </div>
         </Group>
         <ActionIcon>
-          <ChevronRight size={14} />
+          <ChevronRight size={14}/>
         </ActionIcon>
       </Group>
     </UnstyledButton>

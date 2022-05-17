@@ -4,3 +4,4 @@ import {fetchChats} from "./axios";
 export const useGetAllMyChats = () =>
   useQuery('fetchMyChats', () => fetchChats());
 
+

@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {ActionIcon, Button, Group, ScrollArea} from '@mantine/core';
+import {Button, Text, Group, RingProgress, ScrollArea} from '@mantine/core';
 import ChatItem from './ChatItem';
 import {CustomLoader} from '../common/CustomLoader';
 import {useDisclosure, useMediaQuery} from "@mantine/hooks";
@@ -8,14 +8,23 @@ import {useQueryClient} from "react-query";
 import {useGetCountOfNonReadMessages} from "../../api/chat/messages/queries";
 import chatStore from "../../store/chat.store";
 import ModalChatParticipants from "./modals/ModalChatParticipants";
-import ModalCreateGroupChat from "./modals/ModalCreateGroupChat";
+import ModalAdminGroupChat from "./modals/ModalAdminGroupChat";
+import useStore from "../../store/user.store";
 
-const MyChat = ({dataFetchMyChats, isLoadingChats, setOpenedDrawer, isDrawer}: any) => {
+const MyChat = ({
+                  dataFetchMyChats,
+                  isLoadingChats,
+                  setOpenedDrawer,
+                  isDrawer,
+                  openedCreateChatGroupModal,
+                  handlersCreateChatGroupModal
+                }: any) => {
   const queryClient = useQueryClient();
+
   const matches = useMediaQuery('(min-width: 1000px)');
   const {selectedChat} = chatStore((state: any) => state);
+  const {user, setOnlineUsers, fetchUser} = useStore((state: any) => state);
 
-  const [openedCreateChatGroupModal, handlersCreateChatGroupModal] = useDisclosure(false);
   const [openedChatDetailsModal, handlersChatDetailsModal] = useDisclosure(false);
 
   const {data: nonReadMessages} = useGetCountOfNonReadMessages();
@@ -24,19 +33,39 @@ const MyChat = ({dataFetchMyChats, isLoadingChats, setOpenedDrawer, isDrawer}: a
     queryClient.invalidateQueries(['messages', 'non-read']);
   }, [])
 
+  const getChatById = (chatId: number | string) => dataFetchMyChats?.find((chat: any) => chat.id == chatId)
+  // console.log(getChatById(selectedChat.id)?.groupAdmin.id)
+  // console.log(user?.id)
+  const matches2 = useMediaQuery('(min-width: 769px)');
+
+
   if (isLoadingChats) return <CustomLoader/>;
 
   return <>
-    <ModalChatParticipants
-      openedChatDetailsModal={openedChatDetailsModal}
-      handlersChatDetailsModal={handlersChatDetailsModal}
-      chat={dataFetchMyChats.find((chat: any) => chat.id == selectedChat.id)}
+    <RingProgress
+      label={
+        <Text size="xs" align="center">
+          Application data usage
+        </Text>
+      }
+      sections={[
+        { value: 40, color: 'cyan' },
+        { value: 15, color: 'orange' },
+        { value: 15, color: 'grape' },
+      ]}
     />
-
-    <ModalCreateGroupChat
-      openedCreateChatGroupModal={openedCreateChatGroupModal}
-      handlersCreateChatGroupModal={handlersCreateChatGroupModal}
-    />
+    {getChatById(selectedChat.id)?.groupAdmin.id != user.id
+      ? <ModalChatParticipants
+        openedChatDetailsModal={openedChatDetailsModal}
+        handlersChatDetailsModal={handlersChatDetailsModal}
+        chat={getChatById(selectedChat.id)}
+      />
+      : <ModalAdminGroupChat
+        openedChatDetailsModal={openedChatDetailsModal}
+        handlersChatDetailsModal={handlersChatDetailsModal}
+        chat={getChatById(selectedChat.id)}
+      />
+    }
 
     <Group
       mb={'sm'}
@@ -44,21 +73,57 @@ const MyChat = ({dataFetchMyChats, isLoadingChats, setOpenedDrawer, isDrawer}: a
       position={'apart'}
       align={'center'}
     >
-      <Button
-        style={{width: selectedChat?.id != -1 ? '80%' : '100%'}}
-        leftIcon={<Users size={15}/>}
-        onClick={() => handlersCreateChatGroupModal.open()}
-      >
-        New group chat
-      </Button>
-      {selectedChat.id != -1 &&
-        <ActionIcon
-          style={{width: '8%'}}
-          onClick={() => handlersChatDetailsModal.open()}
+      {(matches || (isDrawer && !matches2))
+        ? <Button
+          fullWidth
+          // style={{width: selectedChat?.id != -1 ? '80%' : '100%'}}
+          leftIcon={<Users size={15}/>}
+          onClick={() => {
+            if (setOpenedDrawer) setOpenedDrawer(false)
+            handlersCreateChatGroupModal.open()
+          }}
         >
-          <InfoCircle size={17}/>
-        </ActionIcon>
+          New group chat
+        </Button>
+        : <Group style={{width: '100%'}}>
+          <Button fullWidth onClick={() => {
+            if (setOpenedDrawer) setOpenedDrawer(false)
+            handlersCreateChatGroupModal.open()
+          }}>
+            <Users size={20}/>
+          </Button>
+        </Group>
       }
+
+      {selectedChat.id != -1 &&
+        <>
+          {(matches || (isDrawer && !matches2))
+            ? <Button
+              fullWidth
+              // style={{width: selectedChat?.id != -1 ? '80%' : '100%'}}
+              variant={'outline'} color={'pink'} leftIcon={<InfoCircle size={20}/>}
+              onClick={() => {
+                // if (setOpenedDrawer) setOpenedDrawer(false)
+                handlersChatDetailsModal.open()
+              }}
+            >
+              Details of current chat
+            </Button>
+            : <Group style={{width: '100%'}}>
+              <Button fullWidth
+                      variant={'outline'} color={'pink'}
+                      onClick={() => {
+                        // if (setOpenedDrawer) setOpenedDrawer(false)
+                        handlersChatDetailsModal.open()
+                      }}
+              >
+                <InfoCircle size={20}/>
+              </Button>
+            </Group>
+          }
+        </>
+      }
+
     </Group>
     <ScrollArea
       scrollHideDelay={0}

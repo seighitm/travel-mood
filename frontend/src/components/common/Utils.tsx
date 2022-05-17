@@ -13,13 +13,13 @@ export const creteAuthorShortName = (name: string) => {
 
 export const userPicture = (user: any) => {
   return (user?.picture?.image != "null" && user?.picture?.image != null)
-    ? `${import.meta.env.VITE_API_URL}uploads/${user?.picture?.image}`
+    ? `${import.meta.env.VITE_STORE_AWS}${user?.picture?.image}`
     : `${import.meta.env.VITE_API_URL}uploads/site/${(user?.sex === 'f' ? 'woman.png' : 'man.png')}`
 };
 
 export const articleImage = (article: any) => {
   return article.primaryImage != null && article.primaryImage != 'null'
-    ? `${import.meta.env.VITE_API_URL}uploads/${article.primaryImage}`
+    ? `${import.meta.env.VITE_STORE_AWS}${article.primaryImage}`
     : 'https://previews.123rf.com/images/topvectors/topvectors1506/topvectors150600015/40658771-travel-vacation-flat-design-set-vector-concept-illustration-travel-banner-.jpg'
 };
 

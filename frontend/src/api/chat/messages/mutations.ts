@@ -1,7 +1,7 @@
 import {useMutation, useQueryClient} from "react-query";
 import chatStore from "../../../store/chat.store";
 import useStore from "../../../store/user.store";
-import {readChatMessages, readMessages, sendMessage} from "./axios";
+import {readChatMessages, sendMessage} from "./axios";
 
 export const useMutateSendMessage = (scrollToBottom: any) => {
   const queryClient = useQueryClient();
@@ -10,11 +10,12 @@ export const useMutateSendMessage = (scrollToBottom: any) => {
   return useMutation(({chatId, newMessage}: any) => sendMessage({content: newMessage, chatId: chatId}),
     {
       onSuccess: async (data: any) => {
-        const prevAllMessages: any = await queryClient.getQueryData('fetchMessagesChat');
+        console.log(data);
+        const prevAllMessages: any = await queryClient.getQueryData(['fetchMessagesChat', data.chatId]);
         if (prevAllMessages) {
-          await queryClient.cancelQueries('fetchMessagesChat');
+          await queryClient.cancelQueries(['fetchMessagesChat', data.chatId]);
           prevAllMessages.push(data);
-          queryClient.setQueryData('fetchMessagesChat', () => prevAllMessages);
+          queryClient.setQueryData(['fetchMessagesChat', data.chatId], () => prevAllMessages);
         }
         await queryClient.invalidateQueries(['messages', 'non-read']);
 

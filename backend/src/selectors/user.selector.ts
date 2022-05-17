@@ -2,7 +2,8 @@ import {Prisma} from "@prisma/client";
 
 export const userSelector = Prisma.validator<Prisma.UserSelect>()({
   email: true,
-  name: true,
+  firstName: true,
+  lastName: true,
   picture: true,
 });
 

@@ -3,12 +3,12 @@ import {Button, Group, Modal, Textarea} from "@mantine/core";
 import {PaperPlaneIcon} from "@modulz/radix-icons";
 import {useMutateJoinToTrip} from "../../../api/trips/mutations";
 
-function JoinTripModal({openedJoinModal, handlersJoinModal, tripId, userId}: any) {
+function JoinTripModal({openedJoinModal, handlersJoinModal, tripId, userId, receiveUserId}: any) {
   const [comment, setJoinComment] = useState<string>('');
   const {mutate: mutateJoinToTrip} = useMutateJoinToTrip();
 
   const handlerJoinTrip = () => {
-    mutateJoinToTrip({userId, tripId, comment});
+    mutateJoinToTrip({userId, tripId, comment, receiveUserId, typeOfRequest: 'JOIN'});
   };
 
   return <Modal

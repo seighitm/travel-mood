@@ -1,6 +1,4 @@
 import {$authHost, $host} from "../api";
-import axios from "axios";
-
 
 
 export const unFavoriteTrip = async ({id}: { id: any }) => {
@@ -50,16 +48,18 @@ export const deleteTrip = async ({id}: { id: string }) => {
   return data;
 };
 
-export const joinToTrip = async ({tripId, comment, userId, receiveUserId}: {
+export const joinToTrip = async ({tripId, comment, userId, receiveUserId, typeOfRequest}: {
   tripId: string | number;
   userId: string | number;
   comment?: string;
   receiveUserId?: string | number;
+  typeOfRequest: any
 }) => {
   const {data} = await $authHost.post(`trip/${tripId}/join`, {
     comment: comment,
     userId: userId,
-    receiveUserId: receiveUserId
+    receiveUserId: receiveUserId,
+    typeOfRequest: typeOfRequest
   });
   return data;
 };
@@ -101,21 +101,21 @@ export const changeJoinRequestStatus = async ({tripRequestId, status}: any) => {
 };
 
 export const getTripsFiltering = async (
-                                          page: any,
-                                          limit: any,
-                                          search: any,
-                                          sortBy: any,
-                                          order: any,
-                                        ) => {
-  const {data} = await $host.get('/admin/trips',{
+  page: any,
+  limit: any,
+  search: any,
+  sortBy: any,
+  order: any,
+) => {
+  const {data} = await $host.get('/admin/trips', {
     params: {
       page,
       limit,
-      ...(search ? { search } : {}),
-      ...(sortBy ? { sortBy } : {}),
-      ...(order ? { order } : {}),
+      ...(search ? {search} : {}),
+      ...(sortBy ? {sortBy} : {}),
+      ...(order ? {order} : {}),
     },
-  } );
+  });
   return data;
 };
 

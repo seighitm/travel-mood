@@ -6,6 +6,7 @@ import useStore from '../../../store/user.store';
 import {EyeOpenIcon, PersonIcon} from '@modulz/radix-icons';
 import {useMutateLogout} from '../../../api/auth/mutations';
 import {userPicture} from "../Utils";
+import {getFullUserName} from "../../../utils/utils-func";
 
 export function ProfileAvatar({travelRequestsCounter, guestsCounter}: any) {
   const theme = useMantineTheme();
@@ -39,7 +40,7 @@ export function ProfileAvatar({travelRequestsCounter, guestsCounter}: any) {
       >
         <Menu.Item rightSection={<ChevronRight size={14}/>}>
           <Group onClick={() => navigate(`/user/${user.id}`)}>
-            <Text weight={500}>{`${user?.firstName} ${user.lastName}`}</Text>
+            <Text weight={500}>{getFullUserName(user)}</Text>
           </Group>
         </Menu.Item>
 

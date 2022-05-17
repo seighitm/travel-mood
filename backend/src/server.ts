@@ -30,16 +30,20 @@ app.use(express.json());
 app.use(morgan('dev'))
 app.use(express.urlencoded({extended: true}));
 
-// app.use('/uploads', express.static(path.join(__dirname, 'build', 'src', 'uploads')));
-app.use('/uploads', express.static(path.resolve(__dirname, 'uploads')));
+// app.use('/uploads', express.static(path.join(__dirname, 'build', 'src', 'uploads')));  // GRESIT
 
+
+app.use('/uploads', express.static(path.resolve(__dirname, 'uploads')));
+  console.log('------------------------------------')
+  console.log(path.join(__dirname, 'build', 'src', 'uploads'))
+  console.log(path.resolve(__dirname, 'uploads'))
+  console.log('------------------------------------')
 app.use(routes);
 
 // app.use(express.static(path.join(path.resolve(), 'build', "dist")));
 // app.get("*", (req, res) => res.sendFile(path.join(path.resolve(), 'build', "dist", "index.html")));
 
 app.use(errorHandler);
-
 initDatabaseScript()
 
 const server = http.createServer(app);

@@ -38,13 +38,13 @@ const AdminLayout = ({children}: any) => {
         });
 
       if (socket?._callbacks['$message-received'] == undefined)
-        socket.on('message-received', async (newMessageReceived: any) => {
-          console.log(newMessageReceived);
-          // if (window.location.href.split("/").reverse()[0] !== "chat")
-          await queryClient.invalidateQueries(['notifications', 'all']);
-          const notifications = await queryClient.getQueryData(['notifications', 'all']);
-          setNotifications(notifications);
-        });
+        // socket.on('message-received', async (newMessageReceived: any) => {
+        //   console.log(newMessageReceived);
+        //   // if (window.location.href.split("/").reverse()[0] !== "chat")
+        //   await queryClient.invalidateQueries(['notifications', 'all']);
+        //   const notifications = await queryClient.getQueryData(['notifications', 'all']);
+        //   setNotifications(notifications);
+        // });
     }
   }, [user]);
 

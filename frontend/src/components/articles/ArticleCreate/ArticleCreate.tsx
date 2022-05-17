@@ -67,17 +67,17 @@ function ArticleCreate() {
     setArticleImages(articleImages.filter((item: any) => item.name != name))
   }
 
-  const handlerRemoveUnusedEditorImages = async () => {
-    const allImages: any = editorContent.match(/http:\/\/localhost([^"]*)/g)?.map((item: any) =>
-      item.split('/')[item.split('/').length - 1]
-    )
-    if (allImages && allImages?.length != 0) {
-      const imagesToRemove = editorImages.filter((image: any) => !allImages.includes(image))
-      await removeFiles(imagesToRemove)
-    } else {
-      await removeFiles(editorImages)
-    }
-    setEditorImages([])
+  const handlerRemoveUnusedEditorImages = () => {
+    // const allImages: any = editorContent.match(/http:\/\/localhost([^"]*)/g)?.map((item: any) =>
+    //   item.split('/')[item.split('/').length - 1]
+    // )
+    // if (allImages && allImages?.length != 0) {
+    //   const imagesToRemove = editorImages.filter((image: any) => !allImages.includes(image))
+    //   removeFiles(imagesToRemove)
+    // } else {
+    //   removeFiles(editorImages)
+    // }
+    // setEditorImages([])
   }
 
   const {

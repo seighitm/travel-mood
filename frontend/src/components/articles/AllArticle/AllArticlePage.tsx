@@ -28,6 +28,9 @@ console.log('misa')
     page: activePage
   });
 
+  // useEffect(() => {
+  //   refetchArticles();
+  // }, [])
 
 
   // useEffect(() => {
@@ -59,7 +62,7 @@ console.log('misa')
           <PaginationComponent items={articles?.totalCount}
                                setActivePage={setActivePage}
                                activePage={activePage}
-                               to={'/all-articles/'}
+                               to={'/articles/'}
           />
         </Stack>
         : <ArticleCardSkeleton/>

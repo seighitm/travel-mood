@@ -2,7 +2,7 @@ import { News, PlaneDeparture, Users, Map } from '../assets/Icons';
 
 export const HEADER_LINKS = [
   {
-    link: '/all-articles',
+    link: '/articles',
     label: 'Articles',
     icon: News,
   },
@@ -13,7 +13,7 @@ export const HEADER_LINKS = [
   },
   {
     link: '/users',
-    label: 'Travelers',
+    label: 'Users',
     icon: Users,
   },
   {

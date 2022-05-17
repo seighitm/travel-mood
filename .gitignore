@@ -2,6 +2,7 @@
 .vscode
 
 frontend/node_modules
+frontend/modules
 frontend/dist
 frontend/.env
 frontend/tsconfig.tsbuildinfo

@@ -7,6 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model RelationshipStatus {
+  id     Int    @id @default(autoincrement())
+  status String @unique
+  user   User[]
+}
+
+model Role {
+  id   Int    @id @default(autoincrement())
+  role String @unique
+  user User[]
+}
+
 model Gender {
   id     Int    @id @default(autoincrement())
   gender String @unique
@@ -14,184 +26,6 @@ model Gender {
   userId Int?   @unique
   trip   Trip?  @relation(fields: [tripId], references: [id])
   tripId Int?   @unique
-}
-
-//enum Role {
-//  USER
-//  ADMIN
-//}
-
-//enum RelationshipStatus {
-//  SINGLE
-//  IN_RELATION
-//}
-
-model Chat {
-  id              Int           @id @default(autoincrement())
-  chatName        String
-  isGroupChat     Boolean       @default(false)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @default(now())
-  users           User[]        @relation("user_on_chat")
-  groupAdmin      User?         @relation("group_admin", fields: [groupAdminId], references: [id])
-  groupAdminId    Int?
-  latestMessage   Message?      @relation("latest_messages", fields: [latestMessageId], references: [id])
-  latestMessageId Int?          @unique
-  messages        Message[]     @relation("chat_messages")
-  usersConnected  UserOnChats[]
-}
-
-model UserOnChats {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  chat      Chat     @relation(fields: [chatId], references: [id])
-  chatId    Int
-}
-
-model Message {
-  id              Int      @id @default(autoincrement())
-  user            User     @relation(fields: [userId], references: [id])
-  userId          Int
-  content         String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now())
-  chat            Chat?    @relation("chat_messages", fields: [chatId], references: [id])
-  chatId          Int?
-  readBy          User[]   @relation("MessageRead", references: [id])
-  lastChatMessage Chat?    @relation("latest_messages")
-}
-
-model UserJoinToTrip {
-  id      Int     @id @default(autoincrement())
-  user    User?   @relation(fields: [userId], references: [id])
-  userId  Int?
-  trip    Trip?   @relation(fields: [tripId], references: [id])
-  tripId  Int?
-  comment String?
-  status  String  @default("PENDING")
-  //senderOfInvitation   User?  @relation("TripInvitationSender", fields: [senderOfInvitationId], references: [id])
-  //senderOfInvitationId Int?
-
-  @@unique([userId, tripId])
-}
-
-model ProfileViews {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  guest     User?    @relation("GuestsUser", fields: [guestId], references: [id])
-  guestId   Int?
-  user      User?    @relation("ProfileView", fields: [userId], references: [id])
-  userId    Int?
-  seen      Boolean  @default(false)
-
-  @@unique([guestId, userId])
-}
-
-model User {
-  id Int @id @default(autoincrement())
-
-  email        String        @unique @db.VarChar(150)
-  password     String        @db.VarChar(150)
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @default(now()) @map("updated_at")
-  refreshToken RefreshToken?
-  role         Role          @relation(fields: [roleId], references: [id])
-  roleId       Int           @map("user_id")
-
-  firstName            String             @map("first_name")
-  lastName             String             @map("last_name")
-  name                 String?
-  picture              UserImage?         @relation("UserProfileImages")
-  birthday             DateTime?
-  languages            Language[]
-  gender               Gender?
-  country              Countries?         @relation(fields: [countryId], references: [id])
-  countryId            Int?
-  relationshipStatus   RelationshipStatus @relation(fields: [relationshipStatusId], references: [id])
-  relationshipStatusId Int                @map("relationshipStatus_id")
-
-  resetPasswordToken  String?   @unique
-  resetPasswordExpire DateTime? @map("reset_password_expire")
-
-  messages   Message[]
-  chats      Chat[]    @relation("user_on_chat")
-  chatsAdmin Chat[]    @relation("group_admin")
-
-  followedBy       User[]    @relation("UserFollows", references: [id])
-  following        User[]    @relation("UserFollows", references: [id])
-  articles         Article[] @relation("UserArticles")
-  favoritedArticle Article[] @relation("UserFavorites", references: [id])
-
-  comments ArticleComment[]
-
-  trips           Trip[]
-  usersJoinToTrip UserJoinToTrip[]
-  tripComments    TripComment[]
-  tripFavoritedBy Trip[]           @relation("TripFavoritedBy", references: [id])
-  userOnChats     UserOnChats[]
-
-  guests       ProfileViews[] @relation("GuestsUser")
-  pofilesVisit ProfileViews[] @relation("ProfileView")
-
-  visitedCountries      Countries[] @relation("UserVisitedLocations")
-  interestedInCountries Countries[] @relation("UserInterestetToLocations")
-
-  activatedStatus String    @default("NOT_VALIDATE") @map("activated_status")
-  blockExpiration DateTime? @map("block_expiration")
-
-  activationLink String? @map("activation_link")
-
-  myRatings       UserRatings[] @relation("MyRatings")
-  providedRatings UserRatings[] @relation("ProvidedRatings")
-  rating          Float         @default(0)
-
-  images UserImage[] @relation("UserImages")
-
-  //ownerInvitationTrip UserJoinToTrip[] @relation("TripInvitationSender")
-
-  messgaesRead Message[] @relation("MessageRead", references: [id])
-
-  @@unique([firstName, lastName])
-  @@map("users")
-}
-
-model TripComment {
-  createdAt DateTime @default(now())
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  comment   String
-  userId    Int
-  Trip      Trip?    @relation(fields: [tripId], references: [id])
-  tripId    Int?
-}
-
-model Trip {
-  id              Int              @id @default(autoincrement())
-  user            User             @relation(fields: [userId], references: [id])
-  userId          Int
-  dateFrom        DateTime?
-  dateto          DateTime?
-  isAnytime       Boolean          @default(false)
-  gender          Gender?
-  languages       Language[]
-  title           String
-  description     String
-  transports      Transport[]
-  //budgetMin       Int
-  //budgetMax       Int
-  budget          String?
-  splitCosts      Boolean?
-  itinerary       String?
-  destinations    Countries[]
-  places          Marker[]
-  usersJoinToTrip UserJoinToTrip[]
-  tripComments    TripComment[]
-  tripFavoritedBy User[]           @relation("TripFavoritedBy", references: [id])
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @default(now())
-  isHidden        Boolean          @default(false)
 }
 
 model Tag {
@@ -213,17 +47,6 @@ model Transport {
   trips Trip[]
 }
 
-model ArticleComment {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  body      String
-  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  articleId Int
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId  Int
-}
-
 model Countries {
   id             Int       @id @default(autoincrement())
   name           String    @unique
@@ -231,8 +54,152 @@ model Countries {
   trips          Trip[]
   articles       Article[]
   users          User[]
-  visitedBy      User[]    @relation("UserVisitedLocations")
-  interestedInBy User[]    @relation("UserInterestetToLocations")
+  visitedBy      User[]    @relation("VisitedCountriesByUser")
+  interestedInBy User[]    @relation("InteresetCountriesByUser")
+}
+
+model Chat {
+  id              Int       @id @default(autoincrement())
+  chatName        String?
+  isGroupChat     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now())
+  users           User[]    @relation("UsersOnChat")
+  groupAdmin      User?     @relation("ChatAdmin", fields: [groupAdminId], references: [id])
+  groupAdminId    Int?
+  latestMessage   Message?  @relation("LatestMessageOfChat", fields: [latestMessageId], references: [id])
+  latestMessageId Int?      @unique
+  messages        Message[] @relation("ChatMessages")
+}
+
+model Message {
+  id              Int      @id @default(autoincrement())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          Int
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+  chat            Chat?    @relation("ChatMessages", fields: [chatId], references: [id], onDelete: Cascade)
+  chatId          Int?
+  readBy          User[]   @relation("MessageReadByUsers", references: [id])
+  lastChatMessage Chat?    @relation("LatestMessageOfChat")
+}
+
+model UserJoinToTrip {
+  id      Int     @id @default(autoincrement())
+  user    User?   @relation(fields: [userId], references: [id])
+  userId  Int?
+  trip    Trip?   @relation(fields: [tripId], references: [id])
+  tripId  Int?
+  comment String?
+  status  String  @default("PENDING")
+
+  @@unique([userId, tripId])
+}
+
+model ProfileViews {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  guest     User?    @relation("GuestsUser", fields: [guestId], references: [id])
+  guestId   Int?
+  user      User?    @relation("ProfileView", fields: [userId], references: [id])
+  userId    Int?
+  seen      Boolean  @default(false)
+
+  @@unique([guestId, userId])
+}
+
+model User {
+  id                    Int                @id @default(autoincrement())
+  email                 String             @unique @db.VarChar(150)
+  password              String             @db.VarChar(150)
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @default(now()) @map("updated_at")
+  refreshToken          RefreshToken?
+  role                  Role               @relation(fields: [roleId], references: [id])
+  roleId                Int                @map("user_id")
+  firstName             String             @map("first_name")
+  lastName              String             @map("last_name")
+  picture               UserImage?         @relation("UserProfileImage")
+  birthday              DateTime?
+  languages             Language[]
+  gender                Gender?
+  country               Countries?         @relation(fields: [countryId], references: [id])
+  countryId             Int?
+  relationshipStatus    RelationshipStatus @relation(fields: [relationshipStatusId], references: [id])
+  relationshipStatusId  Int                @map("relationshipStatus_id")
+  resetPasswordToken    String?            @unique
+  resetPasswordExpire   DateTime?          @map("reset_password_expire")
+  messages              Message[]
+  chats                 Chat[]             @relation("UsersOnChat")
+  chatsAdmin            Chat[]             @relation("ChatAdmin")
+  followedBy            User[]             @relation("UserFollows", references: [id])
+  following             User[]             @relation("UserFollows", references: [id])
+  articles              Article[]          @relation("ArticleAuthor")
+  favoritedArticle      Article[]          @relation("ArticleFavoriteBy", references: [id])
+  articleComments       ArticleComment[]
+  trips                 Trip[]
+  usersJoinToTrip       UserJoinToTrip[]
+  tripComments          TripComment[]
+  tripFavoritedBy       Trip[]             @relation("TripFavoritedBy", references: [id])
+  guests                ProfileViews[]     @relation("GuestsUser")
+  pofilesVisit          ProfileViews[]     @relation("ProfileView")
+  visitedCountries      Countries[]        @relation("VisitedCountriesByUser")
+  interestedInCountries Countries[]        @relation("InteresetCountriesByUser")
+  activatedStatus       String             @default("NOT_VALIDATE") @map("activated_status")
+  blockExpiration       DateTime?          @map("block_expiration")
+  myRatings             UserRatings[]      @relation("MyRatings")
+  providedRatings       UserRatings[]      @relation("ProvidedRatings")
+  rating                Float              @default(0)
+  images                UserImage[]        @relation("UserImages")
+  messgaesRead          Message[]          @relation("MessageReadByUsers", references: [id])
+
+  @@unique([firstName, lastName])
+}
+
+model TripComment {
+  id        Int      @id @default(autoincrement())
+  comment   String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  Trip      Trip?    @relation(fields: [tripId], references: [id])
+  tripId    Int?
+  createdAt DateTime @default(now())
+}
+
+model Trip {
+  id              Int              @id @default(autoincrement())
+  user            User             @relation(fields: [userId], references: [id])
+  userId          Int
+  dateFrom        DateTime?        @map("date_from")
+  dateTo          DateTime?        @map("date_to")
+  isAnytime       Boolean          @default(false) @map("is_anytime")
+  gender          Gender?
+  languages       Language[]
+  title           String
+  description     String
+  transports      Transport[]
+  budget          String?
+  splitCosts      Boolean?         @map("split_costs")
+  itinerary       String?
+  destinations    Countries[]
+  places          Marker[]
+  usersJoinToTrip UserJoinToTrip[]
+  tripComments    TripComment[]
+  isHidden        Boolean          @default(false)
+  tripFavoritedBy User[]           @relation("TripFavoritedBy", references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @default(now())
+}
+
+model ArticleComment {
+  id        Int      @id @default(autoincrement())
+  body      String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  Int
+  createdAt DateTime @default(now())
 }
 
 model Marker {
@@ -247,18 +214,10 @@ model Marker {
 }
 
 model ArticleImage {
-  id                  Int      @id @default(autoincrement())
-  name                String   @unique
-  article             Article  @relation("ArticleImages", fields: [articleId], references: [id], onDelete: Cascade)
-  articleId           Int
-  articleTitleImage   Article? @relation("ArticleTitleImage", fields: [articleTitleImageId], references: [id], onDelete: Cascade)
-  articleTitleImageId Int?     @unique
-}
-
-model Role {
-  id   Int    @id @default(autoincrement())
-  role String @unique
-  user User[]
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  article   Article @relation("ArticleImages", fields: [articleId], references: [id], onDelete: Cascade)
+  articleId Int
 }
 
 model RefreshToken {
@@ -270,18 +229,16 @@ model RefreshToken {
 
 model Article {
   id               Int              @id @default(autoincrement())
-  slug             String?
   title            String           @unique
   description      String
   body             String
-  titleImege       ArticleImage?    @relation("ArticleTitleImage")
   primaryImage     String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   tagList          Tag[]
-  author           User             @relation("UserArticles", fields: [authorId], references: [id], onDelete: Cascade)
+  author           User             @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   authorId         Int
-  favoritedBy      User[]           @relation("UserFavorites", references: [id])
+  favoritedBy      User[]           @relation("ArticleFavoriteBy", references: [id])
   comments         ArticleComment[]
   images           ArticleImage[]   @relation("ArticleImages")
   countries        Countries[]
@@ -289,28 +246,22 @@ model Article {
   isUpdatedByAdmin Boolean          @default(false)
 }
 
-model RelationshipStatus {
-  id     Int    @id @default(autoincrement())
-  status String @unique
-  user   User[]
-}
-
 model UserImage {
   id                 Int    @id @default(autoincrement())
   image              String @unique
   user               User?  @relation("UserImages", fields: [userId], references: [id], onDelete: Cascade)
   userId             Int?
-  userProfileImage   User?  @relation("UserProfileImages", fields: [userProfileImageId], references: [id], onDelete: Cascade)
+  userProfileImage   User?  @relation("UserProfileImage", fields: [userProfileImageId], references: [id], onDelete: Cascade)
   userProfileImageId Int?   @unique
 }
 
 model UserRatings {
   id        Int   @id @default(autoincrement())
+  rating    Float
   profile   User? @relation("MyRatings", fields: [profileId], references: [id])
   profileId Int
   user      User? @relation("ProvidedRatings", fields: [userId], references: [id])
   userId    Int
-  rating    Float
 
   @@unique([profileId, userId])
 }

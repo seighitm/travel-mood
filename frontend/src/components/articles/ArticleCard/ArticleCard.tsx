@@ -80,7 +80,7 @@ export function ArticleCard({article, page}: any) {
       <Card.Section style={{position: 'relative'}}>
         <Image
           src={articleImage(article)}
-          withPlaceholder
+          withPlaceholder={!!article?.picture}
           alt={'Article image'}
           height={180}
         />
@@ -118,7 +118,7 @@ export function ArticleCard({article, page}: any) {
         className={classes.title}
         mt="xs"
         component={Link}
-        to={`/articles/${article.id}`}
+        to={`/article/${article.id}`}
       >
         {article.title}
       </Text>

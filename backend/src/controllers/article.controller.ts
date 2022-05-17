@@ -6,7 +6,8 @@ import {
   deleteComment,
   favoriteArticle,
   getArticleById,
-  getArticles, getArticlesForAdmin,
+  getArticles,
+  getArticlesForAdmin,
   getCommentsByArticle,
   unFavoriteArticle,
   updateArticle,
@@ -16,6 +17,8 @@ import {authM} from "../middlewares/auth.middleware";
 import {asyncHandler} from "../utils/asyncHandler";
 
 const upload = require("../middlewares/fileUpload.middleware");
+// import {upload} from '../middlewares/aws-multer'
+
 const router = Router();
 
 /**
@@ -26,7 +29,7 @@ const router = Router();
  * @returns {Promise} Promise
  */
 router.get('/admin/articles',
-  [authM.optional],
+  [authM.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const articles = await getArticlesForAdmin(req.query);
     res.json(articles);
@@ -87,8 +90,6 @@ router.get('/article/:id',
 router.put('/article/:id',
   [authM.required, upload.array("images[]")],
   asyncHandler(async (req: IGetUserAuthInfoRequest | any, res: Response, next: NextFunction) => {
-    console.log(req.body)
-    console.log(req.files)
     const article = await updateArticle(req.body, req.params.id, req.user!.id, req.user?.role, req.files);
     res.json(article);
   })
@@ -140,21 +141,6 @@ router.delete('/article/:id/favorite',
 );
 
 /**
- * @desc Get all article comments
- * @access PUBLIC
- * @route {GET} api/article/:id/comments
- * @param {id} req.params
- * @returns {Promise} Promise
- */
-router.get('/article/:id/comments',
-  [authM.optional],
-  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const comments = await getCommentsByArticle(req.params?.id);
-    res.json(comments);
-  }),
-);
-
-/**
  * @desc Create new comment
  * @access PRIVATE
  * @route {POST} api/article/:id/comments
@@ -185,4 +171,28 @@ router.delete('/article/comment/:id',
   }),
 );
 
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+// RAU
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 export default router;
+
+
+/**
+ * @desc Get all article comments
+ * @access PUBLIC
+ * @route {GET} api/article/:id/comments
+ * @param {id} req.params
+ * @returns {Promise} Promise
+ */
+router.get('/article/:id/comments',
+  [authM.optional],
+  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    const comments = await getCommentsByArticle(req.params?.id);
+    res.json(comments);
+  }),
+);
+

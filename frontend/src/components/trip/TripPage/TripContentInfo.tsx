@@ -98,11 +98,11 @@ const TripContentInfo = React.memo(({trips}: any) => {
               <Badge>
                 <Text size="sm">
                   {new Date(trips.dateFrom).toISOString().split('T')[0]} •••{' '}
-                  {new Date(trips.dateto).toISOString().split('T')[0]}
+                  {new Date(trips.dateTo).toISOString().split('T')[0]}
                 </Text>
               </Badge>
               <Text size="sm">
-                {getNrOfDayByDateInterval({dateFrom: trips.dateFrom, dateTo: trips.dateto})}Days
+                {getNrOfDayByDateInterval({dateFrom: trips.dateFrom, dateTo: trips.dateTo})}Days
               </Text>
             </>
           }

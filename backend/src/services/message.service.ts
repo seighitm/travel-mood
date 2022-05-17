@@ -152,11 +152,33 @@ export const getNonReadMessages = async (
 export const getMessagesByChatId = async (
   chatId: number | string,
   userId: number | string,
+  massagesCount: number | string | any
 ): Promise<any> => {
-  const messages = await prisma.message.findMany({
-    orderBy: {
-      id: 'asc'
+  console.log(massagesCount)
+
+  const startMessage = await prisma.message.findMany({
+    where: {
+      chat: {
+        id: Number(chatId)
+      }
     },
+    // orderBy: {
+    //   id: 'desc',
+    // },
+    // orderBy: {
+    //   id: 'desc',
+    // },
+    // cursor: {
+    //   id: massagesCount ? startMessage[0].id - Number(massagesCount) : startMessage[0].id,
+    // },
+    skip: massagesCount ? Number(massagesCount) - 15 : 0,
+    take: -15
+  })
+
+  // console.log(startMessage[0].id)
+  // console.log(startMessage[startMessage.length - 1].id)
+
+  const messages = await prisma.message.findMany({
     where: {
       chat: {
         id: Number(chatId)
@@ -170,24 +192,26 @@ export const getMessagesByChatId = async (
       },
       user: true,
       lastChatMessage: true
-    }
+    },
+    skip: massagesCount ? Number(massagesCount) - 15 : 0,
+    take: -15
   })
 
-  if (messages[messages.length - 1]) {
-    for (let i = 0; i < messages.length; i++)
-      await prisma.message.update({
-        where: {
-          id: messages[i].id,
-        },
-        data: {
-          readBy: {
-            connect: {
-              id: Number(userId)
-            }
-          }
-        }
-      })
-  }
+  // if (messages[messages.length - 1]) {
+  //   for (let i = 0; i < messages.length; i++)
+  //     await prisma.message.update({
+  //       where: {
+  //         id: messages[i].id,
+  //       },
+  //       data: {
+  //         readBy: {
+  //           connect: {
+  //             id: Number(userId)
+  //           }
+  //         }
+  //       }
+  //     })
+  // }
   return messages
 }
 
@@ -280,10 +304,17 @@ export const other_ReadMessage = async (
   chatId: number | string,
   userId: number | string,
 ): Promise<any> => {
+  console.log('++++++++++++++++++++++++')
+  console.log('++++++++++++++++++++++++')
   const messages = await prisma.message.findMany({
     where: {
       chat: {
-        id: Number(chatId)
+        id: Number(chatId),
+      },
+      readBy: {
+        none: {
+          id: Number(userId)
+        }
       }
     },
     select: {
@@ -291,6 +322,9 @@ export const other_ReadMessage = async (
       readBy: true,
     }
   })
+
+  console.log(messages.length)
+  console.log(messages)
 
   if (messages[messages.length - 1]) {
     for (let i = 0; i < messages.length; i++)

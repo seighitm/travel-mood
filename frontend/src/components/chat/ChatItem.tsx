@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {Avatar, AvatarsGroup, Box, Group, Indicator, Text, TypographyStylesProvider,} from '@mantine/core';
+import {Avatar, AvatarsGroup, Badge, Box, Group, Indicator, Text, TypographyStylesProvider,} from '@mantine/core';
 import chatStore from '../../store/chat.store';
 import useStore from '../../store/user.store';
 import {cutString, userPicture} from '../common/Utils';
@@ -9,6 +9,7 @@ import {Mail, MessageDots} from "../../assets/Icons";
 
 const ChatItem = ({chat, setOpenedDrawer, isDrawer, matches, nonReadMessages}: any) => {
   const matches2 = useMediaQuery('(max-width: 765px)');
+
   const {user, onlineUsers} = useStore((state: any) => state);
   const {selectedChat, directSetSelectedChat} = chatStore((state: any) => state);
 
@@ -22,27 +23,26 @@ const ChatItem = ({chat, setOpenedDrawer, isDrawer, matches, nonReadMessages}: a
   };
 
   const checkIfUsersIsOnline = () => {
-    for(let i = 0; i< chat?.users.length; i++){
-      if(chat.users[i].id != user.id && onlineUsers[chat.users[i].id])
+    for (let i = 0; i < chat?.users.length; i++) {
+      if (chat.users[i].id != user.id && onlineUsers[chat.users[i].id])
         return true
     }
     return false
   }
 
   useEffect(() => {
-    return () => {
-      mutateRead(chat.id)
-    };
+    if (chat.id == selectedChat.id)
+      setTimeout(() => mutateRead(chat.id), 3000)
   }, [selectedChat]);
 
   return <Box style={{width: '100%'}}>
     <TypographyStylesProvider>
       <Group
+        spacing={0}
         onClick={openChat}
         position={(!matches && !matches2) ? 'center' : 'left'}
         noWrap
-        spacing={'xs'}
-        pr={'xs'}
+        direction={!(isDrawer || matches) ? 'column' : 'row'}
         sx={(theme) => ({
           width: !matches ? 'fill-content' : '100%',
           borderRadius: 5,
@@ -100,9 +100,11 @@ const ChatItem = ({chat, setOpenedDrawer, isDrawer, matches, nonReadMessages}: a
           <Box style={{cursor: 'pointer',}}>
             <Group noWrap spacing={10} mt={3}>
               <Mail size={17}/>
-              <Text lineClamp={1} size="sm" sx={{textTransform: 'uppercase'}} weight={700}>
-                {cutString(chat.chatName, 10)}
-              </Text>
+              {/*<Badge style={{width: 'auto'}} variant={'outline'} size={'sm'} py={0}>*/}
+                <Text lineClamp={1} size="sm" sx={{textTransform: 'uppercase'}} weight={700}>
+                  {cutString(chat.chatName, 10)}
+                </Text>
+              {/*</Badge>*/}
             </Group>
             <Group noWrap spacing={10} mt={3}>
               <MessageDots size={17}/>
@@ -111,6 +113,11 @@ const ChatItem = ({chat, setOpenedDrawer, isDrawer, matches, nonReadMessages}: a
               </Text>
             </Group>
           </Box>
+        }
+        {!(isDrawer || matches) &&
+          <Text>
+            {cutString(chat.chatName, 10)}
+          </Text>
         }
       </Group>
     </TypographyStylesProvider>

@@ -10,7 +10,7 @@ const TabItemComponent = memo(({setTypeOfFavoriteItems, item, typeOfFavoriteItem
           onClick={() => setTypeOfFavoriteItems(item)}
           variant="gradient"
           gradient={
-            typeOfFavoriteItems.toLowerCase() == item.toLowerCase()
+            typeOfFavoriteItems?.toLowerCase() == item.toLowerCase()
               ? {from: 'indigo', to: 'orange'}
               : undefined
           }

@@ -19,7 +19,9 @@ import {
 import {IGetUserAuthInfoRequest} from "../utils/interfaces";
 import {asyncHandler} from "../utils/asyncHandler";
 import {switchRole} from "../services/auth.service";
+import {followUser, getProfile, setUserRating, unfollowUser} from "../services/profile.service";
 const upload = require("../middlewares/fileUpload.middleware");
+// import {upload}  from "../middlewares/aws-multer"
 
 const router = Router();
 
@@ -32,7 +34,7 @@ router.get('/user/all-favorites/:type',
 )
 
 router.get('/admin/users',
-  [authM.optional],
+  [authM.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await admin_users(req?.query)
     res.json(user)
@@ -83,19 +85,19 @@ router.put('/user/profile-visits',
   })
 );
 
-/**
- * Add interested or visited countries
- * @auth required
- * @route {PUT} /user/selected-countries
- * @returns User
- */
-router.put('/user/selected-countries',
-  authM.required,
-  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const user = await addInterestedVisitedCountries(req.user?.id, req.body)
-    res.json(user);
-  })
-);
+// /**
+//  * Add interested or visited countries
+//  * @auth required
+//  * @route {PUT} /user/selected-countries
+//  * @returns User
+//  */
+// router.put('/user/selected-countries',
+//   [authM.required],
+//   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+//     const user = await addInterestedVisitedCountries(req.user?.id, req.body)
+//     res.json(user);
+//   })
+// );
 
 /**
  * Activate user account
@@ -228,6 +230,52 @@ router.get('/users',
   })
 );
 
+/**
+ * Set user rating
+ * @auth required
+ * @route {POST} /users/:userId/rating/:rating
+ * @returns profiles
+ */
+router.post('/users/:userId/rating/:rating',
+  [authM.required],
+  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    const profile = await setUserRating(req.params.userId, req.params.rating, req.user!.id);
+    res.json(profile);
+  }),
+);
+
+/**
+ * Unfollow user
+ * @auth required
+ * @route {DELETE} /profiles/:id/follow
+ * @param ID
+ * @returns profiles
+ */
+router.delete('/users/:id/follow',
+  [authM.required],
+  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    const profile = await unfollowUser(req.params.id, req.user!.id);
+    res.json({profile});
+  }),
+);
+
+/**
+ * Follow user
+ * @auth required
+ * @route {POST} /profiles/:id/follow
+ * @param username string
+ * @returns Profile profile of an user
+ */
+router.post('/users/:id/follow',
+  [authM.required],
+  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    const profile = await followUser(req.params?.id, req.user!.id);
+    res.json({profile});
+  })
+);
+
+
+
 export default router;
 
 
@@ -236,6 +284,28 @@ export default router;
 // RAU
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+/**
+ * Get profile
+ * @auth optional
+ * @route {GET} /profiles/:username
+ * @param username string
+ * @returns Profile profile of an user
+ */
+router.get(
+  '/profiles/:id',
+  authM.required,
+  async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    try {
+      const profile = await getProfile(req.params.id, req.user?.id);
+      res.json({profile});
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 
 /**
  * Search users

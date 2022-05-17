@@ -12,7 +12,7 @@ import {
 } from '@mantine/core';
 import { Cross2Icon, StarIcon } from '@modulz/radix-icons';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
-import { addUserFromGroup, removeUserFromGroup, renameGroup } from '../../../api/chat/axios';
+import { addUsersToGroup, removeUserFromGroup, renameGroup } from '../../../api/chat/axios';
 import { showNotification } from '@mantine/notifications';
 import { getUsers } from '../../../api/users/axios';
 
@@ -82,7 +82,7 @@ function UpdateGroupChatModal() {
 
   const { mutate: mutateAddUser } = useMutation(
     'addUserFromGroup',
-    (userId: any) => addUserFromGroup({ chatId: selectedChat.id, userId }),
+    (userId: any) => addUsersToGroup({ chatId: selectedChat.id, userId }),
     {
       onSettled: (data) => {
         queryClient.invalidateQueries('fetchMyChats');
