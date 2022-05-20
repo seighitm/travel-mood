@@ -1,15 +1,17 @@
-import {ScrollArea, Stack} from "@mantine/core";
+import {Button, Group, ScrollArea, Stack} from "@mantine/core";
 import * as React from "react";
 
 import Table from "../components/table";
-import TableInput from "../../../common/tableComponents/table-input";
-import TablePagination from "../../../common/tableComponents/table-pagination";
+import TableInput from "../../../common/table/table-input";
+import TablePagination from "../../../common/table/table-pagination";
 import tableStore from "../../../../store/table.store";
-import {useTripsFiltering} from "../../../../api/trips/queries";
-import {useEffect} from "react";
 import {useArticlesFiltering} from "../../../../api/articles/queries";
+import {useNavigate} from "react-router-dom";
+import {CirclePlus} from "../../../../assets/Icons";
 
 const TableArticles = () => {
+  const navigate = useNavigate()
+
   const {
     queryPageIndex,
     queryPageSize,
@@ -32,6 +34,19 @@ const TableArticles = () => {
 
   return (
     <Stack>
+      <Group style={{width: '100%'}} position={'right'}>
+
+        <Button
+          compact
+          color={'pink'}
+          leftIcon={<CirclePlus size={17}/>}
+          onClick={() => {
+            navigate('add')
+          }}
+        >
+          Add Article
+        </Button>
+      </Group>
       <TableInput
         value={queryPageFilter}
         onChange={setPageFilter}

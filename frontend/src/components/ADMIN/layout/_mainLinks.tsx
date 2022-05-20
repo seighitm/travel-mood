@@ -1,15 +1,8 @@
 import React from 'react';
 import {Group, Text, ThemeIcon, UnstyledButton} from '@mantine/core';
 import {useNavigate} from "react-router-dom";
-import {
-  ChatBubbleIcon,
-  FileTextIcon,
-  GlobeIcon, Link2Icon,
-  PersonIcon,
-  ReaderIcon,
-  RocketIcon,
-  SewingPinFilledIcon
-} from "@modulz/radix-icons";
+import {FileTextIcon, Link2Icon, ReaderIcon, RocketIcon, SewingPinFilledIcon} from "@modulz/radix-icons";
+import {InfoCircle, MessageDots, User, World} from "../../../assets/Icons";
 
 interface MainLinkProps {
   icon: React.ReactNode;
@@ -50,12 +43,13 @@ function MainLink({icon, color, label, link, matches}: MainLinkProps | any) {
 const data = [
   {icon: <FileTextIcon style={{width: '17px', height: '17px'}}/>, color: 'blue', label: 'Articles', link: "/admin/articles"},
   {icon: <RocketIcon style={{width: '17px', height: '17px'}}/>, color: 'teal', label: 'Trips', link: "/admin/trips"},
-  {icon: <PersonIcon style={{width: '17px', height: '17px'}}/>, color: 'violet', label: 'Users', link: "/admin/users"},
-  {icon: <GlobeIcon style={{width: '17px', height: '17px'}}/>, color: 'grape', label: 'Map', link: "/map"},
-  {icon: <ChatBubbleIcon style={{width: '17px', height: '17px'}}/>, color: 'blue', label: 'Chat', link: "/chat"},
+  {icon: <User size={17}/>, color: 'violet', label: 'Users', link: "/admin/users"},
+  {icon: <World size={17} />, color: 'grape', label: 'Map', link: "/admin/map"},
+  {icon: <MessageDots size={17} />, color: 'blue', label: 'Chat', link: "/admin/chat"},
   {icon: <ReaderIcon style={{width: '17px', height: '17px'}}/>, color: 'teal', label: 'Languages', link: "/admin/languages"},
   {icon: <SewingPinFilledIcon style={{width: '17px', height: '17px'}}/>, color: 'violet', label: 'Countries', link: "/admin/countries"},
   {icon: <Link2Icon style={{width: '17px', height: '17px'}}/>, color: 'grape', label: 'Tags', link: "/admin/tags"},
+  {icon: <InfoCircle size={17}/>, color: 'grape', label: 'Complaints', link: "/admin/complaints"},
 ];
 
 export function MainLinks({matches}: any) {

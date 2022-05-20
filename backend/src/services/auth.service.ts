@@ -27,9 +27,9 @@ export enum ROLE {
 }
 
 export const createUser = async (
-  input: UserCreatePayload,
+  input: UserCreatePayload | any,
   profileImage: any
-): Promise<UserResponse> => {
+): Promise<UserResponse | any> => {
   const payload = {
     email: input.email.trim(),
     firstName: input.firstName.trim(),

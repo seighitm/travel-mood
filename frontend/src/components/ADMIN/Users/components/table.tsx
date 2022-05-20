@@ -3,16 +3,17 @@ import * as React from "react";
 import {useEffect, useState} from "react";
 import {usePagination, useSortBy, useTable} from "react-table";
 
-import SortingIcon from "../../../common/tableComponents/sorting-icon";
-import handleSortBy from "../../../common/tableComponents/handle-sort-by";
+import SortingIcon from "../../../common/table/sorting-icon";
+import handleSortBy from "../../../common/table/handle-sort-by";
 import {dateFormatedToIsoString} from "../../../common/Utils";
 import {Calendar} from "@mantine/dates";
 import {useMutateSwitchUserRole, useUserAccountActivate, useUserAccountBlock} from "../../../../api/users/mutations";
-import {Circle, Trash} from "../../../../assets/Icons";
+import {Circle} from "../../../../assets/Icons";
 import {ArrowDownIcon, ArrowUpIcon, ChatBubbleIcon, LockClosedIcon, LockOpen1Icon} from "@modulz/radix-icons";
 import {useMutateAccessChat} from "../../../../api/chat/mutations";
 import {useNavigate} from "react-router-dom";
 import useStore from "../../../../store/user.store";
+import dayjs from 'dayjs';
 
 const TableUsers = ({
                       columns,
@@ -116,7 +117,7 @@ const TableUsers = ({
 
   useEffect(() => {
     if (isSuccessAccessChat)
-      navigate('/chat')
+      navigate('/admin/chat')
   }, [isSuccessAccessChat])
 
   return (
@@ -140,7 +141,7 @@ const TableUsers = ({
             </Text>
           </>
           : <>
-            <Calendar value={value} onChange={setValue}/>
+            <Calendar value={value} onChange={setValue} minDate={dayjs(new Date()).toDate()}/>
             <Group mt={'sm'} position={'center'}>
               <Button compact onClick={() => {
                 mutateBlockUser({userId: selectedUserId, expiredBlockDate: value})
@@ -190,7 +191,7 @@ const TableUsers = ({
                                     color={onlineUsers[row.original.id] ? 'green' : 'red'} radius={'xl'}>
                           <Circle/>
                         </ActionIcon>
-                      } variant={'subtle'} onClick={() => navigate('/user/' + row.original.id)}>
+                      } variant={'subtle'} onClick={() => navigate('/admin/user/' + row.original.id)}>
                         {cell.render("Cell")}
                       </Button>
                       : <Text lineClamp={checkColumnTitle(cell, 'title') ? 1 : undefined}

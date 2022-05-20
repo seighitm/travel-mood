@@ -10,9 +10,9 @@ function CustomPaper({children}: any) {
       shadow={'xs'}
       sx={(theme) => ({
         border: '2px solid ',
-        borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[0],
+        borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[1],
         position: 'relative',
-        backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
+        backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0],
       })}
     >
       {children}

@@ -3,12 +3,12 @@ import './index.css';
 import './MapStyles.css';
 import App from './App';
 import {BrowserRouter} from 'react-router-dom';
-import Providers from './components/common/engine/Providers';
+import Providers from './components/common/Providers';
 import "regenerator-runtime/runtime";
 import {createRoot} from 'react-dom/client';
 import {io} from "socket.io-client";
 import {SOCKET_ENDPOINT} from "./data/Constants";
-import HelmetMetaData from "./components/common/SocialShare/HelmetMetaData";
+import HelmetMetaData from "./components/common/socialShare/HelmetMetaData";
 
 const socket = io(SOCKET_ENDPOINT)
 

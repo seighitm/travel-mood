@@ -108,8 +108,6 @@ function UsersList() {
     await refetchUsers();
   };
 
-  console.log(onlineUsers)
-
   return (
     <div className={classes.wrapper}>
       <Accordion
@@ -237,6 +235,7 @@ function UsersList() {
         {users?.filter((item: any) => item.id != user?.id)?.map((item: any) => (
           <Grid.Col xs={12} sm={6} md={4} lg={3} key={item.id}>
             <UserCard
+              role={item.role.role}
               key={item.email}
               name={`${item.firstName} - ${item.lastName}`}
               onlineUsers={onlineUsers}

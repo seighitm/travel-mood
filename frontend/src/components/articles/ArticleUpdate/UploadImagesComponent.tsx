@@ -4,7 +4,6 @@ import {Cross2Icon} from "@modulz/radix-icons";
 
 const UploadImagesComponent = React.memo(
   ({oldFiles, newFiles, handlerRemoveOldImage, handlerRemoveNewImage}: any) => {
-    console.log(oldFiles, newFiles)
     return (
       <Grid mb={'md'} mt={'md'} gutter="xs">
         {oldFiles != undefined && oldFiles.map((file: any, index: any) =>

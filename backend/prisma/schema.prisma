@@ -62,8 +62,8 @@ model Chat {
   id              Int       @id @default(autoincrement())
   chatName        String?
   isGroupChat     Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @default(now())
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
   users           User[]    @relation("UsersOnChat")
   groupAdmin      User?     @relation("ChatAdmin", fields: [groupAdminId], references: [id])
   groupAdminId    Int?
@@ -77,8 +77,8 @@ model Message {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId          Int
   content         String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now())
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   chat            Chat?    @relation("ChatMessages", fields: [chatId], references: [id], onDelete: Cascade)
   chatId          Int?
   readBy          User[]   @relation("MessageReadByUsers", references: [id])
@@ -99,7 +99,7 @@ model UserJoinToTrip {
 
 model ProfileViews {
   id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
   guest     User?    @relation("GuestsUser", fields: [guestId], references: [id])
   guestId   Int?
   user      User?    @relation("ProfileView", fields: [userId], references: [id])
@@ -114,7 +114,7 @@ model User {
   email                 String             @unique @db.VarChar(150)
   password              String             @db.VarChar(150)
   createdAt             DateTime           @default(now()) @map("created_at")
-  updatedAt             DateTime           @default(now()) @map("updated_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
   refreshToken          RefreshToken?
   role                  Role               @relation(fields: [roleId], references: [id])
   roleId                Int                @map("user_id")
@@ -146,12 +146,14 @@ model User {
   pofilesVisit          ProfileViews[]     @relation("ProfileView")
   visitedCountries      Countries[]        @relation("VisitedCountriesByUser")
   interestedInCountries Countries[]        @relation("InteresetCountriesByUser")
-  activatedStatus       String             @default("NOT_VALIDATE") @map("activated_status")
+  activatedStatus       String             @default("ACTIVATED") @map("activated_status")
   blockExpiration       DateTime?          @map("block_expiration")
   myRatings             UserRatings[]      @relation("MyRatings")
   providedRatings       UserRatings[]      @relation("ProvidedRatings")
   rating                Float              @default(0)
   images                UserImage[]        @relation("UserImages")
+  complaintEmit         Complaint[]        @relation("ComplaintUserEmit")
+  complaintReceive      Complaint[]        @relation("ComplaintUserReceive")
   messgaesRead          Message[]          @relation("MessageReadByUsers", references: [id])
 
   @@unique([firstName, lastName])
@@ -164,7 +166,7 @@ model TripComment {
   userId    Int
   Trip      Trip?    @relation(fields: [tripId], references: [id])
   tripId    Int?
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 }
 
 model Trip {
@@ -188,8 +190,8 @@ model Trip {
   tripComments    TripComment[]
   isHidden        Boolean          @default(false)
   tripFavoritedBy User[]           @relation("TripFavoritedBy", references: [id])
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @default(now())
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
 }
 
 model ArticleComment {
@@ -199,7 +201,7 @@ model ArticleComment {
   articleId Int
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  Int
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 }
 
 model Marker {
@@ -233,8 +235,8 @@ model Article {
   description      String
   body             String
   primaryImage     String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
   tagList          Tag[]
   author           User             @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   authorId         Int
@@ -247,12 +249,14 @@ model Article {
 }
 
 model UserImage {
-  id                 Int    @id @default(autoincrement())
-  image              String @unique
-  user               User?  @relation("UserImages", fields: [userId], references: [id], onDelete: Cascade)
+  id                 Int        @id @default(autoincrement())
+  image              String     @unique
+  user               User?      @relation("UserImages", fields: [userId], references: [id], onDelete: Cascade)
   userId             Int?
-  userProfileImage   User?  @relation("UserProfileImage", fields: [userProfileImageId], references: [id], onDelete: Cascade)
-  userProfileImageId Int?   @unique
+  userProfileImage   User?      @relation("UserProfileImage", fields: [userProfileImageId], references: [id], onDelete: Cascade)
+  userProfileImageId Int?       @unique
+  complaint          Complaint? @relation("ComplaintImage", fields: [complaintId], references: [id])
+  complaintId        Int?       @unique
 }
 
 model UserRatings {
@@ -264,4 +268,15 @@ model UserRatings {
   userId    Int
 
   @@unique([profileId, userId])
+}
+
+model Complaint {
+  id        Int         @id @default(autoincrement())
+  user      User?       @relation("ComplaintUserEmit", fields: [userId], references: [id])
+  userId    Int
+  profile   User?       @relation("ComplaintUserReceive", fields: [profileId], references: [id])
+  profileId Int
+  reason    String
+  image    UserImage?   @relation("ComplaintImage")
+    createdAt       DateTime  @default(now()) @map("created_at")
 }

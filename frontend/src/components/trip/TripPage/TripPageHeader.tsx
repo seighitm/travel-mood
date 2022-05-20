@@ -17,7 +17,6 @@ import {
 } from '@mantine/core';
 import {Pencil1Icon, QuestionMarkCircledIcon,} from '@modulz/radix-icons';
 import {Link, useNavigate, useParams} from 'react-router-dom';
-import SocialSharButtons from '../../common/SocialShare/SocialSharButtons';
 import useStore from '../../../store/user.store';
 import {
   useMutateChangeJoinRequestStatus,
@@ -27,7 +26,7 @@ import {
   useMutateUnFavoriteTrip,
   useMutationDeleteTrip,
 } from '../../../api/trips/mutations';
-import {userPicture} from "../../common/Utils";
+import {dateFormatedToIsoString, userPicture} from "../../common/Utils";
 import {useDisclosure} from "@mantine/hooks";
 import {BrandFacebook, BrandTwitter, ChevronDown, Pencil, Send, Star, Trash} from "../../../assets/Icons";
 import {useGetUserById} from "../../../api/users/queries";
@@ -35,6 +34,8 @@ import JoinTripModal from "./JoinTripModal";
 import SendJoinTripRequest from "./SendJoinTripRequest";
 import {getFullUserName} from "../../../utils/utils-func";
 import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
+import {ROLE} from "../../../types/enums";
+import SocialSharButtons from "../../common/socialShare/SocialSharButtons";
 
 const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -119,8 +120,6 @@ function TripPageHeader({trips}: any) {
     setHiddenStatus(trips.isHidden)
   }, [trips])
 
-  console.log(trips)
-
   return (
     <Paper className={classes.wrapper}>
       {!isNullOrUndefined(user) &&
@@ -168,6 +167,9 @@ function TripPageHeader({trips}: any) {
               {trips.title?.toUpperCase()}
             </Text>
             <Group>
+              <Badge variant={'outline'}>
+                {dateFormatedToIsoString(trips.updatedAt)}
+              </Badge>
               {!isNullOrUndefined(trips) && !isEmptyArray(trips.tripFavoritedBy) &&
                 <Popover
                   opened={openedLikesCountPopup}
@@ -203,7 +205,7 @@ function TripPageHeader({trips}: any) {
                 variant={"light"}
                 color={"gray"}
                 px={'xs'}
-                size="xl"
+                size="lg"
                 leftSection={
                   !isNullOrUndefined(user) &&
                   <ActionIcon
@@ -266,7 +268,7 @@ function TripPageHeader({trips}: any) {
                   </Text>
                 </Group>
               </Popover>
-              {!isNullOrUndefined(user) && user.id == trips.user.id &&
+              {!isNullOrUndefined(user) && user?.id == trips?.user.id &&
                 <Switch
                   onLabel="ON" offLabel="OFF"
                   checked={hiddenStatus}
@@ -350,13 +352,7 @@ function TripPageHeader({trips}: any) {
                   color="teal"
                   variant={'light'}
                   leftIcon={<Pencil size={17}/>}
-                  component={Link}
-                  to={'/trip/edit/' + id}
-                  styles={{
-                    inner: {
-                      color: 'teal',
-                    },
-                  }}
+                  onClick={() => navigate(`${user?.role == ROLE.ADMIN ? '/admin' : ''}/trip/edit/${id}`)}
                 >
                   Edit
                 </Button>
@@ -366,11 +362,6 @@ function TripPageHeader({trips}: any) {
                   variant={'light'}
                   leftIcon={<Trash size={17}/>}
                   onClick={() => mutateDeleteTrip(id)}
-                  component={Link}
-                  to={'/trips/'}
-                  styles={{
-                    inner: {color: 'red'}
-                  }}
                 >
                   Delete
                 </Button>

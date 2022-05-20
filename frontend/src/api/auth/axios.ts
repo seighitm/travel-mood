@@ -1,4 +1,5 @@
 import {$authHost, $host} from "../api";
+import useStore from "../../store/user.store";
 
 export const apiSignIn = async (payload: any) => {
   const {data} = await $host.post('auth/login', {user: payload});
@@ -11,6 +12,9 @@ export const apiSignUp = async (payload: any) => {
 };
 
 export const apiLogout = async () => {
+  useStore.setState({user: null});
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
   const {data} = await $host.get('auth/logout');
   return data;
 };

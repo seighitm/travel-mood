@@ -6,7 +6,6 @@ export const getCountOfNonReadMessages = async () => {
 };
 
 export const allMessages = async (chatId: any, massagesCount?: any) => {
-  console.log(massagesCount)
   const res = await $authHost.get('/message/' + chatId, {params: {massagesCount: massagesCount}});
   return res.data;
 };

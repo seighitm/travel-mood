@@ -2,8 +2,8 @@ import {ActionIcon, Button, createStyles, Skeleton, Table as MantineTable, Text,
 import * as React from "react";
 import {usePagination, useSortBy, useTable} from "react-table";
 
-import SortingIcon from "../../../common/tableComponents/sorting-icon";
-import handleSortBy from "../../../common/tableComponents/handle-sort-by";
+import SortingIcon from "../../../common/table/sorting-icon";
+import handleSortBy from "../../../common/table/handle-sort-by";
 import {useMutationDeleteTrip} from "../../../../api/trips/mutations";
 import {dateFormatedToIsoString} from "../../../common/Utils";
 import {Trash} from "../../../../assets/Icons";
@@ -121,14 +121,13 @@ const Table = ({
       <tbody {...getTableBodyProps()}>
       {page.map((row: any) => {
         prepareRow(row);
-        console.log(row.cells[0].getCellProps())
         return (
           <tr {...row.getRowProps()} key={row.id}>
             {row.cells.map((cell: any, index: any) => (
               <>
                 <td {...cell.getCellProps()} style={{width: '0%!important'}} key={index}>
                   {checkColumnTitle(cell, 'title')
-                    ? <Button compact variant={'subtle'} onClick={() => navigate('/trip/' + row.original.id)}>
+                    ? <Button compact variant={'subtle'} onClick={() => navigate('/admin/trip/' + row.original.id)}>
                       {cell.render("Cell")}
                     </Button>
                     : <Text lineClamp={checkColumnTitle(cell, 'title') ? 1 : undefined}

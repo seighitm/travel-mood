@@ -1,6 +1,7 @@
 import useStore from "../../store/user.store";
 import {useQuery} from "react-query";
 import {
+  apiGetAllComplaints,
   apiGetAllProfileVisits,
   apiGetUserById,
   filterUsers,
@@ -23,12 +24,16 @@ export const useGetAllProfileVisits = () => {
 
 //##################################################################################
 //##################################################################################
-export const useGetUserById = ({id, isEnabled = true}: {
+export const useGetUserById = ({id, isEnabled = true, onErrorEvent}: {
   id: number | string | undefined;
   isEnabled: boolean;
+  onErrorEvent?: any
 }) => {
   return useQuery(['users', 'one', id], () => apiGetUserById(id), {
     enabled: isEnabled,
+    onError: async (err: any) => {
+      if (err?.response.data.message == 'User not found!') onErrorEvent()
+    },
   });
 }
 
@@ -52,6 +57,10 @@ export const useGetAllFavorites = (typeOfFavoriteItem: any) =>
 
 export const useGetUsersByNameOrEmail= (searchField: any) =>
   useQuery(['users', 'byEmailOrName', searchField], () => getUsers({searchField}));
+
+export const useGetAllComplaints= () =>
+  useQuery(['complaints'], () => apiGetAllComplaints());
+
 
 export const useGetUsersWithAdminRole = (
   queryPageIndex: any,

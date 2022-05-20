@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {Container, Group} from '@mantine/core';
 import {useGetUserTrips} from '../../api/trips/queries';
 import TabItemComponent from './TabItemComponent';
-import {CustomLoader} from '../common/engine/Routes';
+import {CustomLoader} from '../common/CustomLoader';
 import {useIsFetching, useQueryClient} from "react-query";
 import CardTripRequest from "./CardTripRequest";
 import useStore from "../../store/user.store";
@@ -28,8 +28,6 @@ const AllTripRequests = () => {
       : 0
   }
   const {user, onlineUsers} = useStore((state: any) => state);
-
-  console.log(allRequestsCount)
 
   return (
     <Container>

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useMutateAddNewProfileVisit, useMutateUserProfileUpdateMap} from '../../api/users/mutations';
 import {useGetUserById} from '../../api/users/queries';
-import {useParams} from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 import {TypographyStylesProvider} from '@mantine/core';
 import {CustomLoader} from '../common/CustomLoader';
 import UserMap from '../maps/UserMap';
@@ -10,21 +10,31 @@ import chatStore from '../../store/chat.store';
 import UserInfo from './UserInfo';
 import UserPosts from './UserPosts';
 import UserImages from './UserImages';
-import {isNullOrUndefined} from "../../utils/primitive-checks";
+import {isEmptyArray, isNullOrUndefined} from "../../utils/primitive-checks";
+import {ROLE} from "../../types/enums";
 
 function UserProfile() {
   const {id} = useParams();
   const {user} = useStore((state: any) => state);
   const {socket} = chatStore((state: any) => state);
+  const navigate = useNavigate()
+
+  const onErrorEvent = () => {
+    if (user.role == ROLE.USER) {
+      navigate('/users')
+    } else {
+      navigate('/admin/users')
+    }
+  }
 
   const [visitedCountries, setVisitedCountries] = useState<any>(null);
   const [interestedCountries, setInterestedCountries] = useState<any>(null);
-  const {data, isFetching} = useGetUserById({id: id, isEnabled: true});
+  const {data, isFetching} = useGetUserById({id: id, isEnabled: true, onErrorEvent});
   const {mutate: mutateUpdateUserCountries, isLoading} = useMutateUserProfileUpdateMap();
   const {mutate: mutateUpdateAddNewVisit} = useMutateAddNewProfileVisit();
 
   useEffect(() => {
-    if (Number(id) != Number(user?.id)) {
+    if (!isNullOrUndefined(user) && Number(id) != Number(user?.id)) {
       mutateUpdateAddNewVisit(id)
     }
   }, [id])
@@ -51,14 +61,14 @@ function UserProfile() {
   return <>
     <TypographyStylesProvider>
       <UserInfo data={data} id={id}/>
-      {(data && data?.images != 0) &&
+      {!isNullOrUndefined(data) && !isEmptyArray(data.images) &&
         <UserImages images={data.images}/>
       }
-      {(data?.trips.length != 0 || data?.articles.length != 0) &&
+      {!isNullOrUndefined(data) && !isNullOrUndefined(data?.trips) && !isEmptyArray(data?.articles) &&
         <UserPosts articles={data?.articles} trips={data.trips}/>
       }
     </TypographyStylesProvider>
-    {visitedCountries != null && interestedCountries != null && (
+    {!isNullOrUndefined(visitedCountries) && !isNullOrUndefined(interestedCountries) &&
       <UserMap
         mutateSelectCountries={mutateUpdateUserCountries}
         isLoading={isLoading}
@@ -67,9 +77,8 @@ function UserProfile() {
         setVisitedCountries={setVisitedCountries}
         setinterestedCountries={setInterestedCountries}
         userId={id}
-        // geoDate={geoDate}
       />
-    )}
+    }
   </>
 }
 

@@ -1,8 +1,8 @@
 import {NextFunction, Request, Response, Router} from 'express';
-import {authM} from "../middlewares/auth.middleware";
+import {authMiddleware, roleCheckMiddleware} from "../middlewares/auth.middleware";
 import {
   activateUserProfile,
-  addInterestedVisitedCountries, admin_users,
+  admin_users,
   blockUserProfile,
   checkUserProfileViews,
   createProfileView,
@@ -19,14 +19,22 @@ import {
 import {IGetUserAuthInfoRequest} from "../utils/interfaces";
 import {asyncHandler} from "../utils/asyncHandler";
 import {switchRole} from "../services/auth.service";
-import {followUser, getProfile, setUserRating, unfollowUser} from "../services/profile.service";
+import {
+  followUser,
+  getAllComplaint,
+  getProfile,
+  sendComplaint,
+  setUserRating,
+  unfollowUser
+} from "../services/profile.service";
+
 const upload = require("../middlewares/fileUpload.middleware");
 // import {upload}  from "../middlewares/aws-multer"
 
 const router = Router();
 
 router.get('/user/all-favorites/:type',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await getAllFavoriteItems(req.params?.type, req.user?.id)
     res.json(user)
@@ -34,7 +42,7 @@ router.get('/user/all-favorites/:type',
 )
 
 router.get('/admin/users',
-  [authM.required],
+  [roleCheckMiddleware(['ADMIN'])],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await admin_users(req?.query)
     res.json(user)
@@ -49,7 +57,7 @@ router.get('/admin/users',
  * @returns search users
  */
 router.get('/user/profile-visits',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await getProfileViews(req.user.id)
     res.json(user);
@@ -64,7 +72,7 @@ router.get('/user/profile-visits',
  * @returns search users
  */
 router.put('/user/:id/block',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await blockUserProfile(req.params.id, req.body.expiredBlockDate)
     res.json(user);
@@ -78,7 +86,7 @@ router.put('/user/:id/block',
  * @returns ProfileViews
  */
 router.put('/user/profile-visits',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const profileViews = await checkUserProfileViews(req.user?.id)
     res.json(profileViews);
@@ -106,7 +114,7 @@ router.put('/user/profile-visits',
  * @returns User
  */
 router.put('/user/:id/activate',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await activateUserProfile(req.params?.id)
     res.json(user);
@@ -120,7 +128,7 @@ router.put('/user/:id/activate',
  * @returns User
  */
 router.put('/user/images',
-  [authM.required, upload.array("images[]")],
+  [authMiddleware.required, upload.array("images[]")],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await updateUserImages(req?.user.id, req.body, req.files)
     res.json(user);
@@ -134,7 +142,7 @@ router.put('/user/images',
  * @returns User
  */
 router.put('/user/general-info',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await updateUserGeneralInfo(req?.user.id, req.body)
     res.json(user);
@@ -148,7 +156,7 @@ router.put('/user/general-info',
  * @returns User
  */
 router.put('/user/personal-info',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await updateUserPersonalInfo(req?.user.id, req.body)
     res.json(user);
@@ -162,7 +170,7 @@ router.put('/user/personal-info',
  * @returns User
  */
 router.put('/user/map',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     console.log(req.body)
     const user = await updateUserMap(req?.user.id, req.body)
@@ -177,7 +185,7 @@ router.put('/user/map',
  * @returns User
  */
 router.put('/user/profile-visits/:id',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await createProfileView(req.user.id, req.params.id)
     res.json(user);
@@ -192,7 +200,7 @@ router.put('/user/profile-visits/:id',
  * @returns search users
  */
 router.get('/user/:id',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     // if (req.user)
     //   await createProfileView(req.user.id, req.params.id)
@@ -209,7 +217,7 @@ router.get('/user/:id',
  * @returns User
  */
 router.put('/user/:id/switch-role',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await switchRole(req.params?.id)
     res.json(user);
@@ -223,7 +231,7 @@ router.put('/user/:id/switch-role',
  * @returns User
  */
 router.get('/users',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const user = await fullSearchUsers(req?.query)
     res.json(user);
@@ -236,8 +244,8 @@ router.get('/users',
  * @route {POST} /users/:userId/rating/:rating
  * @returns profiles
  */
-router.post('/users/:userId/rating/:rating',
-  [authM.required],
+router.post('/user/:userId/rating/:rating',
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const profile = await setUserRating(req.params.userId, req.params.rating, req.user!.id);
     res.json(profile);
@@ -251,8 +259,8 @@ router.post('/users/:userId/rating/:rating',
  * @param ID
  * @returns profiles
  */
-router.delete('/users/:id/follow',
-  [authM.required],
+router.delete('/user/:id/follow',
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const profile = await unfollowUser(req.params.id, req.user!.id);
     res.json({profile});
@@ -266,15 +274,45 @@ router.delete('/users/:id/follow',
  * @param username string
  * @returns Profile profile of an user
  */
-router.post('/users/:id/follow',
-  [authM.required],
+router.post('/user/:id/follow',
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const profile = await followUser(req.params?.id, req.user!.id);
     res.json({profile});
   })
 );
 
+/**
+ * Follow user
+ * @auth required
+ * @route {POST} /profiles/:id/follow
+ * @param username string
+ * @returns Profile profile of an user
+ */
+router.post('/user/:id/complaint',
+  [authMiddleware.required, upload.single("image")],
+  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    console.log(req?.user.id, req.params?.id, req?.body?.reason, req.file)
+    console.log(req?.body)
+    const complaint = await sendComplaint(req?.user.id, req.params?.id, req?.body?.reason, req.file);
+    res.json(complaint);
+  })
+);
 
+/**
+ * Follow user
+ * @auth required
+ * @route {POST} /profiles/:id/follow
+ * @param username string
+ * @returns Profile profile of an user
+ */
+router.get('/users/complaint',
+  [authMiddleware.required],
+  asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    const complaint = await getAllComplaint();
+    res.json(complaint);
+  })
+);
 
 export default router;
 
@@ -295,7 +333,7 @@ export default router;
  */
 router.get(
   '/profiles/:id',
-  authM.required,
+  authMiddleware.required,
   async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     try {
       const profile = await getProfile(req.params.id, req.user?.id);
@@ -315,7 +353,7 @@ router.get(
  * @returns search users
  */
 router.get('/users/llllllllllllllll',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const users = await getUsersByNameOrEmail(req.query?.searchField)
     res.json(users);

@@ -1,6 +1,6 @@
 import {IGetUserAuthInfoRequest} from "../utils/interfaces";
 import {NextFunction, Response, Router} from "express";
-import {authM} from "../middlewares/auth.middleware";
+import {authMiddleware, roleCheckMiddleware} from "../middlewares/auth.middleware";
 import {
   accessChat,
   addUsersToGroupChat,
@@ -22,7 +22,7 @@ const router = Router();
  * @returns created chat
  */
 router.post('/chat',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const chat = await accessChat(req.body, req?.user?.id)
     res.json(chat);
@@ -36,7 +36,7 @@ router.post('/chat',
  * @returns array of chats
  */
 router.get('/chat',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const chats = await getMyChats(req.user.id)
     res.json(chats);
@@ -52,7 +52,7 @@ router.get('/chat',
  * @returns created group chat
  */
 router.post('/chat/group',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const groupChat = await createGroupChat(req.body?.users, req.body?.chatName, req?.user?.id)
     res.json(groupChat);
@@ -68,7 +68,7 @@ router.post('/chat/group',
  * @returns updated group chat
  */
 router.put('/chat/group',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const {chatId, chatName} = req.body;
     const groupChat = await updateGroupChatName(chatName, chatId, req?.user?.id)
@@ -85,7 +85,7 @@ router.put('/chat/group',
  * @returns updated group chat
  */
 router.delete('/chat/group',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const {chatId, usersId} = req.body;
     const groupChat = await deleteGroupChat(chatId, usersId)
@@ -102,7 +102,7 @@ router.delete('/chat/group',
  * @returns updated group chat
  */
 router.put('/chat/group/users',
-  authM.required,
+  authMiddleware.required,
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const groupChat = await addUsersToGroupChat(req.body)
     res.json(groupChat)
@@ -118,7 +118,7 @@ router.put('/chat/group/users',
  * @returns updated group chat
  */
 router.delete('/chat/group/users',
-  authM.required,
+  authMiddleware.required,
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const groupChat = await removeUsersFromGroupChat(req.body)
     res.json(groupChat)

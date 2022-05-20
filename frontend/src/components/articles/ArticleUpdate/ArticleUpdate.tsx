@@ -1,19 +1,8 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Divider,
-  Grid,
-  Image,
-  LoadingOverlay,
-  MultiSelect,
-  SimpleGrid,
-  TextInput,
-} from '@mantine/core';
+import {ActionIcon, Box, Button, Divider, Grid, Image, MultiSelect, SimpleGrid, TextInput,} from '@mantine/core';
 import {useNavigate, useParams} from 'react-router-dom';
 import Editor from '../../common/editor/Editor';
-import DropzoneArea from '../../common/dropzone/DropzoneArea';
+import DropzoneArea from '../../common/DropzoneArea';
 import {useTagsQuery} from '../../../api/tags/queries';
 import UploadImagesComponent from './UploadImagesComponent';
 import {useForm} from '@mantine/form';
@@ -21,9 +10,7 @@ import {ArrowBackUp, Check, DeviceFloppy, X} from '../../../assets/Icons';
 import {useGetLocations} from '../../../api/countries/queries';
 import {useMutationUpdateArticle} from "../../../api/articles/mutations";
 import {useOneArticleQuery} from "../../../api/articles/queries";
-import {removeFiles} from "../../../api/utils/axios";
 import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
-import {useQueryClient} from "react-query";
 
 function ArticleUpdate() {
   let {id} = useParams();

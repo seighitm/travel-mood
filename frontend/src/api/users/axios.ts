@@ -41,12 +41,12 @@ export const apiUpdateUser = async (payload: any) => {
 };
 
 export const apiUserFollow = async (userId: string) => {
-  const {data} = await $authHost.post(`users/${userId}/follow`);
+  const {data} = await $authHost.post(`user/${userId}/follow`);
   return data;
 };
 
 export const apiUserUnFollow = async (userId: string) => {
-  const {data} = await $authHost.delete(`users/${userId}/follow`);
+  const {data} = await $authHost.delete(`user/${userId}/follow`);
   return data;
 };
 
@@ -56,7 +56,7 @@ export const apiGetUserById = async (id: any) => {
 };
 
 export const apiSetUserRating = async ({userId, rating}: any) => {
-  const {data} = await $authHost.post(`users/${userId}/rating/${rating}`);
+  const {data} = await $authHost.post(`user/${userId}/rating/${rating}`);
   return data;
 };
 
@@ -76,9 +76,18 @@ export const apiUserAccountActivate = async ({userId}: any) => {
 };
 
 export const getFavorites = async (queryKey: any) => {
-  console.log(queryKey)
   const res = await $authHost.get('user/all-favorites/' + queryKey);
   return res.data;
+};
+
+export const apiSendComplaint = async ({profileId, complaintPayload}: any) => {
+  const {data} = await $authHost.post(`user/${profileId}/complaint`, complaintPayload);
+  return data;
+};
+
+export const apiGetAllComplaints = async () => {
+  const {data} = await $authHost.get(`users/complaint`);
+  return data;
 };
 
 export const filterUsers = async (payload: any) => {
@@ -117,7 +126,7 @@ export const getUsersWithAdminRole = async (
   sortBy: any,
   order: any,
 ) => {
-  const {data} = await $host.get('/admin/users',{
+  const {data} = await $authHost.get('/admin/users',{
     params: {
       page,
       limit,

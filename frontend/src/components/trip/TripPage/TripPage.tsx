@@ -13,34 +13,31 @@ import TripContentInfo from './TripContentInfo';
 import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
 import {dateFormatedToIsoString} from "../../common/Utils";
 import UserTripCard from "../../profile/UserTripCard";
+import {ROLE} from "../../../types/enums";
 
 function TripPage() {
   const {id} = useParams();
+  const navigate = useNavigate()
   const {user} = useStore((state: any) => state);
-  const {mutate: mutateCommentRemoveFromTrip} = useMutationRemoveCommentFromTrip();
 
   const onErrorEvent = () => {
-    if (user.role == 'USER')
+    if (user.role == ROLE.USER) {
       navigate('/trips')
-    else
+    } else {
       navigate('/admin/trips')
+    }
   }
 
-  const {data: dbTrip, isFetching: isFetchingDbTrip, isError} = useOneTripsQuery({id, onErrorEvent});
+  const {mutate: mutateCommentRemoveFromTrip} = useMutationRemoveCommentFromTrip();
+  const {data: dbTrip, isFetching: isFetchingDbTrip} = useOneTripsQuery({id, onErrorEvent});
   const {mutate: mutateCreateComment, isLoading: isLoadingCreateComment} = useMutateAddCommentToTrip();
-  console.log(dbTrip)
-  const navigate = useNavigate()
-
-  const {data: dbTrips, isFetching: isFetchingDbTrips, refetch: refetchDbTrips} =
-    useTripsQuery({
-      filterFields: {
-        destinations: dbTrip?.destinations?.map((item: any) => item.name),
-      },
-      page: 1,
-      isEnabled: dbTrip != null,
-    });
-
-  console.log(dbTrips)
+  const {data: dbTrips} = useTripsQuery({
+    filterFields: {
+      destinations: dbTrip?.destinations?.map((item: any) => item.name)
+    },
+    isEnabled: dbTrip != null,
+    page: 1,
+  });
 
   if (isFetchingDbTrip)
     return <CustomLoader/>;
@@ -62,37 +59,42 @@ function TripPage() {
         </>
       }
 
-      <Divider my={'md'} style={{width: '100%'}} label={'Info:'}/>
-
       {dbTrips?.trips &&
-        <Accordion>
-          <Accordion.Item label="Offers to similar locations">
-            {dbTrips?.trips.map((trip: any) =>
-              <UserTripCard trip={trip}/>
-            )}
-          </Accordion.Item>
-        </Accordion>
+        <>
+          <Divider my={'md'} style={{width: '100%'}} label={'Info:'}/>
+          <Accordion>
+            <Accordion.Item label="Offers to similar locations">
+              {dbTrips?.trips.map((trip: any) =>
+                <UserTripCard trip={trip}/>
+              )}
+            </Accordion.Item>
+          </Accordion>
+        </>
       }
 
-      <Divider my={'md'} style={{width: '100%'}} label={'Comments:'}/>
-      {!isNullOrUndefined(user) &&
+      {!isNullOrUndefined(user) && !isNullOrUndefined(dbTrip) &&
         <EditCommentBox
-          id={dbTrip.id}
+          id={dbTrip?.id}
           mutateCreateComment={mutateCreateComment}
           isLoading={isLoadingCreateComment}
         />
       }
+
       {!isNullOrUndefined(dbTrip) && !isEmptyArray(dbTrip?.tripComments) &&
-        dbTrip?.tripComments.map((item: any) => (
-          <CommentBox
-            body={item.comment}
-            key={item.id}
-            mutateRemoveComment={mutateCommentRemoveFromTrip}
-            author={item?.user}
-            commentId={item.id}
-            postedAt={dateFormatedToIsoString(item.createdAt)}
-          />
-        ))}
+        <>
+          <Divider my={'md'} style={{width: '100%'}} label={'Comments:'}/>
+          {dbTrip?.tripComments.map((item: any) =>
+            <CommentBox
+              body={item.comment}
+              key={item.id}
+              mutateRemoveComment={mutateCommentRemoveFromTrip}
+              author={item?.user}
+              commentId={item.id}
+              postedAt={dateFormatedToIsoString(item.updatedAt)}
+            />
+          )}
+        </>
+      }
     </>
   );
 }

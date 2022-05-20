@@ -32,6 +32,5 @@ export const cutString: any = (message: string, length: number = 15) => {
 }
 
 export const dateFormatedToIsoString: any = (date: Date | any) => {
-  console.log(date)
   return new Date(date).toISOString().split('T')[0]
 }

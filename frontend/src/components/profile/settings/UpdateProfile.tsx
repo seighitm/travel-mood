@@ -12,7 +12,6 @@ function UpdateProfile() {
   const navigate = useNavigate();
   const {user} = useStore((state: any) => state);
   const {data, isFetching} = useGetUserById({id: user.id, isEnabled: true});
-
   if (isFetching) return <CustomLoader/>;
 
   return <>
@@ -43,7 +42,7 @@ function UpdateProfile() {
             />
           }
         </Group>
-        <Button onClick={() => navigate('/user/' + data.id + '/images')}>
+        <Button onClick={() => navigate(`${user.role == 'ADMIN' ? '/admin' : ''}/user/${data.id}/images`)}>
           Show all images
         </Button>
       </Group>

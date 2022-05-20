@@ -1,13 +1,13 @@
 import {IGetUserAuthInfoRequest} from "../utils/interfaces";
 import {NextFunction, Response, Router} from "express";
-import {authM} from "../middlewares/auth.middleware";
+import {authMiddleware} from "../middlewares/auth.middleware";
 import {createMarker, getAllMarkers, getMarkerById} from "../services/map.service";
 import {asyncHandler} from "../utils/asyncHandler";
 
 const router = Router();
 
 router.get('/info/markers',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const mapItems = await getAllMarkers()
     res.json(mapItems);
@@ -15,7 +15,7 @@ router.get('/info/markers',
 )
 
 router.get('/info/markers/:id',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const marker: any = await getMarkerById(req.params?.id)
     res.json(marker?.trip);
@@ -23,7 +23,7 @@ router.get('/info/markers/:id',
 )
 
 router.post('/info/markers',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest | any, res: Response, next: NextFunction) => {
     const marker = await createMarker(req.body.place, req.body.description)
     res.json(marker);

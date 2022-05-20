@@ -9,7 +9,6 @@ import dayjs from 'dayjs';
 const PersonalInfo = ({form, handleSubmit, setStateRegistration}: any) => {
   const {data: dbLanguages} = useGetLanguages({});
   const {data: dbLocations} = useGetLocations({});
-  console.log(dbLocations)
   return (
     <form onSubmit={form.onSubmit(handleSubmit)}>
       <DatePicker

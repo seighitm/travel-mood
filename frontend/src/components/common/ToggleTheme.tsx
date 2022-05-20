@@ -4,7 +4,6 @@ import {MoonIcon, SunIcon} from "@modulz/radix-icons";
 
 function ToggleTheme() {
   const {colorScheme, toggleColorScheme} = useMantineColorScheme();
-  console.log('misa')
   return (
     <Group position="center">
       <ActionIcon
@@ -16,8 +15,9 @@ function ToggleTheme() {
           color: theme.colorScheme === 'dark' ? theme.colors.yellow[4] : theme.colors.blue[6],
         })}
       >
-        {colorScheme === 'dark' ? <SunIcon style={{width: '20px', height: '20px'}}/> :
-          <MoonIcon style={{width: '20px', height: '20px'}}/>}
+        {colorScheme === 'dark'
+          ? <SunIcon style={{width: '20px', height: '20px'}}/>
+          : <MoonIcon style={{width: '20px', height: '20px'}}/>}
       </ActionIcon>
     </Group>
   );

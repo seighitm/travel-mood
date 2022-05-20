@@ -4,9 +4,6 @@ import {isEmptyArray, isNullOrUndefined, isString} from "../utils/primitive-chec
 import {s3} from "../middlewares/aws-multer";
 
 export const removeFiles = async (files: any): Promise<any> => {
-  console.log('^^^^^^^^^')
-  console.log(files)
-  console.log('^^^^^^^^^')
   if (!isNullOrUndefined(files) && !isEmptyArray(files) && isString(files[0])) {
     for (let i = 0; files.length; i++) {
       if (files[i]) {

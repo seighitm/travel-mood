@@ -1,11 +1,12 @@
 import React from 'react';
-import {Avatar, Button, Group, Indicator, Paper, SimpleGrid, Text, UnstyledButton,} from '@mantine/core';
+import {Avatar, Badge, Button, Group, Indicator, Paper, SimpleGrid, Text, UnstyledButton,} from '@mantine/core';
 import {useMutateAccessChat} from '../../api/chat/mutations';
 import useStore from '../../store/user.store';
 import {useNavigate} from 'react-router-dom';
 import {userPicture} from "../common/Utils";
 import {useFollowMutate, useUnFollowMutate} from "../../api/users/mutations";
 import {MessageDots, Star} from "../../assets/Icons";
+import {isNullOrUndefined} from "../../utils/primitive-checks";
 
 interface UserCardComponentProps {
   picture: string;
@@ -13,10 +14,14 @@ interface UserCardComponentProps {
   id: number;
   onlineUsers: any
   isFollowedByUser: boolean;
+  role: string;
 }
 
-export function UserCard({picture, name, id, isFollowedByUser, onlineUsers}: UserCardComponentProps) {
+export function UserCard({role, picture, name, id, isFollowedByUser, onlineUsers}: UserCardComponentProps) {
   const navigate = useNavigate();
+
+  console.log(role)
+
   const {user} = useStore((state: any) => state);
   const {mutate: mutateAccessChat} = useMutateAccessChat();
 
@@ -46,6 +51,11 @@ export function UserCard({picture, name, id, isFollowedByUser, onlineUsers}: Use
         backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
       })}
     >
+      {!isNullOrUndefined(role) && role == 'ADMIN' &&
+        <Badge style={{position: 'absolute'}} size={'lg'} color="pink">
+          {role}
+        </Badge>
+      }
       <Group position="center">
         <Indicator
           size={20}

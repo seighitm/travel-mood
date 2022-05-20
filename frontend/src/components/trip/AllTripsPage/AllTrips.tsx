@@ -11,25 +11,13 @@ import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
 function AllTrips() {
   const {page} = useParams()
   const queryClient = useQueryClient();
-
-  const [languages, setLanguages] = useState<any>([]);
-  const [destinations, setDestinations] = useState<any>([]);
-  const [sex, setSex] = useState<any>('');
-  const [date, setDate] = useState<any>([]);
-  const [age, setAge] = useState<any>('');
-  const [budget, setBudget] = useState<any>(0);
   const [activePage, setActivePage] = useState<any>(1);
+
+
 
   const {data: dbTrips, isFetching: isFetchingDbTrips, refetch: refetchDbTrips} =
     useTripsQuery({
-      filterFields: {
-        destinations: destinations,
-        languages: languages,
-        sex: sex,
-        date: date,
-        age: age,
-        budget: budget
-      },
+      filterFields: {},
       page: activePage,
     });
 
@@ -37,28 +25,10 @@ function AllTrips() {
     refetchDbTrips()
   }, [activePage, page])
 
-  React.useCallback(async () => {
-    if (sex == '' && languages.length == 0 && destinations.length == 0) {
-      await refetchDbTrips();
-    }
-  }, [destinations, languages, sex]);
-
   return <>
     <SearchTripsComponent
+      activePage={activePage}
       setActivePage={setActivePage}
-      refetchDbTrips={refetchDbTrips}
-      sex={sex}
-      date={date}
-      setDate={setDate}
-      age={age}
-      setAge={setAge}
-      budget={budget}
-      setBudget={setBudget}
-      languages={languages}
-      destinations={destinations}
-      setSex={setSex}
-      setDestinations={setDestinations}
-      setLanguages={setLanguages}
     />
     {isFetchingDbTrips && isNullOrUndefined(queryClient.getQueryData(['trips', 'all']))
       ? <CardTripSkeleton/>

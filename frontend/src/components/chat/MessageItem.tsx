@@ -52,7 +52,7 @@ function MessageItem({message, isRead, selectedMessage, setSelectedMessage}: any
                         : theme.colors.dark[3]
                       : isRead
                         ? theme.colors.gray[2]
-                        : theme.colors.gray[6],
+                        : theme.colors.gray[4],
                   border: `1px solid ${
                     theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[2]
                   }`,

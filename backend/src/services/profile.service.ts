@@ -3,6 +3,7 @@ import prisma from "../../prisma/PrismaClient";
 import profileSelector from "../selectors/profile.selector";
 import ApiError from "../utils/api-error";
 import profileMapper from "../mappers/profile.mapper";
+import {isEmptyString, isNullOrUndefined} from "../utils/primitive-checks";
 
 export const getProfile = async (
   userId: number | string,
@@ -101,3 +102,64 @@ export const setUserRating =
     return Math.floor(avg);
   };
 
+export const sendComplaint = async (userId: number, profileId: string, reason: string, image: any): Promise<any> => {
+  if (isNullOrUndefined(userId)) {
+    throw new ApiError(404, {message: 'User ID is not defined!'});
+  } else if (isNullOrUndefined(reason)) {
+    throw new ApiError(404, {message: 'Reason is not send!'});
+  } else if (isEmptyString(reason)) {
+    throw new ApiError(404, {message: 'Reason is empty!'});
+  }
+
+  const complaint = await prisma.complaint.create({
+    data: {
+      user: {
+        connect: {
+          id: Number(userId)
+        }
+      },
+      profile: {
+        connect: {
+          id: Number(profileId)
+        }
+      },
+      reason: reason,
+      ...(image
+          ? {
+            image: {
+              create: {
+                image: image.filename
+              }
+            },
+          } : {}
+      ),
+    },
+  });
+
+  return complaint;
+};
+
+export const getAllComplaint = async (): Promise<any> => {
+  const complaints = await prisma.complaint.findMany({
+    include: {
+      image: true,
+      user: {
+        select: {
+          id: true,
+          picture: true,
+          firstName: true,
+          lastName: true
+        }
+      },
+      profile: {
+        select: {
+          id: true,
+          picture: true,
+          firstName: true,
+          lastName: true
+        }
+      }
+    }
+  });
+  return complaints;
+};

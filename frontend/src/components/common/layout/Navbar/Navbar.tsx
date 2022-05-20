@@ -2,17 +2,15 @@ import React from 'react';
 import {Badge, Box, createStyles, Divider, Navbar, ScrollArea, UnstyledButton,} from '@mantine/core';
 import {
   Adjustments,
-  Bulb,
   Check,
-  Checkbox,
   Compass,
   Directions,
   Eye,
   Heart,
-  Logout, MessageDots,
+  Logout,
+  MessageDots,
   Pencil,
   Plane,
-  Selector,
   Settings,
   User,
 } from '../../../../assets/Icons';
@@ -40,15 +38,6 @@ const useStyles = createStyles((theme) => ({
     //         theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
     //     }`,
     // },
-  },
-
-  searchCode: {
-    fontWeight: 700,
-    fontSize: 10,
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[0],
-    border: `1px solid ${
-      theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[2]
-    }`,
   },
 
   mainLinks: {
@@ -97,12 +86,6 @@ const useStyles = createStyles((theme) => ({
     paddingBottom: theme.spacing.md,
   },
 
-  collectionsHeader: {
-    paddingLeft: theme.spacing.md + 2,
-    paddingRight: theme.spacing.md,
-    marginBottom: 5,
-  },
-
   collectionLink: {
     display: 'block',
     padding: `8px ${theme.spacing.xs}px`,
@@ -118,54 +101,13 @@ const useStyles = createStyles((theme) => ({
       color: theme.colorScheme === 'dark' ? theme.white : theme.black,
     },
   },
-  linkActive: {
-    '&, &:hover': {
-      backgroundColor:
-        theme.colorScheme === 'dark'
-          ? theme.fn.rgba(theme.colors[theme.primaryColor][9], 0.25)
-          : theme.colors[theme.primaryColor][0],
-      color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 3 : 7],
-    },
-  },
-  link: {
-    display: 'block',
-    lineHeight: 1,
-    padding: '8px 12px',
-    borderRadius: theme.radius.sm,
-    textDecoration: 'none',
-    color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.colors.gray[7],
-    fontSize: theme.fontSizes.sm,
-    fontWeight: 500,
-
-    '&:hover': {
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-    },
-  },
 }));
 
-const links2 = [
-  {icon: Bulb, label: 'Activity', notifications: 3},
-  {icon: Checkbox, label: 'Tasks', notifications: 4},
-  {icon: User, label: 'Contacts'},
-];
-
-const collections = [
-  {emoji: '👍', label: 'Sales'},
-  {emoji: '🚚', label: 'Deliveries'},
-  {emoji: '💸', label: 'Discounts'},
-  {emoji: '💰', label: 'Profits'},
-  {emoji: '✨', label: 'Reports'},
-  {emoji: '🛒', label: 'Orders'},
-  {emoji: '📅', label: 'Events'},
-  {emoji: '🙈', label: 'Debts'},
-  {emoji: '💁‍♀️', label: 'Customers'},
-];
-
-const CustomNavbar = ({setOpenedDrawer, links, guestsCounter, travelRequestsCounter}: any) => {
-  const {classes, theme, cx} = useStyles();
+const CustomNavbar = ({setOpenedDrawer, guestsCounter, travelRequestsCounter}: any) => {
+  const {classes, theme} = useStyles();
+  const {user} = useStore((state: any) => state);
   const navigate = useNavigate();
   const {data: nonReadMessages} = useGetCountOfNonReadMessages();
-  const {user} = useStore((state: any) => state);
 
   const {mutate: mutateLogout} = useMutateLogout();
 
@@ -173,44 +115,15 @@ const CustomNavbar = ({setOpenedDrawer, links, guestsCounter, travelRequestsCoun
     await mutateLogout();
   };
 
-  // const items = links.map((link: any) => (
-  //     <a
-  //         key={link.label}
-  //         href={link.link}
-  //         className={cx(classes.link, {[classes.linkActive]: active === link.link})}
-  //         onClick={(event) => {
-  //             event.preventDefault();
-  //             navigate(link.link)
-  //         }}
-  //
-  //     >
-  //         {link.label}
-  //     </a>
-  // ));
-  // const mainLinks = () => <div></div>
-  const mainLinks = links2.map((link: any) => (
-    <UnstyledButton key={link.label} className={classes.mainLink}>
-      <div className={classes.mainLinkInner}>
-        <link.icon size={20} className={classes.mainLinkIcon}/>
-        <span>{link.label}</span>
-      </div>
-      {link.notifications && (
-        <Badge size="sm" variant="filled" className={classes.mainLinkBadge}>
-          {link.notifications}
-        </Badge>
-      )}
-    </UnstyledButton>
-  ));
-
   const collectionLinks = HEADER_LINKS.map((link: any) => (
     <UnstyledButton
+      key={link.label}
+      className={classes.mainLink}
       onClick={(event: any) => {
         event.preventDefault();
         setOpenedDrawer(false);
         navigate(link.link);
       }}
-      key={link.label}
-      className={classes.mainLink}
     >
       <div className={classes.mainLinkInner}>
         <link.icon size={20} className={classes.mainLinkIcon}/>
@@ -223,21 +136,6 @@ const CustomNavbar = ({setOpenedDrawer, links, guestsCounter, travelRequestsCoun
       )}
     </UnstyledButton>
   ));
-  //     .map((collection: any) => (
-  //     <a
-  //         href={collection.link}
-  //         onClick={(event) => {
-  //             event.preventDefault();
-  //             setOpenedDrawer(false)
-  //             navigate(collection.link)
-  //         }}
-  //         key={collection.label}
-  //         className={classes.collectionLink}
-  //     >
-  //         <span style={{marginRight: 9, fontSize: 16}}>{collection.emoji}</span>
-  //         {collection.label}
-  //     </a>
-  // ));
 
   return (
     <Navbar width={{sm: 300}} p="md" className={classes.navbar}>
@@ -251,9 +149,9 @@ const CustomNavbar = ({setOpenedDrawer, links, guestsCounter, travelRequestsCoun
             </>
           }
         />
-
-        <div className={classes.collections}>{collectionLinks}</div>
-
+        <div className={classes.collections}>
+          {collectionLinks}
+        </div>
         <Divider
           style={{width: '100%'}}
           label={
@@ -285,11 +183,11 @@ const CustomNavbar = ({setOpenedDrawer, links, guestsCounter, travelRequestsCoun
           </UnstyledButton>
 
           <UnstyledButton
+            className={classes.mainLink}
             onClick={() => {
               setOpenedDrawer(false);
               navigate('/view');
             }}
-            className={classes.mainLink}
           >
             <div className={classes.mainLinkInner}>
               <Eye color={theme.colors.green[6]} size={20} className={classes.mainLinkIcon}/>
@@ -413,13 +311,7 @@ const CustomNavbar = ({setOpenedDrawer, links, guestsCounter, travelRequestsCoun
       </Navbar.Section>
 
       <Navbar.Section className={classes.section}>
-        <UserButton
-          setOpenedDrawer={setOpenedDrawer}
-          image="https://i.imgur.com/fGxgcDF.png"
-          name="Bob Rulebreaker"
-          email="Product owner"
-          icon={<Selector size={14}/>}
-        />
+        <UserButton setOpenedDrawer={setOpenedDrawer}/>
       </Navbar.Section>
     </Navbar>
   );

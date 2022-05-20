@@ -12,7 +12,7 @@ import {
   TextInput,
   ThemeIcon
 } from '@mantine/core';
-import DropzoneArea from '../../common/dropzone/DropzoneArea';
+import DropzoneArea from '../../common/DropzoneArea';
 import UploadImagesSection from './UploadImagesComponent';
 import {useGetLocations} from '../../../api/countries/queries';
 import {Check, DeviceFloppy, X} from "../../../assets/Icons";
@@ -21,7 +21,6 @@ import {FilePlusIcon} from "@modulz/radix-icons";
 import Editor from "../../common/editor/Editor";
 import {useTagsQuery} from "../../../api/tags/queries";
 import {useForm} from "@mantine/form";
-import {removeFiles} from "../../../api/utils/axios";
 
 function ArticleCreate() {
   const openRef = useRef<any>();
@@ -138,8 +137,8 @@ function ArticleCreate() {
           ref={openRef}
           type={'file'}
           onChange={(e: any) => {
-            setTitleImage(null)
-            openRef.current.value = ''
+            // setTitleImage(null)
+            // openRef.current.value = ''
             setTitleImage(e.target.files[0])
           }}
         />
@@ -223,7 +222,6 @@ function ArticleCreate() {
         }
 
         <DropzoneArea
-          titleImage={titleImage}
           setFiles={setArticleImages}
           files={articleImages}
         />

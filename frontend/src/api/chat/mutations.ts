@@ -11,7 +11,6 @@ export const useMutateAccessChat = () => {
   const {directSetSelectedChat} = chatStore((state: any) => state);
   return useMutation('accessChat', (userId: any) => accessChat(userId), {
     onSuccess: async (data: any) => {
-      console.log(data)
       socket.emit("join chat", data.id)
       socket.emit("post-reconnect-to-rooms", data?.users?.map((item: any) => item.id))
       await queryClient.invalidateQueries('fetchMyChats');
@@ -52,7 +51,6 @@ export const useMutateAddUsersToGroupChat = () => {
   const {directSetSelectedChat} = chatStore((state: any) => state);
   return useMutation('accessChat', ({chatId, usersId}: any) => addUsersToGroup({chatId, usersId}), {
     onSuccess: async (data: any) => {
-      console.log(data)
       socket.emit("post-reconnect-to-rooms", data.newUsers?.map((item: any) => item))
 
       // for (let i = 0; i < data.newUsers.length; i++) {

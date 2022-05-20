@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {Button, Text, Group, RingProgress, ScrollArea} from '@mantine/core';
+import {Button, Group, RingProgress, ScrollArea, Text} from '@mantine/core';
 import ChatItem from './ChatItem';
 import {CustomLoader} from '../common/CustomLoader';
 import {useDisclosure, useMediaQuery} from "@mantine/hooks";
@@ -20,40 +20,24 @@ const MyChat = ({
                   handlersCreateChatGroupModal
                 }: any) => {
   const queryClient = useQueryClient();
-
   const matches = useMediaQuery('(min-width: 1000px)');
   const {selectedChat} = chatStore((state: any) => state);
   const {user, setOnlineUsers, fetchUser} = useStore((state: any) => state);
-
+  const matches2 = useMediaQuery('(min-width: 769px)');
   const [openedChatDetailsModal, handlersChatDetailsModal] = useDisclosure(false);
-
   const {data: nonReadMessages} = useGetCountOfNonReadMessages();
 
   useEffect(() => {
-    queryClient.invalidateQueries(['messages', 'non-read']);
+    if (queryClient.getQueryData(['messages', 'non-read']) != undefined){
+      queryClient.invalidateQueries(['messages', 'non-read']);
+    }
   }, [])
 
   const getChatById = (chatId: number | string) => dataFetchMyChats?.find((chat: any) => chat.id == chatId)
-  // console.log(getChatById(selectedChat.id)?.groupAdmin.id)
-  // console.log(user?.id)
-  const matches2 = useMediaQuery('(min-width: 769px)');
-
 
   if (isLoadingChats) return <CustomLoader/>;
 
   return <>
-    <RingProgress
-      label={
-        <Text size="xs" align="center">
-          Application data usage
-        </Text>
-      }
-      sections={[
-        { value: 40, color: 'cyan' },
-        { value: 15, color: 'orange' },
-        { value: 15, color: 'grape' },
-      ]}
-    />
     {getChatById(selectedChat.id)?.groupAdmin.id != user.id
       ? <ModalChatParticipants
         openedChatDetailsModal={openedChatDetailsModal}

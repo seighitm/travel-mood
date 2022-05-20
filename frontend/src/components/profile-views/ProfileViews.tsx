@@ -19,7 +19,7 @@ function ProfileViews() {
   return <Container size={'md'}>
     <Grid>
       {data?.guests.map((item: any) => (
-        <Grid.Col xs={12} sm={6} md={4} xl={4} lg={4} key={item.user.name}>
+        <Grid.Col xs={12} sm={6} md={4} lg={3} xl={3} key={item.user.name}>
           <Card
             shadow="sm"
             p="xl"
@@ -34,12 +34,12 @@ function ProfileViews() {
                 onClick={() => navigate('/user/' + item.user.id)}
                 caption={`${item.user?.lastName} ${item.user?.firstName}`}
                 src={userPicture(item.user)}
-                height={180}
+                height={150}
                 alt="User image."
               />
             </Card.Section>
             <Group position={'center'}>
-              <Badge>{new Date(item.createdAt).toISOString().split('T')[0]}</Badge>
+              <Badge>{new Date(item.updatedAt).toISOString().split('T')[0]}</Badge>
             </Group>
           </Card>
         </Grid.Col>

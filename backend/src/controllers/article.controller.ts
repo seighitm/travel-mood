@@ -13,7 +13,7 @@ import {
   updateArticle,
 } from '../services/article.service';
 import {IGetUserAuthInfoRequest} from "../utils/interfaces";
-import {authM} from "../middlewares/auth.middleware";
+import {authMiddleware, roleCheckMiddleware} from "../middlewares/auth.middleware";
 import {asyncHandler} from "../utils/asyncHandler";
 
 const upload = require("../middlewares/fileUpload.middleware");
@@ -29,7 +29,7 @@ const router = Router();
  * @returns {Promise} Promise
  */
 router.get('/admin/articles',
-  [authM.required],
+  [roleCheckMiddleware(['ADMIN'])],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const articles = await getArticlesForAdmin(req.query);
     res.json(articles);
@@ -43,7 +43,7 @@ router.get('/admin/articles',
  * @returns {Promise} Promise
  */
 router.get('/articles',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const articles = await getArticles(req.query, req.user?.id);
     res.json(articles);
@@ -57,7 +57,7 @@ router.get('/articles',
  * @returns {Promise} Promise
  */
 router.post('/article',
-  [authM.required, upload.array("images[]")],
+  [authMiddleware.required, upload.array("images[]")],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     console.log(req.body)
     const article = await createArticle(req.body, req.files, req.user?.id);
@@ -72,7 +72,7 @@ router.post('/article',
  * @returns {Promise} Promise
  */
 router.get('/article/:id',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const article = await getArticleById(req.params?.id, req.user?.id);
     res.json(article);
@@ -88,7 +88,7 @@ router.get('/article/:id',
  * @returns {Promise} Promise
  */
 router.put('/article/:id',
-  [authM.required, upload.array("images[]")],
+  [authMiddleware.required, upload.array("images[]")],
   asyncHandler(async (req: IGetUserAuthInfoRequest | any, res: Response, next: NextFunction) => {
     const article = await updateArticle(req.body, req.params.id, req.user!.id, req.user?.role, req.files);
     res.json(article);
@@ -103,7 +103,7 @@ router.put('/article/:id',
  * @returns {Promise} Promise
  */
 router.delete('/article/:id',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const data = await deleteArticle(req.params?.id, req.user?.id, req.user?.role);
     res.json(data)
@@ -118,7 +118,7 @@ router.delete('/article/:id',
  * @returns {Promise} Promise
  */
 router.post('/article/:id/favorite',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const article = await favoriteArticle(req.params?.id, req.user?.id);
     res.json(article);
@@ -133,7 +133,7 @@ router.post('/article/:id/favorite',
  * @returns {Promise} Promise
  */
 router.delete('/article/:id/favorite',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const article = await unFavoriteArticle(req.params.id, req.user?.id);
     res.json(article);
@@ -149,7 +149,7 @@ router.delete('/article/:id/favorite',
  * @returns {Promise} Promise
  */
 router.post('/article/:id/comment',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const comment = await addComment(req.body.comment, req.params.id, req.user!.id);
     res.json(comment);
@@ -164,7 +164,7 @@ router.post('/article/:id/comment',
  * @returns {Promise} Promise
  */
 router.delete('/article/comment/:id',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const comment = await deleteComment(req.params?.id, req.user?.id, req.user?.role);
     res.json(comment);
@@ -189,7 +189,7 @@ export default router;
  * @returns {Promise} Promise
  */
 router.get('/article/:id/comments',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const comments = await getCommentsByArticle(req.params?.id);
     res.json(comments);

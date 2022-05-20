@@ -1,8 +1,0 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.forgotMessage = void 0;
-var forgotMessage = function (resetUrl, user) {
-    return "\n          <body\n            style=\"\n              color: rgb(68, 68, 68);\n              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            \"\n          >\n            <h2 class=\"title\" style=\"text-align: center\">Reset Your Password</h2>\n            <h4>Hello ".concat(user.name, ",</h4>\n            <p>\n              Tap the link below to reset your account password. If you didn't request a\n              new password, you can safely delete this email.\n\n              <a\n                class=\"reset-btn\"\n                style=\"\n                  color: rgb(68, 68, 68);\n                  font-weight: 900;\n                  text-decoration: none;\n                  text-transform: uppercase;\n                \"\n                target=\"blank\"\n                href=\"").concat(resetUrl, "\"\n              >\n                Reset Password\n              </a>\n            </p>\n\n            <p>\n              If that doesn't work, copy and paste the following link in your browser:\n            </p>\n            <div class=\"text-link\">\n              <a target=\"blank\" href=\"").concat(resetUrl, "\"> ").concat(resetUrl, " </a>\n            </div>\n\n            <p class=\"footer\" style=\"font-size: small; font-style: italic\">\n              <span>Thank you,</span> <br />\n              <span>Websom Team</span>\n            </p>\n          </body>\n      ");
-};
-exports.forgotMessage = forgotMessage;
-//# sourceMappingURL=emailTemplates.js.map

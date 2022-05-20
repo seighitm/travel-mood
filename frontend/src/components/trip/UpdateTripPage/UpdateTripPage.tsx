@@ -67,7 +67,7 @@ function UpdateTripPage() {
       }
       form.setFieldValue('title', dbTrip.title);
       form.setFieldValue('description', dbTrip.description);
-      form.setFieldValue('gender', dbTrip.sex);
+      form.setFieldValue('gender', dbTrip.gender.gender);
       form.setFieldValue('isAnytime', dbTrip.isAnytime);
       form.setFieldValue('languages', dbTrip?.languages?.map((item: any) => item.name));
       form.setFieldValue('transports', dbTrip?.transports?.map((item: any) => item.name));
@@ -95,7 +95,7 @@ function UpdateTripPage() {
         tripPayload: {
           ...data,
           markers: markers,
-          destinations: destinations.map((item: any) => item.countryCode)
+          countries: destinations.map((item: any) => item.countryCode)
         },
       })
     }
@@ -145,11 +145,11 @@ function UpdateTripPage() {
           placeholder="Gender"
           icon={<User size={17}/>}
           data={[
-            {value: 'm', label: 'Male'},
-            {value: 'f', label: 'Female'},
-            {value: 'mg', label: 'Male Group'},
-            {value: 'fg', label: 'Female Group'},
-            {value: 'fg', label: 'Any'}
+            {value: 'MALE', label: 'Male'},
+            {value: 'FEMALE', label: 'Female'},
+            {value: 'MALE_GROUP', label: 'Male Group'},
+            {value: 'FEMALE_GROUP', label: 'Female Group'},
+            {value: 'ANY', label: 'Any'}
           ]}
           {...form.getInputProps('gender')}
         />
@@ -195,8 +195,8 @@ function UpdateTripPage() {
           label="Select itinerary ..."
           {...form.getInputProps('itinerary')}
           data={[
-            {value: 'Fixed', label: 'Fixed'},
-            {value: 'Flexible', label: 'Flexible'},
+            {value: 'FIXED', label: 'Fixed'},
+            {value: 'FLEXIBLE', label: 'Flexible'},
           ]}
         />
 

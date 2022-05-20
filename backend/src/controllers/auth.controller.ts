@@ -1,7 +1,7 @@
 import {NextFunction, Request, Response, Router} from 'express';
 import {createUser, forgotPassword, getCurrentUser, login, resetPassword,} from '../services/auth.service';
 import {IGetUserAuthInfoRequest} from "../utils/interfaces";
-import {authM} from "../middlewares/auth.middleware";
+import {authMiddleware} from "../middlewares/auth.middleware";
 import {asyncHandler} from "../utils/asyncHandler";
 import {refreshTokenService} from "../services/token.service";
 
@@ -17,7 +17,7 @@ const upload = require("../middlewares/fileUpload.middleware");
  * @returns {Promise} Promise
  */
 router.post('/auth/register',
-  [authM.optional, upload.single("image")],
+  [authMiddleware.optional, upload.single("image")],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await createUser(req.body, req.file);
     res.json(user);
@@ -31,7 +31,7 @@ router.post('/auth/register',
  * @returns {Promise} Promise
  */
 router.post('/auth/login',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const user = await login(req.body.user);
     res.json(user);
@@ -45,7 +45,7 @@ router.post('/auth/login',
  * @returns {accessToken, refreshToken, user}
  */
 router.post('/refresh-token',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const userData = await refreshTokenService(req?.body?.localRefreshToken);
     return res.json(userData);
@@ -58,8 +58,11 @@ router.post('/refresh-token',
  * @returns {Promise} Promise
  */
 router.get('/auth/me',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    console.log('%%%%%%%%%%%%%%%%%%%')
+    console.log(req.user)
+    console.log('%%%%%%%%%%%%%%%%%%%')
     const user = await getCurrentUser(req.user?.id)
     res.json(user);
   }));
@@ -72,7 +75,7 @@ router.get('/auth/me',
  * @returns {Promise} Promise
  */
 router.get('/auth/logout',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler((req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     res.json(req.user);
   }));
@@ -85,7 +88,7 @@ router.get('/auth/logout',
  * @returns {Promise} Promise
  */
 router.post('/auth/forgot-password',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await forgotPassword(req.body?.email)
     res.json(user)
@@ -100,7 +103,7 @@ router.post('/auth/forgot-password',
  * @returns {Promise} Promise
  */
 router.post('/auth/reset-password',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await resetPassword(req.body?.password, req.body?.resetToken)
     res.status(200).json({

@@ -7,7 +7,6 @@ import {isEmptyArray, isFile, isNullOrUndefined} from "../utils/primitive-checks
 import {s3} from "./aws-multer";
 
 module.exports = function (err: ApiError, req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) {
-  console.log(err)
   if (err && err.errorCode) {
     if (!isNullOrUndefined(req?.files) && !isEmptyArray(req?.files) && isFile(req?.files[0])) {
       for (let i = 0; req?.files.length; i++) {
@@ -37,7 +36,6 @@ module.exports = function (err: ApiError, req: IGetUserAuthInfoRequest, res: Res
       }
     }
   }
-  console.log(err.errorCode)
   if (err && err.errorCode)
     res.status(err.errorCode).json(err.message);
   else if (err)

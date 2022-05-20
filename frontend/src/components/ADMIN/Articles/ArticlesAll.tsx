@@ -145,7 +145,7 @@ export default function ArticlesAll() {
         author: item?.author?.name,
         userImage: item?.author?.picture,
         title: item?.title,
-        date: item?.createdAt,
+        date: item?.updatedAt,
         likes: item?.favoritesCount,
         comments: item?.comments?.length
       })))
@@ -172,7 +172,7 @@ export default function ArticlesAll() {
             </Text>
           </Group>
         </td>
-        <td>{new Date(row.createdAt).toISOString().split('T')[0]}</td>
+        <td>{new Date(row.updatedAt).toISOString().split('T')[0]}</td>
         <td>{row.favoritesCount}</td>
         <td>{row.comments?.length}</td>
         <td>

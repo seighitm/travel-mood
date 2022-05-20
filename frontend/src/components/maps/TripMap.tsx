@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {FeatureGroup, GeoJSON, LayersControl, MapContainer, Marker, Polyline, Popup} from 'react-leaflet';
+import L,{GeoJSON as LeafletGeoJSON, Icon} from 'leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
-import {GeoJSON as LeafletGeoJSON, Icon} from 'leaflet';
 import redIcon from '../../assets/svg-map-markers/img/marker-icon-2x-red.png';
 import blueIcon from '../../assets/svg-map-markers/img/marker-icon-2x-blue.png';
 import blueIconShadow from '../../assets/svg-map-markers/img/marker-shadow.png';
@@ -9,7 +9,8 @@ import {Group, LoadingOverlay, Text} from '@mantine/core';
 import {fetchGeoJsonData} from '../../api/map/axios';
 import CustomTileLayer from "./UtilsComponent/CustomTileLayer";
 import {SearchField} from "./MapObjects";
-// import {SearchField} from "./UtilsComponent/SearchComponent";
+import {isEmptyArray, isNullOrUndefined} from "../../utils/primitive-checks";
+// import {SearchField.tsx} from "./UtilsComponent/SearchComponent";
 
 const GeoJSONWithLayer = (props: any) => {
   const geoJsonLayerRef = useRef<LeafletGeoJSON | null>(null);
@@ -119,6 +120,7 @@ const TripMap = React.memo(({dbCountries, dbMarkers}: any) => {
           [-58.995311187950925, 174],
         ]}
       >
+        {/*<SearchField.tsx/>*/}
         <LoadingOverlay visible={!geoDate}/>
         <CustomTileLayer/>
         <LayersControl position="bottomleft">
@@ -130,16 +132,18 @@ const TripMap = React.memo(({dbCountries, dbMarkers}: any) => {
                 weight={5}
                 positions={dbMarkers.map((item: any) => [item.lon, item.lat])}
               />
-              {/*// @ts-ignore*/}
-              <MarkerClusterGroup>
-                <MyMarkers
-                  markers={dbMarkers.map((item: any) => ({
-                    place: [item.lon, item.lat],
-                    id: item.id,
-                    description: item.description,
-                  }))}
-                />
-              </MarkerClusterGroup>
+              {!isEmptyArray(dbMarkers) &&
+                // @ts-ignore
+                <MarkerClusterGroup>
+                  <MyMarkers
+                    markers={dbMarkers?.map((item: any) => ({
+                      place: [item.lon, item.lat],
+                      id: item.id,
+                      description: item.description,
+                    }))}
+                  />
+                </MarkerClusterGroup>
+              }
             </FeatureGroup>
           </LayersControl.Overlay>
           <LayersControl.Overlay checked name="Countries">
@@ -154,7 +158,6 @@ const TripMap = React.memo(({dbCountries, dbMarkers}: any) => {
             </FeatureGroup>
           </LayersControl.Overlay>
         </LayersControl>
-        <SearchField/>
       </MapContainer>
     </div>
   );

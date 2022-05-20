@@ -1,13 +1,14 @@
 import {$authHost, $host} from "../api";
 
 export const getAllArticle =
-  async ({page, tags, author, countries}: {
+  async ({page, tags, author, countries, title}: {
     page?: number | string;
     tags?: string[];
     author?: string;
     countries?: string[];
+    title?: string;
   }) => {
-    const res = await $authHost.get('articles', {params: {page, tags, author, countries}});
+    const res = await $authHost.get('articles', {params: {page, tags, author, countries, title}});
     return res.data;
   };
 
@@ -67,7 +68,7 @@ export const getArticlesFiltering = async (
   sortBy: any,
   order: any,
 ) => {
-  const {data} = await $host.get('/admin/articles',{
+  const {data} = await $authHost.get('/admin/articles',{
     params: {
       page,
       limit,

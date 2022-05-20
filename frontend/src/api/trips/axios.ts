@@ -1,3 +1,4 @@
+import {isEmptyString, isNullOrUndefined} from "../../utils/primitive-checks";
 import {$authHost, $host} from "../api";
 
 
@@ -12,8 +13,6 @@ export const favoriteTrip = async ({id}: { id: any }) => {
 };
 
 export const getOneTrip = async (id: any) => {
-  console.log('miiiiiiiiiii')
-  console.log(id)
   const {data} = await $authHost.get('trip-one/' + id);
   return data;
 };
@@ -65,26 +64,38 @@ export const joinToTrip = async ({tripId, comment, userId, receiveUserId, typeOf
 };
 
 
-export const getTrips = async ({destinations, sex, maxBudget, minBudget, languages, date, budget, page}: any) => {
-  console.log({destinations, sex, maxBudget, minBudget, languages, date})
+export const getTrips = async ({
+                                 destinations,
+                                 sex,
+                                 maxBudget,
+                                 minBudget,
+                                 languages,
+                                 date,
+                                 budget,
+                                 page,
+                                 title
+                               }: any) => {
   const {data} = await $authHost.get('trips', {
     params: {
-      ...(page
+      ...(!isNullOrUndefined(page)
         ? {page: page}
         : {}),
-      ...(destinations && destinations?.length > 0
+      ...(!isNullOrUndefined(title) && !isEmptyString(title)
+        ? {title: title}
+        : {}),
+      ...(!isNullOrUndefined(destinations) && !isEmptyString(destinations)
         ? {destinations: destinations}
         : {}),
-      ...(sex
+      ...(!isNullOrUndefined(sex)
         ? {sex: sex}
         : {}),
-      ...(languages && languages?.length > 0
+      ...(!isNullOrUndefined(languages) && !isEmptyString(languages)
         ? {languages: languages}
         : {}),
-      ...(budget
+      ...(!isNullOrUndefined(budget)
         ? {budget: budget}
         : {}),
-      ...(date && date?.length == 2
+      ...(!isNullOrUndefined(date) && date?.length == 2
         ? {date: date}
         : {}),
     },
@@ -107,7 +118,7 @@ export const getTripsFiltering = async (
   sortBy: any,
   order: any,
 ) => {
-  const {data} = await $host.get('/admin/trips', {
+  const {data} = await $authHost.get('/admin/trips', {
     params: {
       page,
       limit,

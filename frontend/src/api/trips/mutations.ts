@@ -91,7 +91,6 @@ export const useMutateFavoriteTrip = () => {
       if (usersAll) {
         await queryClient.cancelQueries(['users', 'one']);
         const findTripById = usersAll.trips.findIndex((item: any) => item.id == data.trip.id)
-        console.log(findTripById)
         if (findTripById != -1) {
           usersAll.trips[findTripById].tripFavoritedBy = data.trip.tripFavoritedBy;
           queryClient.setQueryData(['users', 'one'], () => usersAll);

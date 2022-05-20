@@ -2,8 +2,6 @@ import L from "leaflet";
 import { useEffect } from "react";
 
 const CustomLegend = ({map}: any) => {
-  console.log(map);
-
   useEffect(() => {
     // get color depending on population density value
     const getColor = (d: any) => {

@@ -88,7 +88,7 @@ const TripContentInfo = React.memo(({trips}: any) => {
         <ActionIcon>
           <Clock size={17}/>
         </ActionIcon>
-        <Group>
+        <Group spacing={'xs'}>
           <Text size="md" weight="bold">
             Date:
           </Text>
@@ -102,7 +102,7 @@ const TripContentInfo = React.memo(({trips}: any) => {
                 </Text>
               </Badge>
               <Text size="sm">
-                {getNrOfDayByDateInterval({dateFrom: trips.dateFrom, dateTo: trips.dateTo})}Days
+                ({getNrOfDayByDateInterval({dateFrom: trips.dateFrom, dateTo: trips.dateTo})} Days)
               </Text>
             </>
           }
@@ -116,7 +116,7 @@ const TripContentInfo = React.memo(({trips}: any) => {
             <ActionIcon>
               <World size={17}/>
             </ActionIcon>
-            <Group spacing={'sm'}>
+            <Group spacing={'xs'}>
               <Text size="md" weight="bold">
                 Languages:
               </Text>
@@ -139,7 +139,7 @@ const TripContentInfo = React.memo(({trips}: any) => {
             <ActionIcon>
               <Plane size={17}/>
             </ActionIcon>
-            <Group spacing={'sm'}>
+            <Group spacing={'xs'}>
               <Text size="md" weight="bold">
                 Transports:
               </Text>
@@ -171,7 +171,7 @@ const TripContentInfo = React.memo(({trips}: any) => {
           <ActionIcon ml={'lg'}>
             <Gps size={17}/>
           </ActionIcon>
-          <Group>
+          <Group spacing={'xs'}>
             <Text size="md" weight="bold">
               Itinerary:
             </Text>

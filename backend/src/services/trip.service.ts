@@ -525,7 +525,8 @@ export const getTrips = async (
     date,
     languages,
     page,
-    gender
+    gender,
+    title
   }: TripFindRequestPayload,
   userId: number,
   userRole: string
@@ -537,6 +538,17 @@ export const getTrips = async (
     isHidden: false
   })
   // }
+  console.log('PPPPPPPPPPPPPPPPP')
+  console.log(title)
+  console.log('PPPPPPPPPPPPPPPPP')
+  if (!isNullOrUndefined(title)) {
+    queries.push({
+        title: {
+          contains: title
+        }
+      }
+    );
+  }
 
   if (!isNullOrUndefined(destinations)) {
     queries.push({
@@ -570,7 +582,7 @@ export const getTrips = async (
     );
   }
 
-  if (!isNullOrUndefined(budget)) {
+  if (!isNullOrUndefined(budget) && budget != '0') {
     queries.push({
         budget: {
           equals: budget
@@ -609,18 +621,18 @@ export const getTrips = async (
 
   const trips = await prisma.trip.findMany({
     where: {
-      // AND: queries
-      OR:[
+      AND: queries,
+      OR: [
         {
-          AND:[
+          AND: [
             {
               isHidden: true,
             },
             {
-              usersJoinToTrip:{
-                some:{
-                  user:{
-                    id:{
+              usersJoinToTrip: {
+                some: {
+                  user: {
+                    id: {
                       in: userId
                     }
                   }
@@ -691,7 +703,6 @@ export const getTrips = async (
   })
 
   console.log(queries)
-  console.log(trips)
 
   return {
     trips: trips,
@@ -767,12 +778,11 @@ export const updateTrip = async (
   userId: number,
   tripId: number | string,
   {
-    countries,
     languages,
     description,
     title,
     date,
-    destinations,
+    countries,
     gender,
     markers,
     isAnytime,
@@ -782,6 +792,8 @@ export const updateTrip = async (
     budget
   }: Trip
 ): Promise<{ id: number }> => {
+
+  console.log(countries)
   TripPayloadValidator({title, description, languages, countries})
 
   await disconnectMarkers(tripId)
@@ -800,7 +812,11 @@ export const updateTrip = async (
       },
       itinerary: itinerary,
       budget: budget,
-      gender: gender,
+      gender: {
+        connect: {
+          gender: gender
+        }
+      },
       description: description,
       title: title,
       splitCosts: isSplitCost,
@@ -812,28 +828,22 @@ export const updateTrip = async (
         dateFrom: null,
         dateTo: null
       }),
-      destinations: {
-        connect: destinations.map((item: any) => ({
-          code: item
-        }))
-      },
+      ...(!isNullOrUndefined(countries) && !isEmptyArray(countries)
+        ? {
+          destinations: {
+            connect: countries.map((item: any) => ({code: item}))
+          }
+        } : []),
       languages: {
-        connect: languages.map((item: any) => ({
-          name: item
-        }))
+        connect: languages.map((item: any) => ({name: item}))
       },
       transports: {
-        connectOrCreate: transports.map((item: any) => ({
-          create: {
-            name: item
-          },
-          where: {
-            name: item
-          }
-        }))
+        connectOrCreate: transports.map((item: any) => ({where: {name: item}, create: {name: item}}))
       },
-      places: {
-        connectOrCreate: markers.map((item: any) => ({
+      ...(!isNullOrUndefined(markers) && !isEmptyArray(markers)
+        ? {
+          places: {
+            connectOrCreate: markers.map((item: any) => ({
               where: {
                 lat_lon: {
                   lon: item?.place[0].toString(),
@@ -845,10 +855,9 @@ export const updateTrip = async (
                 lat: item?.place[1].toString(),
                 description: item.description
               },
-            }
-          )
-        ),
-      },
+            })),
+          },
+        } : []),
     },
     select: {
       id: true
@@ -871,7 +880,7 @@ export const getOneTrip = async (
   const trip = await prisma.trip.findFirst({
     where: {
       id: Number(tripId),
-      ...(!isNullOrUndefined(userId) && findTrip?.user.id != userId && findTrip.usersJoinToTrip.find((item: any) => item.user.id == userId) == undefined)
+      ...(!isNullOrUndefined(userId) && findTrip?.user.id != userId && findTrip?.usersJoinToTrip.find((item: any) => item.user.id == userId) == undefined)
         ? {isHidden: false} : {}
     },
     include: {

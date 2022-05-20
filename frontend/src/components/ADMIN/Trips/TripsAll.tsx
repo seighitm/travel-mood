@@ -224,7 +224,7 @@ export default function TripsAll() {
       setSortedData(dbTrips.map((item: any) => ({
         author: item?.user?.name,
         title: item?.title,
-        date: item?.createdAt,
+        date: item?.updatedAt,
         likes: item?.tripFavoritedBy.length,
         comments: item?.tripComments?.length
       })))
@@ -246,14 +246,12 @@ export default function TripsAll() {
               </Group>
             </UnstyledButton>
           </td>
-          <td>{new Date(row.createdAt).toISOString().split('T')[0]}</td>
+          <td>{new Date(row.updatedAt).toISOString().split('T')[0]}</td>
           <td>{row.tripFavoritedBy.length}</td>
           <td>{row.tripComments?.length}</td>
         </tr>
       )))
   }, [isSuccess])
-  console.log(sortedData)
-  console.log(dbTrips)
 
   const setSorting = (field: keyof RowData) => {
     const reversed = field === sortBy ? !reverseSortDirection : false;

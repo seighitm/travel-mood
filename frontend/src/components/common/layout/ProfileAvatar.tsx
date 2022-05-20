@@ -1,9 +1,8 @@
 import React from 'react';
 import {ActionIcon, Avatar, Badge, Divider, Group, Menu, Text, UnstyledButton, useMantineTheme,} from '@mantine/core';
-import {ChevronRight, Directions, Heart, Logout, Plane, Settings} from '../../../assets/Icons';
+import {ChevronRight, Directions, Eye, Heart, Logout, Plane, Settings, User} from '../../../assets/Icons';
 import {useNavigate} from 'react-router-dom';
 import useStore from '../../../store/user.store';
-import {EyeOpenIcon, PersonIcon} from '@modulz/radix-icons';
 import {useMutateLogout} from '../../../api/auth/mutations';
 import {userPicture} from "../Utils";
 import {getFullUserName} from "../../../utils/utils-func";
@@ -32,15 +31,18 @@ export function ProfileAvatar({travelRequestsCounter, guestsCounter}: any) {
               color="cyan"
               radius="xl"
               size={'sm'}
-            >
-              MS
-            </Avatar>
+            />
           </UnstyledButton>
         }
       >
-        <Menu.Item rightSection={<ChevronRight size={14}/>}>
-          <Group onClick={() => navigate(`/user/${user.id}`)}>
-            <Text weight={500}>{getFullUserName(user)}</Text>
+        <Menu.Item
+          onClick={() => navigate(`/user/${user.id}`)}
+          rightSection={<ChevronRight size={14}/>}
+        >
+          <Group>
+            <Text lineClamp={2} weight={500}>
+              {getFullUserName(user)}
+            </Text>
           </Group>
         </Menu.Item>
 
@@ -48,7 +50,7 @@ export function ProfileAvatar({travelRequestsCounter, guestsCounter}: any) {
         <Menu.Item
           style={{position: 'relative'}}
           onClick={() => navigate('/view')}
-          icon={<EyeOpenIcon color={theme.colors.green[6]}/>}
+          icon={<Eye color={theme.colors.green[6]}/>}
         >
           {guestsCounter != 0 && (
             <Badge
@@ -76,7 +78,7 @@ export function ProfileAvatar({travelRequestsCounter, guestsCounter}: any) {
         <Menu.Item
           style={{position: 'relative'}}
           onClick={() => navigate('/trip-requests')}
-          icon={<PersonIcon color={theme.colors.yellow[6]}/>}
+          icon={<User color={theme.colors.yellow[6]}/>}
         >
           Travel requests
           {travelRequestsCounter != 0 && (
@@ -113,23 +115,13 @@ export function ProfileAvatar({travelRequestsCounter, guestsCounter}: any) {
         >
           New trip
         </Menu.Item>
-
         <Divider/>
-
-        <Menu.Label>Settings</Menu.Label>
         <Menu.Item onClick={() => navigate('/edit/profile')} icon={<Settings size={14}/>}>
           Settings
         </Menu.Item>
         <Menu.Item onClick={handlerLogout} color="red" icon={<Logout size={14}/>}>
           Logout
         </Menu.Item>
-
-        {/*<Menu.Item icon={<SwitchHorizontal size={14}/>}>Change account</Menu.Item>*/}
-        {/*<Menu.Label>Danger zone</Menu.Label>*/}
-        {/*<Menu.Item icon={<PlayerPause size={14}/>}>Pause subscription</Menu.Item>*/}
-        {/*<Menu.Item color="red" icon={<Trash size={14}/>}>*/}
-        {/*    Delete account*/}
-        {/*</Menu.Item>*/}
       </Menu>
     </Group>
   );

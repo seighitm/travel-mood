@@ -3,16 +3,14 @@ import {getOneTrip, getTrips, getTripsFiltering, getUserTrips} from "./axios";
 import useStore from "../../store/user.store";
 import {useAsyncDebounce} from "react-table";
 import {useNavigate} from "react-router-dom";
+import {apiLogout} from "../auth/axios";
 
 //############################################################################################
 //############################################################################################
 export const useOneTripsQuery = ({id, onErrorEvent}: { id: string | number | any } | any) => {
-  const navigate = useNavigate();
   return useQuery(['trips', 'one'], () => getOneTrip(id), {
     onError: async (err: any) => {
-      onErrorEvent()
-      console.log(err.response.status);
-      // navigate(-1)
+      if (err?.response.data.message == 'Trip not found!') onErrorEvent()
     },
   });
 };
@@ -20,7 +18,7 @@ export const useOneTripsQuery = ({id, onErrorEvent}: { id: string | number | any
 //############################################################################################
 //############################################################################################
 export const useTripsQuery = ({filterFields, page, isEnabled = true}: any) =>
-  useQuery(['trips', 'all'], () => getTrips({...filterFields, page}),{
+  useQuery(['trips', 'all'], () => getTrips({...filterFields, page}), {
     enabled: isEnabled
   });
 

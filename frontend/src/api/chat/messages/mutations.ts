@@ -10,7 +10,6 @@ export const useMutateSendMessage = (scrollToBottom: any) => {
   return useMutation(({chatId, newMessage}: any) => sendMessage({content: newMessage, chatId: chatId}),
     {
       onSuccess: async (data: any) => {
-        console.log(data);
         const prevAllMessages: any = await queryClient.getQueryData(['fetchMessagesChat', data.chatId]);
         if (prevAllMessages) {
           await queryClient.cancelQueries(['fetchMessagesChat', data.chatId]);

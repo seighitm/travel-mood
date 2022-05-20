@@ -1,14 +1,15 @@
 .idea
 .vscode
+yarn.*
+yarn-*
+build
+dist
+.env
+node_modules
 
-frontend/node_modules
 frontend/modules
-frontend/dist
-frontend/.env
 frontend/tsconfig.tsbuildinfo
 
-backend/node_modules
-backend/build
-backend/.env
+backend/src/uploads
+backend/prisma/migrations
 backend/tsconfig.release.json
-backend/yarn.lock

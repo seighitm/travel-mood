@@ -7,15 +7,12 @@ function Verify() {
   const navigate = useNavigate()
   return <Group
     position={'center'}
-    sx={(theme) => ({
-      height: '100vh',
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
-    })}
+    style={{height: '80vh'}}
   >
     <Box style={{width: '360px'}}>
       <Paper withBorder p="lg" radius="md" shadow="md">
         <Group position={'center'}>
-          <Image src={image} height={200} width={200}/>
+          <Image src={image} height={210} width={250}/>
         </Group>
         <Title mt={'sm'} align="center" order={2}>
           Check Your Email

@@ -9,10 +9,11 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import * as React from "react";
+import {useState} from "react";
 import {usePagination, useSortBy, useTable} from "react-table";
 
-import SortingIcon from "../../../common/tableComponents/sorting-icon";
-import handleSortBy from "../../../common/tableComponents/handle-sort-by";
+import SortingIcon from "../../../common/table/sorting-icon";
+import handleSortBy from "../../../common/table/handle-sort-by";
 import {useMutationDeleteTrip} from "../../../../api/trips/mutations";
 import {dateFormatedToIsoString} from "../../../common/Utils";
 import {Trash} from "../../../../assets/Icons";
@@ -20,7 +21,6 @@ import {useNavigate} from "react-router-dom";
 import ConfirmationModal from "../../ConfirmationModal";
 import {useMutationDeleteArticle} from "../../../../api/articles/mutations";
 import {useDisclosure} from "@mantine/hooks";
-import {useState} from "react";
 
 const Table = ({
                  columns,
@@ -37,8 +37,6 @@ const Table = ({
                }: any) => {
   const {classes} = useStyles();
   console.log(data)
-  const {mutate: mutateDeleteTrip} = useMutationDeleteTrip(() => console.log('YEEEES'));
-
 
   const tableColumns = React.useMemo(() => columns, [columns]);
   const tableData = React.useMemo(() => data, [data]);
@@ -163,7 +161,7 @@ const Table = ({
                   <td {...cell.getCellProps()} style={{width: '0px!important'}} key={index}>
                     {checkColumnTitle(cell, 'title')
                       ? <UnstyledButton style={{width: '47%', color: theme.colors.blue[6]}}
-                                        onClick={() => navigate('/trip/' + row.original.id)}>
+                                        onClick={() => navigate('/admin/article/' + row.original.id)}>
                         <Text lineClamp={1} styles={{root: {width: checkColumnTitle(cell, 'title') ? '100px' : ''}}}>
                           {cell.render("Cell")}
                         </Text>

@@ -154,7 +154,7 @@ const CardTrip = React.memo(({trip}: any) => {
                   >
                     <Star
                       size={17}
-                      color={theme.colors.red[6]}
+                      color={isNullOrUndefined(user) ? 'gray' : theme.colors.red[6]}
                       fill={isFavoritedTrip ? theme.colors.red[6] : 'none'}
                     />
                   </ActionIcon>
@@ -201,7 +201,7 @@ const CardTrip = React.memo(({trip}: any) => {
                   </ActionIcon>
                 }
               >
-                <Group>
+                <Group spacing={'xs'}>
                   {trip?.languages?.map((item: any) =>
                     <Badge
                       variant={'outline'}
@@ -279,12 +279,23 @@ const CardTrip = React.memo(({trip}: any) => {
             />
 
             {!isEmptyArray(trip?.destinations) &&
-              <Group mb={'xs'} mt={5} position={'left'}>
-                <Spoiler
-                  maxHeight={34}
-                  showLabel="Show more"
-                  hideLabel="Hide"
-                >
+              <Spoiler
+                pr={'md'}
+                style={{display: 'flex'}}
+                maxHeight={30}
+                mb={10}
+                showLabel={
+                  <ActionIcon variant={'light'} radius={'xl'}>
+                    <ArrowDown size={17}/>
+                  </ActionIcon>
+                }
+                hideLabel={
+                  <ActionIcon variant={'light'} radius={'xl'}>
+                    <ArrowUp size={17}/>
+                  </ActionIcon>
+                }
+              >
+                <Group spacing={5} mt={5} position={'left'}>
                   {trip?.destinations?.map((i: any) => (
                     <Badge
                       className={classes.badgeItem}
@@ -310,8 +321,8 @@ const CardTrip = React.memo(({trip}: any) => {
                       {i.name}
                     </Badge>
                   ))}
-                </Spoiler>
-              </Group>
+                </Group>
+              </Spoiler>
             }
           </Box>
         </Grid.Col>

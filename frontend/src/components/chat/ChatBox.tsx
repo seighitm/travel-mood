@@ -139,7 +139,7 @@ const ChatBox = () => {
               borderRadius: theme.radius.md,
             })}
           >
-            <LoadingOverlay visible={isFetchingMessages || isLoadingMoreMessages}/>
+            <LoadingOverlay visible={(isFetchingMessages && isEmptyArray(queryClient.getQueryData(['fetchMessagesChat', selectedChat.id]))) || isLoadingMoreMessages}/>
             {isVisibleLoadMoreButton && !isEmptyArray(queryClient.getQueryData(['fetchMessagesChat', selectedChat.id])) &&
               <Group mb={'sm'} position={'center'}>
                 <Button compact disabled={isLoadingMoreMessages} onClick={() => fc()}>

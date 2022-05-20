@@ -85,7 +85,6 @@ function CountriesPage() {
   useEffect(() => {
     setRows(dbCountries?.map((element: any) => {
       const selected = selection.includes(element.name);
-      console.log(element)
       return <tr key={element.id} className={cx({[classes.rowSelected]: selected})}>
         <td>
           <Checkbox

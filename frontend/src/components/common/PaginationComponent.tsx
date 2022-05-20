@@ -14,7 +14,6 @@ function PaginationComponent({items, setActivePage, activePage, to}: any) {
       total={Math.ceil(items / 12)}
       onChange={(e: any) => {
         navigate(to + e.toString());
-        console.log(e)
         setActivePage(e)
         scrollTo({ y: 0 })
       }}

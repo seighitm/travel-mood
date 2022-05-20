@@ -4,6 +4,7 @@ import {useNavigate} from 'react-router-dom';
 import useStore from '../../../../store/user.store';
 import {ChevronRight} from '../../../../assets/Icons';
 import {userPicture} from "../../Utils";
+import {getFullUserName} from "../../../../utils/utils-func";
 
 const useStyles = createStyles((theme) => ({
   user: {
@@ -18,22 +19,7 @@ const useStyles = createStyles((theme) => ({
   },
 }));
 
-interface UserButtonProps {
-  image: string;
-  name: string;
-  email: string;
-  icon?: React.ReactNode;
-  setOpenedDrawer?: any;
-}
-
-export function UserButton({
-                             image,
-                             name,
-                             email,
-                             icon,
-                             setOpenedDrawer,
-                             ...others
-                           }: UserButtonProps) {
+export function UserButton({setOpenedDrawer}: any) {
   const {classes} = useStyles();
   const navigate = useNavigate();
   const {user} = useStore((state: any) => state);
@@ -41,7 +27,6 @@ export function UserButton({
   return (
     <UnstyledButton
       className={classes.user}
-      {...others}
       onClick={() => {
         setOpenedDrawer(false);
         navigate(`/user/${user.id}`);
@@ -55,9 +40,8 @@ export function UserButton({
           />
 
           <div>
-            <Text weight={500}>{user?.name}</Text>
             <Text size="xs" color="dimmed">
-              {user?.email}
+              {getFullUserName(user)}
             </Text>
           </div>
         </Group>

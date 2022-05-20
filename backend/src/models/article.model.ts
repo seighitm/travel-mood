@@ -43,6 +43,7 @@ export interface ArticleFindQuery {
   limit: string;
   page: any,
   countries: string[],
+  title?: string
 }
 
 export interface ArticleQueryResponse {

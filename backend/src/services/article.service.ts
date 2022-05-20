@@ -17,9 +17,7 @@ import commentMapper from "../mappers/comment.mapper";
 import {articleMapper, articlesMapper} from "../mappers/article.mapper";
 import {isEmptyArray, isEmptyString, isLongArrayLengthThan, isNullOrUndefined} from "../utils/primitive-checks";
 import {ArticleCreateOrUpdateValidator} from "../validators/article.validator";
-import {removeFiles} from "./file-upload.services";
 import {ROLE} from "./auth.service";
-import {s3} from "../middlewares/aws-multer";
 
 export const getArticles = async (
   query: ArticleFindQuery | any,
@@ -94,6 +92,15 @@ export const createArticle = async (
 ): Promise<ArticleResponse> => {
   ArticleCreateOrUpdateValidator({title, description, countries, body})
 
+  console.log({
+    title,
+    description,
+    body,
+    tagList,
+    countries,
+    isPrimaryImage
+  })
+
   const countOfExistingTitles = await prisma.article.count({
     where: {
       title
@@ -128,11 +135,12 @@ export const createArticle = async (
           id: Number(userId),
         },
       },
-      ...((!isNullOrUndefined(images) && !isEmptyArray(images)) ? {
-        images: {
-          create: images.map((file: { filename: string }) => ({name: file.key}))
-        }
-      } : []),
+      ...((!isNullOrUndefined(images) && !isEmptyArray(images))
+        ? {
+          images: {
+            create: images.map((file: { filename: string }) => ({name: file.filename}))
+          }
+        } : []),
     },
     select: articleSelector,
   });
@@ -151,7 +159,6 @@ export const getArticleById = async (id: string, userId?: number): Promise<Artic
   if (isNullOrUndefined(article)) {
     throw new ApiError(404, {message: 'Article not found!'});
   }
-
   return articleMapper(article, userId);
 };
 
@@ -194,7 +201,7 @@ export const updateArticle = async (
       id: Number(id),
     },
     data: {
-      ...((art && art.author.id != userId && userRole == 'ADMIN')
+      ...((art && art.author.id != userId && userRole == ROLE.ADMIN)
           ? {isUpdatedByAdmin: true}
           : art && art.author.id == userId
             ? {isUpdatedByAdmin: false}
@@ -206,7 +213,7 @@ export const updateArticle = async (
       ...(!isNullOrUndefined(files) && {
         images: {
           createMany: {
-            data: files?.map((item: { filename: string }) => ({name: item.key})),
+            data: files?.map((item: { filename: string }) => ({name: item.filename})),
           }
         }
       }),
@@ -308,9 +315,9 @@ export const unFavoriteArticle = async (
 
 const buildFindAllQuery = (query: ArticleFindQuery): Prisma.ArticleWhereInput => {
   const queries: Array<Prisma.ArticleWhereInput> = [];
-  console.log(query)
-  console.log(query.author.split(' ')[0])
-  console.log(query.author.split(' ')[1])
+  // console.log(query)
+  // console.log(query.author.split(' ')[0])
+  // console.log(query.author.split(' ')[1])
 
   if (query.author) {
     queries.push(
@@ -371,11 +378,19 @@ const buildFindAllQuery = (query: ArticleFindQuery): Prisma.ArticleWhereInput =>
     });
   }
 
+  if (!isNullOrUndefined(query.title) && !isEmptyString(query.title)) {
+    queries.push({
+      title: {
+        contains: query.title
+      }
+    });
+  }
+
   if (query.countries && query.countries.length != 0) {
     queries.push({
       countries: {
         some: {
-          name: {
+          code: {
             in: query.countries
           }
         }

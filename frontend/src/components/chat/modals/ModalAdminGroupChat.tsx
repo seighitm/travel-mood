@@ -10,6 +10,7 @@ import {
   Divider,
   LoadingOverlay,
   Modal,
+  Group,
   MultiSelect,
   ScrollArea,
   TextInput
@@ -17,7 +18,6 @@ import {
 import {cutString, userPicture} from "../../common/Utils";
 import {getFullUserName} from "../../../utils/utils-func";
 import {Check, CirclePlus, InfoCircle, Pencil, Trash, User, X} from '../../../assets/Icons';
-import {Group} from "../../../../modules/@mantine/core";
 import {useGetUsersByNameOrEmail} from "../../../api/users/queries";
 import {useDebouncedValue} from "@mantine/hooks";
 import {
@@ -68,9 +68,9 @@ function ModalAdminGroupChat({openedChatDetailsModal, handlersChatDetailsModal, 
     mutateRemoveUsersFromGroupChat({usersId: selectedUsersToRemove, chatId: chat.id})
   }
 
-  console.log(chat.users)
-  console.log(dbUsers)
-  console.log(dbUsers.filter((item: any) => !chat.users.find((chatUser: any) => chatUser.id == item.id)))
+  // console.log(chat.users)
+  // console.log(dbUsers)
+  // console.log(dbUsers.filter((item: any) => !chat.users.find((chatUser: any) => chatUser.id == item.id)))
 
 
   return <>

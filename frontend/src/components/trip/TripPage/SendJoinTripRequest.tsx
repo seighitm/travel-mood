@@ -42,11 +42,6 @@ function SendJoinTripRequest({openedInviteModal, handlersInviteModal, following,
                   leftIcon={<Check size={17}/>}
                   compact
                   onClick={() => {
-                    console.log({
-                      tripId,
-                      userId: item.id,
-                      typeOfRequest: "SEND"
-                    })
                     mutateJoinToTrip({
                       tripId,
                       userId: item.id,

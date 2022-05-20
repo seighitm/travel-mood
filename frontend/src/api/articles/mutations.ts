@@ -10,6 +10,8 @@ import {
   unFavoriteArticle,
   updateArticle
 } from "./axios";
+import useStore from "../../store/user.store";
+import {ROLE} from "../../types/enums";
 
 //##############################################################################
 //##############################################################################
@@ -174,8 +176,6 @@ export const useMutationRemoveCommentFromArticle = () => {
       onSuccess: async (data) => {
         await queryClient.cancelQueries(['articles', 'one']);
         const prev: any = queryClient.getQueryData(['articles', 'one']);
-        console.log(data)
-        console.log(prev)
         const newComments = prev.comments.filter((item: any) => item.id != data.id);
         prev.comments = [...newComments];
         queryClient.setQueryData(['articles', 'one'], () => prev);
@@ -219,6 +219,8 @@ export const useMutationUpdateArticle = ({
                                          }: { id: string | number | undefined, onSuccessEvent: any }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const {user, setOnlineUsers, fetchUser} = useStore((state: any) => state);
+
   return useMutation((articlePayload: any) => updateArticle({id, articlePayload}),
     {
       onSuccess: async (data) => {
@@ -229,7 +231,7 @@ export const useMutationUpdateArticle = ({
           message: undefined,
           color: 'blue',
         });
-        navigate('/article/' + data.id);
+        navigate(`${user?.role == ROLE.ADMIN ? '/admin' : ''}/article/${data?.id}`);
       },
       onError: async (err: any) => {
         showNotification({

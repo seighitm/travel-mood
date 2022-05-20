@@ -86,9 +86,6 @@ function LanguagesPage() {
     setFormattedLanguages([...array])
   }, [languagesJsonData])
 
-
-  console.log(formattedLanguages)
-
   useEffect(() => {
     setRows(dataLanguages?.map((element: any) => {
       const selected = selection.includes(element.name);

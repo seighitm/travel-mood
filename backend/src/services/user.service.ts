@@ -481,11 +481,16 @@ export const getProfileViews = async (
 export const getUserById = async (
   userId: string | number,
 ): Promise<any> => {
-  return await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
       where: {
         id: Number(userId)
       },
       include: {
+        role:{
+          select:{
+            role: true
+          }
+        },
         country: true,
         followedBy: true,
         following: {
@@ -537,6 +542,11 @@ export const getUserById = async (
       }
     }
   )
+
+  if (isNullOrUndefined(user))
+    throw new ApiError(404, {message: 'User not found!'});
+
+  return user
 };
 
 export const fullSearchUsers = async (
@@ -713,7 +723,11 @@ export const getAllFavoriteItems = async (
 
   const userSelector = {
     followedBy: true,
-    following: true,
+    following: {
+      include: {
+        role: true
+      }
+    },
   }
 
   return await prisma.user.findUnique({

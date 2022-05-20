@@ -142,7 +142,6 @@ export default function TripsAll() {
     isLoading: isLoadingActivateUserAccountMutation
   } = useUserAccountActivate();
   const isOnline = (userId: any) => onlineUsers[userId]
-  console.log(onlineUsers)
   // useEffect(() => {
   //   console.log()
   //   refetch()
@@ -263,9 +262,6 @@ export default function TripsAll() {
   //     )))
   // }, [sortedData])
 
-  console.log(sortedData)
-  console.log(data)
-
   const setSorting = (field: keyof RowData) => {
     const reversed = field === sortBy ? !reverseSortDirection : false;
     setReverseSortDirection(reversed);
@@ -277,7 +273,6 @@ export default function TripsAll() {
     const {value} = event.currentTarget;
     setSearch(value);
     const misa = sortData(sortedData, {sortBy, reversed: reverseSortDirection, search: value})
-    console.log(misa);
     setSortedData(misa);
   };
 

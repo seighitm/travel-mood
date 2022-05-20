@@ -6,7 +6,7 @@ export interface Trip {
   countries: string[],
   languages: string[],
   description: string,
-  title: string,
+  title?: string,
   isAnytime: boolean | string,
   date: string[],
   budget: string,
@@ -19,7 +19,7 @@ export interface Trip {
   page: number | string,
 }
 
-export type TripFindRequestPayload = Pick<Trip, 'page' | 'destinations'| 'budget'| 'date'| 'languages'| 'gender'>;
+export type TripFindRequestPayload = Pick<Trip, 'title' | 'page' | 'destinations'| 'budget'| 'date'| 'languages'| 'gender'>;
 
 
 export type TripFavoriteResponse = Pick<Trip, 'id' | 'tripFavoritedBy'>;

@@ -2,10 +2,11 @@ import React, {useState} from 'react';
 import {Avatar, Badge, createStyles, Group, Menu, Paper, Text} from '@mantine/core';
 import useStore from '../../../store/user.store';
 import {useNavigate} from 'react-router-dom';
-import {creteAuthorShortName, userPicture} from '../Utils';
+import {cutString, userPicture} from '../Utils';
 import {useMediaQuery} from '@mantine/hooks';
 import {ClockIcon, PersonIcon, TrashIcon} from "@modulz/radix-icons";
 import ConfirmationModal from "../../profile/user-images/modals/ConfirmationModal";
+import {getFullUserName} from "../../../utils/utils-func";
 
 const useStyles = createStyles((theme) => ({
   comment: {
@@ -35,9 +36,10 @@ export function CommentBox({postedAt, body, author, commentId, mutateRemoveComme
   const {classes} = useStyles();
   const {user} = useStore((state: any) => state);
   const navigate = useNavigate();
-  const matches = useMediaQuery('(min-width: 900px)');
+  const matches1 = useMediaQuery('(min-width: 900px)');
+  const matches2 = useMediaQuery('(min-width: 740px)');
   const [isOpenedCommentConfirmationModalModal, setOpenedCommentConfirmationModalModal] = useState(false);
-  console.log(author)
+
   return (
     <Group position={'center'}>
       <ConfirmationModal
@@ -45,28 +47,26 @@ export function CommentBox({postedAt, body, author, commentId, mutateRemoveComme
         setOpenedConfirmationModal={setOpenedCommentConfirmationModalModal}
         handlerSubmit={() => mutateRemoveComment({commentId: commentId})}
       />
-      {matches && (
+      {matches1 && (
         <Group direction={'row'}>
           <Avatar
             style={{cursor: 'pointer'}}
             radius="xl"
             onClick={() => navigate('/user/' + author.id)}
             src={userPicture(author)}
-          >
-            {creteAuthorShortName(`${author.firstName} ${author.lastName}`)}
-          </Avatar>
+          />
         </Group>
       )}
       <Paper
-        style={{position: 'relative', width: matches ? '80%' : '100%'}}
+        style={{position: 'relative', width: matches1 ? '80%' : '100%'}}
         withBorder
         radius="md"
         className={classes.comment}
       >
-        <Group direction={'column'} spacing={'xs'} position={'left'}>
-          {matches ? (
+        <Group direction={!matches2 ? 'column' : 'row'} spacing={'xs'} position={'left'}>
+          {matches1 ? (
             <Badge pl={0} leftSection={<PersonIcon className={classes.icon}/>} color="gray" size="sm">
-              {`${author.firstName} ${author.lastName}`}
+              {cutString(getFullUserName(author), 20)}
             </Badge>
           ) : (
             <Badge
@@ -80,7 +80,7 @@ export function CommentBox({postedAt, body, author, commentId, mutateRemoveComme
                 <Avatar alt="Avatar for badge" size={'xs'} mr={5} src={userPicture(author)}/>
               }
             >
-              {`${author.firstName} ${author.lastName}`}
+              {cutString(getFullUserName(author))}
             </Badge>
           )}
           <Badge pl={0} leftSection={<ClockIcon className={classes.icon}/>} color={'gray'} size="sm">

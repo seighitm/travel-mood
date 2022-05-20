@@ -63,7 +63,8 @@ function CreateTrip() {
       description: (value) => (value.length <= 8 ? 'Description should have at least 8 letters' : null),
       languages: (value) => (value.length == 0 ? 'Add at least one language!' : null),
       transports: (value) => (value.length == 0 ? 'Add at least one transport!' : null),
-      budget: (value) => ((value && value < 0) ? 'Invalid budget!' : null)
+      budget: (value) => ((value && value < 0) ? 'Invalid budget!' : null),
+      itinerary: (value) => (isEmptyString(value) ? 'You did not specify the type of itinerary!' : null),
     },
   });
 
@@ -207,7 +208,7 @@ function CreateTrip() {
           my={'lg'}
           labelPosition="center"
           style={{width: '100%'}}
-          label={(Object.keys(form.errors).length !== 0)
+          label={(Object.keys(form.errors).length !== 0 || mapError != '')
             ? <ThemeIcon variant={'light'} color={'red'}><X size={17}/></ThemeIcon>
             : <ThemeIcon variant={'light'} color={'blue'}><Check size={17}/></ThemeIcon>
           }

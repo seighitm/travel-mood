@@ -1,5 +1,15 @@
-import React from 'react';
-import {Accordion, Button, createStyles, Group, MultiSelect, Select, SimpleGrid,} from '@mantine/core';
+import React, {useState} from 'react';
+import {
+  Accordion,
+  Button,
+  createStyles,
+  Grid,
+  Group,
+  LoadingOverlay,
+  MultiSelect,
+  Select,
+  TextInput,
+} from '@mantine/core';
 import {useGetLanguages} from '../../../api/languages/queries';
 import {useGetLocations} from '../../../api/countries/queries';
 import {DateRangePicker} from '@mantine/dates';
@@ -15,6 +25,8 @@ import {
   Trash
 } from "../../../assets/Icons";
 import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
+import {getHotkeyHandler} from "@mantine/hooks";
+import {useTripsQuery} from "../../../api/trips/queries";
 
 const useStyles = createStyles((theme, _params, getRef) => {
   const icon = getRef('control');
@@ -26,7 +38,7 @@ const useStyles = createStyles((theme, _params, getRef) => {
       borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[0],
     },
     item: {
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
+      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
       borderBottom: 0,
       borderRadius: theme.radius.md,
       boxShadow: theme.shadows.xs,
@@ -54,24 +66,33 @@ const useStyles = createStyles((theme, _params, getRef) => {
   };
 });
 
-export function SearchTripsComponent({
-                                       setActivePage,
-                                       refetchDbTrips,
-                                       languages,
-                                       setLanguages,
-                                       destinations,
-                                       setDestinations,
-                                       sex,
-                                       setSex,
-                                       date,
-                                       setDate,
-                                       budget,
-                                       setBudget,
-                                     }: any) {
+export function SearchTripsComponent({activePage, setActivePage}: any) {
   const {classes} = useStyles();
+  const navigate = useNavigate()
+
+  const [languages, setLanguages] = useState<any>([]);
+  const [destinations, setDestinations] = useState<any>([]);
+  const [sex, setSex] = useState<any>('');
+  const [date, setDate] = useState<any>([]);
+  const [age, setAge] = useState<any>('');
+  const [budget, setBudget] = useState<any>(0);
+  const [title, setTitle] = useState<string>('')
+
   const {data: dbLanguages} = useGetLanguages({});
   const {data: dbLocations} = useGetLocations({});
-  const navigate = useNavigate()
+  const {isFetching: isFetchingDbTrips, refetch: refetchDbTrips} =
+    useTripsQuery({
+      filterFields: {
+        destinations: destinations,
+        languages: languages,
+        sex: sex,
+        date: date,
+        age: age,
+        budget: budget,
+        title: title
+      },
+      page: activePage,
+    });
 
   const handlerFilter = async () => {
     await refetchDbTrips();
@@ -81,12 +102,15 @@ export function SearchTripsComponent({
     setSex('');
     setLanguages([]);
     setDestinations([]);
+    setDate([])
     setActivePage(1)
+    setTimeout(() => refetchDbTrips(), 5)
     navigate('/trips/1')
   };
 
   return (
     <div className={classes.wrapper}>
+      <LoadingOverlay visible={isFetchingDbTrips}/>
       <Accordion
         iconPosition="right"
         initialItem={-1}
@@ -99,84 +123,115 @@ export function SearchTripsComponent({
         }}
       >
         <Accordion.Item label="Filter">
-          <SimpleGrid mt={10} mb={'lg'} cols={2} spacing={12}>
-            <DateRangePicker
-              icon={<CalendarEvent size={17}/>}
-              placeholder="Select date"
-              value={date}
-              onChange={setDate}
-            />
-            <Select
-              clearable
-              placeholder="Budget"
-              onChange={setBudget}
-              value={budget}
-              icon={<CurrencyDollar size={17}/>}
-              data={[
-                {value: '0-150', label: '$0 - 150$'},
-                {value: '150-500', label: '$150 - 500$'},
-                {value: '500-1000', label: '$500 - 1000$'},
-                {value: '1000-1500', label: '$1000 - 1500$'},
-                {value: '1500-2000', label: '$1500$ - 2000$'},
-                {value: '2000', label: '2000$ +'},
-              ]}
-            />
-            <MultiSelect
-              searchable
-              clearable
-              icon={<Map size={17}/>}
-              placeholder="Countries"
-              value={destinations}
-              onChange={setDestinations}
-              data={!isNullOrUndefined(dbLocations) && !isEmptyArray(dbLocations)
-                ? dbLocations?.map((item: any) => ({
-                  value: item.code,
-                  label: item.name,
-                })) : []
-              }
-            />
-            <MultiSelect
-              placeholder="Languages"
-              value={languages}
-              searchable
-              onChange={setLanguages}
-              icon={<Language size={17}/>}
-              clearable
-              data={!isNullOrUndefined(dbLanguages) && !isEmptyArray(dbLanguages)
-                ? dbLanguages?.map((item: any) => ({
-                  value: item.name,
-                  label: item.name,
-                })) : []
-              }
-            />
-            <Select
-              clearable
-              placeholder="Gender"
-              value={sex}
-              onChange={setSex}
-              icon={<GenderBigender size={17}/>}
-              data={[
-                {value: 'M', label: 'Male'},
-                {value: 'F', label: 'Female'},
-                {value: 'O', label: 'Other'},
-              ]}
-            />
-          </SimpleGrid>
-          <Group position={'right'}>
-            <Button leftIcon={<Search size={17}/>}
-                    onClick={() => handlerFilter()}
-            >
-              Find
-            </Button>
-            <Button leftIcon={<Trash size={17}/>}
-                    color="red"
-                    onClick={() => {
-                      handlerResetFilter()
-                    }}
-            >
-              Reset
-            </Button>
-          </Group>
+
+          <TextInput
+            onKeyDown={getHotkeyHandler([
+              ['Enter', handlerFilter],
+            ])}
+            mb={'sm'}
+            icon={<Search size={15}/>}
+            value={title}
+            onChange={({currentTarget}: any) => setTitle(currentTarget.value)}
+            placeholder="Title"
+          />
+          <Grid>
+
+            <Grid.Col md={6} lg={4}>
+              <DateRangePicker
+                icon={<CalendarEvent size={17}/>}
+                placeholder="Select date"
+                value={date}
+                onChange={setDate}
+              />
+            </Grid.Col>
+
+            <Grid.Col md={6} lg={4}>
+              <Select
+                clearable
+                placeholder="Budget"
+                onChange={setBudget}
+                value={budget}
+                icon={<CurrencyDollar size={17}/>}
+                data={[
+                  {value: '0-150', label: '$0 - 150$'},
+                  {value: '150-500', label: '$150 - 500$'},
+                  {value: '500-1000', label: '$500 - 1000$'},
+                  {value: '1000-1500', label: '$1000 - 1500$'},
+                  {value: '1500-2000', label: '$1500$ - 2000$'},
+                  {value: '2000', label: '2000$ +'},
+                ]}
+              />
+            </Grid.Col>
+
+            <Grid.Col md={6} lg={4}>
+              <MultiSelect
+                searchable
+                clearable
+                icon={<Map size={17}/>}
+                placeholder="Countries"
+                value={destinations}
+                onChange={setDestinations}
+                data={!isNullOrUndefined(dbLocations) && !isEmptyArray(dbLocations)
+                  ? dbLocations?.map((item: any) => ({
+                    value: item.code,
+                    label: item.name,
+                  })) : []
+                }
+              />
+            </Grid.Col>
+
+            <Grid.Col md={6} lg={4}>
+              <MultiSelect
+                placeholder="Languages"
+                value={languages}
+                searchable
+                onChange={setLanguages}
+                icon={<Language size={17}/>}
+                clearable
+                data={!isNullOrUndefined(dbLanguages) && !isEmptyArray(dbLanguages)
+                  ? dbLanguages?.map((item: any) => ({
+                    value: item.name,
+                    label: item.name,
+                  })) : []
+                }
+              />
+            </Grid.Col>
+
+            <Grid.Col md={6} lg={4}>
+              <Select
+                clearable
+                placeholder="Gender"
+                value={sex}
+                onChange={setSex}
+                icon={<GenderBigender size={17}/>}
+                data={[
+                  {value: 'M', label: 'Male'},
+                  {value: 'F', label: 'Female'},
+                  {value: 'O', label: 'Other'},
+                ]}
+              />
+            </Grid.Col>
+            <Grid.Col md={6} lg={4}>
+
+              <Group grow position={'right'}>
+                <Button
+                  leftIcon={<Search size={17}/>}
+                  onClick={() => handlerFilter()}
+                >
+                  Find
+                </Button>
+                <Button
+                  leftIcon={<Trash size={17}/>}
+                  color="red"
+                  onClick={() => {
+                    handlerResetFilter()
+                  }}
+                >
+                  Reset
+                </Button>
+              </Group>
+            </Grid.Col>
+          </Grid>
         </Accordion.Item>
       </Accordion>
     </div>

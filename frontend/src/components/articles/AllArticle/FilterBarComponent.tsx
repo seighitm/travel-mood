@@ -1,22 +1,13 @@
-import React, {forwardRef, useState} from 'react';
-import {
-  Accordion,
-  Autocomplete,
-  Avatar,
-  Button,
-  createStyles,
-  Group,
-  MultiSelect,
-  SimpleGrid,
-  Text,
-} from '@mantine/core';
-import {useFilterUser, useGetUsersByNameOrEmail} from '../../../api/users/queries';
+import React, {useState} from 'react';
+import {Accordion, Autocomplete, Button, createStyles, Grid, Group, MultiSelect, TextInput,} from '@mantine/core';
+import {useGetUsersByNameOrEmail} from '../../../api/users/queries';
 import {useTagsQuery} from "../../../api/tags/queries";
-import {useDebouncedValue} from "@mantine/hooks";
-import {ChevronDown, Search, X} from "../../../assets/Icons";
+import {getHotkeyHandler, useDebouncedValue} from "@mantine/hooks";
+import {ChevronDown, Search, User, World, X} from "../../../assets/Icons";
 import {useGetAllArticles} from "../../../api/articles/queries";
 import {useGetLocations} from "../../../api/countries/queries";
 import {getFullUserName} from "../../../utils/utils-func";
+import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
 
 const useStyles = createStyles((theme, _params, getRef) => {
   const icon = getRef('control');
@@ -26,11 +17,6 @@ const useStyles = createStyles((theme, _params, getRef) => {
       borderRadius: theme.radius.md,
       border: '2px solid ',
       borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[0],
-    },
-    title: {
-      color: theme.white,
-      fontSize: 52,
-      fontFamily: `Greycliff CF, ${theme.fontFamily}`,
     },
     item: {
       backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
@@ -61,22 +47,6 @@ const useStyles = createStyles((theme, _params, getRef) => {
   };
 });
 
-const AutoCompleteItem = forwardRef<HTMLDivElement, any>(
-  ({description, value, image, ...others}: any, ref) => (
-    <div ref={ref} {...others}>
-      <Group noWrap>
-        <Avatar src={'https://source.unsplash.com/random/300x300'} radius={'lg'}/>
-        <div>
-          <Text>{value}</Text>
-          <Text size="xs" color="dimmed">
-            {description}
-          </Text>
-        </div>
-      </Group>
-    </div>
-  )
-);
-
 export function FilterBarComponent({activePage}: any) {
   const {classes} = useStyles();
 
@@ -84,6 +54,7 @@ export function FilterBarComponent({activePage}: any) {
   const [userName, setUserName] = useState<string>('');
   const [selectedTags, setSelectedTags] = useState<any>([]);
   const [debouncedFirstName] = useDebouncedValue(userName, 200);
+  const [title, setTitle] = useState<string>('')
 
   const {data: dbUsers} = useGetUsersByNameOrEmail(debouncedFirstName);
   const {data: dbCountries} = useGetLocations({isEnabled: true});
@@ -94,98 +65,109 @@ export function FilterBarComponent({activePage}: any) {
     author: userName,
     countries: selectedCountries,
     tags: selectedTags,
+    title: title,
   });
 
   const handlerResetFilter = () => {
     setSelectedCountries([]);
     setUserName('');
     setSelectedTags([]);
+    setTimeout(() => refetchArticles(), 5)
   };
 
   const handlerRrefetchArticles = async () => {
     await refetchArticles();
   };
 
-  console.log(userName)
-
   return (
     <div className={classes.wrapper}>
       <Accordion
         iconPosition="right"
         initialItem={-1}
+        icon={<ChevronDown size={17}/>}
         classNames={{
           item: classes.item,
           control: classes.control,
           icon: classes.icon,
           contentInner: classes.content,
         }}
-        icon={<ChevronDown size={17}/>}
       >
         <Accordion.Item label="Filter">
-          <SimpleGrid mb={'lg'} cols={2}>
-            <MultiSelect
-              clearButtonLabel="Clear selection"
+          <TextInput
+            onKeyDown={getHotkeyHandler([
+              ['Enter', handlerRrefetchArticles],
+            ])}
+            mb={'sm'}
+            icon={<Search size={15}/>}
+            value={title}
+            onChange={({currentTarget}: any) => setTitle(currentTarget.value)}
+            placeholder="Title"
+          />
+          <Grid>
+            <Grid.Col md={6} lg={4}>
 
-              data={dbTags && dbTags?.length >= 0
-                ? dbTags?.map((item: any) => ({
-                  value: item.name,
-                  label: item.name,
-                })) : []
-              }
-              clearable
-              searchable
-              placeholder="Tags"
-              value={selectedTags}
-              onChange={setSelectedTags}
-            />
-
-            <MultiSelect
-              clearButtonLabel="Clear selection"
-              data={dbCountries && dbCountries?.length != 0
-                ? dbCountries?.map((item: any) => ({
-                  value: item.code,
-                  label: item.name,
-                })) : []
-              }
-              clearable
-              searchable
-              value={selectedCountries}
-              onChange={setSelectedCountries}
-              placeholder="Countries"
-            />
-
-            <Autocomplete
-              placeholder="Users"
-              value={userName}
-              onChange={setUserName}
-              data={userName && dbUsers ? dbUsers.map((us: any) => (getFullUserName(us))) : []}
-            />
-
-            {/*<MultiSelect*/}
-            {/*  placeholder="Users"*/}
-            {/*  data={searchUser && dbUsers ? dbUsers.map((item: any) => item.firstName + " " + item.lastName) : []}*/}
-            {/*  clearable*/}
-            {/*  searchable*/}
-            {/*  value={searchUser}*/}
-            {/*  onChange={setSearchUser}*/}
-            {/*/>*/}
-            <Group grow position={'right'}>
-              <Button
-                leftIcon={<Search size={17}/>}
-                onClick={handlerRrefetchArticles}
-              >
-                Filter
-              </Button>
-              <Button
-                leftIcon={<X size={17}/>}
-                color="red"
-                variant={'light'}
-                onClick={handlerResetFilter}
-              >
-                Reset
-              </Button>
-            </Group>
-          </SimpleGrid>
+              <MultiSelect
+                clearButtonLabel="Clear selection"
+                data={!isNullOrUndefined(dbTags) && !isEmptyArray(dbTags)
+                  ? dbTags?.map((item: any) => ({
+                    value: item.name,
+                    label: item.name,
+                  })) : []
+                }
+                icon={'#'}
+                clearable
+                searchable
+                placeholder="Tags"
+                value={selectedTags}
+                onChange={setSelectedTags}
+              />
+            </Grid.Col>
+            <Grid.Col md={6} lg={4}>
+              <MultiSelect
+                limit={20}
+                clearButtonLabel="Clear selection"
+                data={!isNullOrUndefined(dbCountries) && !isEmptyArray(dbCountries)
+                  ? dbCountries?.map((item: any) => ({
+                    value: item.code,
+                    label: item.name,
+                  })) : []
+                }
+                clearable
+                icon={<World size={15}/>}
+                searchable
+                value={selectedCountries}
+                onChange={setSelectedCountries}
+                placeholder="Countries"
+              />
+            </Grid.Col>
+            <Grid.Col md={6} lg={4}>
+              <Autocomplete
+                icon={<User size={15}/>}
+                placeholder="Users"
+                value={userName}
+                onChange={setUserName}
+                data={userName && dbUsers ? dbUsers.map((us: any) => (getFullUserName(us))) : []}
+              />
+            </Grid.Col>
+            <Grid.Col md={6} lg={8}>
+              <Group grow position={'right'}>
+                <Button
+                  leftIcon={<Search size={17}/>}
+                  onClick={handlerRrefetchArticles}
+                >
+                  Filter
+                </Button>
+                <Button
+                  leftIcon={<X size={17}/>}
+                  color="red"
+                  variant={'light'}
+                  onClick={handlerResetFilter}
+                >
+                  Reset
+                </Button>
+              </Group>
+            </Grid.Col>
+          </Grid>
         </Accordion.Item>
       </Accordion>
     </div>

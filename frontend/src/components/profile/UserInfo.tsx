@@ -22,7 +22,19 @@ import {userPicture} from '../common/Utils';
 import {useMutateAccessChat} from "../../api/chat/mutations";
 import {isEmptyArray, isEmptyString, isNullOrUndefined} from "../../utils/primitive-checks";
 import {calculateAge, getFullUserName} from "../../utils/utils-func";
-import {CalendarEvent, MessageDots, Pencil, Star, User, World} from "../../assets/Icons";
+import {CalendarEvent, FileAlert, MessageDots, Pencil, Star, User, World} from "../../assets/Icons";
+import ModalComplaint from "./ModalComplaint";
+import {useDisclosure} from "@mantine/hooks";
+
+const useStyles = createStyles((theme) => ({
+  wrapper: {
+    border: '2px solid ',
+    boxShadow: theme.shadows.lg,
+    borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[2],
+    position: 'relative',
+    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
+  },
+}));
 
 const UserInfo = ({data, id}: any) => {
   const navigate = useNavigate()
@@ -34,8 +46,7 @@ const UserInfo = ({data, id}: any) => {
   const {mutate: mutateFollow} = useFollowMutate('follow');
   const {mutate: mutateUnFollow} = useUnFollowMutate('unFollow');
   const {mutate: mutateAccessChat} = useMutateAccessChat();
-
-  console.log(data)
+  const [openedComplaintModal, handlersComplaintModal] = useDisclosure(false);
 
   useEffect(() => {
     if (!isNullOrUndefined(user) && !isNullOrUndefined(socket)) {
@@ -62,6 +73,13 @@ const UserInfo = ({data, id}: any) => {
       radius={10}
       className={classes.wrapper}
     >
+      {!isNullOrUndefined(user) && user?.id != id &&
+        <ModalComplaint
+          profileId={id}
+          handlersComplaintModal={handlersComplaintModal}
+          openedComplaintModal={openedComplaintModal}
+        />
+      }
       <Grid columns={24}>
         <Grid.Col lg={7} xl={7} md={9} sm={10} style={{position: 'relative'}}>
           <Indicator
@@ -109,8 +127,23 @@ const UserInfo = ({data, id}: any) => {
               </Group>
             }
 
-            {(!isNullOrUndefined(user) && user?.id != id) &&
+            {!isNullOrUndefined(user) && user?.id != id &&
               <Group ml={'md'}>
+                {user?.role == 'USER' &&
+                  <Button
+                    pr={'sm'}
+                    compact
+                    color={'green'}
+                    radius={'xl'}
+                    onClick={() => {
+                      handlersComplaintModal.open()
+                    }}
+                    leftIcon={<FileAlert size={17}/>}
+                  >
+                    Complaint
+                  </Button>
+                }
+
                 <Button
                   pr={'sm'}
                   compact
@@ -132,7 +165,7 @@ const UserInfo = ({data, id}: any) => {
                   onClick={handlerFullowUser}
                   leftIcon={<Star
                     size={17}
-                    color={theme.colors.red[6]}
+                    color={theme.colors.pink[6]}
                     fill={data?.followedBy?.find((us: any) => us.id == user?.id)
                       ? theme.colors.red[6]
                       : 'none'
@@ -230,15 +263,5 @@ const UserInfo = ({data, id}: any) => {
     </Paper>
   );
 };
-
-const useStyles = createStyles((theme) => ({
-  wrapper: {
-    border: '2px solid ',
-    boxShadow: theme.shadows.lg,
-    borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[2],
-    position: 'relative',
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
-  },
-}));
 
 export default UserInfo;

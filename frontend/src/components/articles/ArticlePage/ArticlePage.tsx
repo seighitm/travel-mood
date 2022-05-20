@@ -14,7 +14,9 @@ import {
   Menu,
   Modal,
   Space,
+  Spoiler,
   Text,
+  Tooltip,
   TypographyStylesProvider,
   UnstyledButton,
   useMantineTheme,
@@ -25,7 +27,7 @@ import useStore from '../../../store/user.store';
 import {CustomLoader} from '../../common/CustomLoader';
 import {CommentBox} from '../../common/comment/CommentBox';
 import {EditCommentBox} from '../../common/comment/EditCommentBox';
-import {articleImage, creteAuthorShortName, cutString, dateFormatedToIsoString, userPicture} from "../../common/Utils";
+import {articleImage, creteAuthorShortName, dateFormatedToIsoString, userPicture} from "../../common/Utils";
 import CustomPaper from "../../common/CustomPaper";
 import {useQueryClient} from "react-query";
 import {useOneArticleQuery} from "../../../api/articles/queries";
@@ -36,9 +38,10 @@ import {
   useMutationRemoveCommentFromArticle,
   useMutationUnFavoriteArticle
 } from "../../../api/articles/mutations";
-import {Pencil, Star, Trash} from "../../../assets/Icons";
+import {ArrowNarrowDown, ArrowNarrowUp, Pencil, Star, Trash} from "../../../assets/Icons";
 import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
 import {getFullUserName} from "../../../utils/utils-func";
+import {ROLE} from "../../../types/enums";
 
 function ArticlePage() {
   const {id} = useParams();
@@ -52,7 +55,15 @@ function ArticlePage() {
   const [selectModalImage, setSelectedModalImage] = useState('');
   const [openedImagesCollapse, setOpenedImagesCollapse] = useState<boolean>(false);
 
-  const {data: dbArticle, isFetching: isFetchingDbArticle} = useOneArticleQuery({id: id,});
+  const onErrorEvent = () => {
+    if (user.role == ROLE.USER) {
+      navigate('/articles')
+    } else {
+      navigate('/admin/articles')
+    }
+  }
+
+  const {data: dbArticle, isFetching: isFetchingDbArticle} = useOneArticleQuery({id: id, onErrorEvent});
 
   const {mutate: mutateRemoveComment} = useMutationRemoveCommentFromArticle();
   const {mutate: mutateDeleteArticle} = useMutationDeleteArticle({});
@@ -75,7 +86,6 @@ function ArticlePage() {
   if (!queryClient.getQueryData(['articles', 'one']) && isFetchingDbArticle) {
     return <CustomLoader/>;
   }
-  console.log(dbArticle?.author)
 
   return <>
     <TypographyStylesProvider>
@@ -91,6 +101,39 @@ function ArticlePage() {
         >
           {dbArticle?.title}
         </Text>
+        <Spoiler
+          maxHeight={25}
+          style={{display: 'flex', flexDirection: 'column'}}
+          showLabel={<ArrowNarrowDown size={17}/>}
+          hideLabel={<ArrowNarrowUp size={17}/>}
+        >
+          <Group style={{width: '100%'}} position={'center'}>
+            {!isNullOrUndefined(dbArticle) && !isEmptyArray(dbArticle?.countries) &&
+              dbArticle.countries?.map((destination: any) => (
+                <Tooltip
+                  key={destination.name}
+                  position="bottom"
+                  placement="center"
+                  label={destination.name}
+                  withArrow
+                >
+                  <ActionIcon
+                    size="xs"
+                    color="blue"
+                    radius="xl"
+                    variant="transparent"
+                  >
+                    <Image
+                      mb={0}
+                      style={{height: '12px'}}
+                      src={`${import.meta.env.VITE_API_URL}uploads/flags/${destination.code.toLowerCase()}.svg`}
+                      alt={''}
+                    />
+                  </ActionIcon>
+                </Tooltip>
+              ))}
+          </Group>
+        </Spoiler>
         <Divider style={{width: '100%'}}/>
         <Group
           position={'apart'}
@@ -117,7 +160,7 @@ function ArticlePage() {
                 {getFullUserName(dbArticle?.author)}
               </Text>
               <Text size="xs" color="dimmed">
-                {dateFormatedToIsoString(dbArticle?.createdAt)}
+                {dateFormatedToIsoString(dbArticle?.updatedAt)}
               </Text>
             </div>
           </Group>

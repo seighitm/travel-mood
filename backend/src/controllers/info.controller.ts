@@ -1,5 +1,5 @@
 import {NextFunction, Response, Router} from 'express';
-import {authM} from "../middlewares/auth.middleware";
+import {authMiddleware} from "../middlewares/auth.middleware";
 import {IGetUserAuthInfoRequest} from "../utils/interfaces";
 import {asyncHandler} from "../utils/asyncHandler";
 import {
@@ -16,7 +16,7 @@ const router = Router();
 
 // GET ALL LANGUAGES
 router.get('/info/languages',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const languages = await getAllLanguages()
     res.json(languages)
@@ -25,7 +25,7 @@ router.get('/info/languages',
 
 // GET ALL Transports
 router.get('/info/transports',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const transports = await getAllTransports()
     res.json(transports);
@@ -34,7 +34,7 @@ router.get('/info/transports',
 
 // GET ALL LOCATIONS
 router.get('/info/countries',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const countries = await getAllCountries()
     res.json(countries);
@@ -43,7 +43,7 @@ router.get('/info/countries',
 
 // Create language
 router.post('/info/languages',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const languages = await addNewLanguage(req.body?.languages?.languages)
     res.json(languages);
@@ -51,7 +51,7 @@ router.post('/info/languages',
 );
 
 router.delete('/info/languages',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const languages = await deleteLanguages(req.body?.languages)
     res.json(languages);
@@ -60,7 +60,7 @@ router.delete('/info/languages',
 
 // Create countries
 router.post('/info/countries',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const countries = await addNewCountry(req.body?.countries)
     res.json(countries);
@@ -69,7 +69,7 @@ router.post('/info/countries',
 
 // Delete countries
 router.delete('/info/countries',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const countries = await deleteCountries(req.body?.countries)
     res.json(countries);

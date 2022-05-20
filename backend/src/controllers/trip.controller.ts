@@ -1,5 +1,5 @@
 import {NextFunction, Request, Response, Router} from 'express';
-import {authM} from "../middlewares/auth.middleware";
+import {authMiddleware, roleCheckMiddleware} from "../middlewares/auth.middleware";
 import prisma from "../../prisma/PrismaClient";
 import {IGetUserAuthInfoRequest} from "../utils/interfaces";
 import {asyncHandler} from "../utils/asyncHandler";
@@ -28,7 +28,7 @@ const router = Router();
  * @returns Trips
  */
 router.get('/admin/trips',
-  [authM.optional],
+  [roleCheckMiddleware(['ADMIN'])],
   asyncHandler(async (req: Request | any, res: Response, next: NextFunction) => {
     const trips = await filtering(req.query)
     res.json(trips);
@@ -43,7 +43,7 @@ router.get('/admin/trips',
  * @returns Trip
  */
 router.put('/trip/:id/favorite',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const trip = await addTripToFavorite(req.user.id, req.params.id)
     res.json({trip});
@@ -58,7 +58,7 @@ router.put('/trip/:id/favorite',
  * @returns Trip
  */
 router.delete('/trip/:id/favorite',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const trip = await removeTripFromFavorite(req.user.id, req.params.id)
     res.json({trip});
@@ -73,7 +73,7 @@ router.delete('/trip/:id/favorite',
  * @returns Trip
  */
 router.post('/trip/:id/comment',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const comment = await addCommentToTrip(req.user.id, req.params.id, req.body.comment)
     res.json(comment);
@@ -88,7 +88,7 @@ router.post('/trip/:id/comment',
  * @returns Trip
  */
 router.delete('/trip/:id/comment',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const comment = await removeCommentToTrip(req.params.id, req.user?.id)
     res.json(comment).sendStatus(204);
@@ -102,9 +102,8 @@ router.delete('/trip/:id/comment',
  * @returns Trip
  */
 router.post('/trip/:id/join',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    console.log(req?.body)
     const user = await joinToTrip(req?.body, req.params.id)
     res.json(user);
   })
@@ -117,7 +116,7 @@ router.post('/trip/:id/join',
  * @returns Trip
  */
 router.delete('/trip/:id/join',
-  authM.required,
+  authMiddleware.required,
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const userJoinToTrip = await leaveFromTrip(req?.user?.id, req.params.id)
     res.json(userJoinToTrip);
@@ -131,7 +130,7 @@ router.delete('/trip/:id/join',
  * @returns Trip
  */
 router.post('/trip',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const trip = await createTrip(req.user.id, req.body)
     res.json(trip);
@@ -145,7 +144,7 @@ router.post('/trip',
  * @returns Trips
  */
 router.get('/trips',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: Request | any, res: Response, next: NextFunction) => {
     const trips = await getTrips(req.query, req.user?.id, req.user?.role)
     res.json(trips);
@@ -153,7 +152,7 @@ router.get('/trips',
 )
 
 router.put('/trip/joinRequest/:id/changeStatus',
-  [authM.required],
+  [authMiddleware.required],
   async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     try {
       // const test = await prisma.userJoinToTrip.findUnique({
@@ -235,7 +234,7 @@ router.put('/trip/joinRequest/:id/changeStatus',
 
 
 router.get('/trips/requests',
-  [authM.required],
+  [authMiddleware.required],
   async (req: IGetUserAuthInfoRequest | any, res: Response, next: NextFunction) => {
     try {
       if (req.query?.status == 'ALL') {
@@ -287,9 +286,6 @@ router.get('/trips/requests',
           },
           _count: true
         })
-        console.log('%%%%%%%%%%%%%')
-        console.log(userJoinning)
-        console.log('%%%%%%%%%%%%%')
         res.json(userJoinning);
       } else if (req.query?.status == 'PENDING') {
         console.log('PPPPPPPPPPPPPPP')
@@ -528,7 +524,7 @@ router.get('/trips/requests',
  * @returns Trip
  */
 router.get('/trip-one/:id',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     console.log('MIIIIIIIIIIIIIISA')
     const trip = await getOneTrip(req.params.id, req.user?.id);
@@ -544,7 +540,7 @@ router.get('/trip-one/:id',
  * @returns Trip
  */
 router.put('/trip/:id',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const trip = await updateTrip(req.user.id, req.params.id, req?.body)
     res.json(trip);
@@ -559,7 +555,7 @@ router.put('/trip/:id',
  * @returns Trip
  */
 router.delete('/trip/:id',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const trip = await deleteTrip(req.params.id, req.user.id, req.user?.role)
     res.json(trip);
@@ -573,7 +569,7 @@ router.delete('/trip/:id',
  * @returns Trips
  */
 router.put('/trip/:id/hide',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: Request | any, res: Response, next: NextFunction) => {
     const trips = await switchTripHideStatus(req.params.id, req.user.id, req.user?.role);
     res.json(trips);

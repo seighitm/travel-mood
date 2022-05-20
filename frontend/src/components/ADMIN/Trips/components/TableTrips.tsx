@@ -1,14 +1,17 @@
-import {ScrollArea, Stack} from "@mantine/core";
+import {Button, ScrollArea, Stack} from "@mantine/core";
 import * as React from "react";
 
 import Table from "../components/table";
-import TableInput from "../../../common/tableComponents/table-input";
-import TablePagination from "../../../common/tableComponents/table-pagination";
+import TableInput from "../../../common/table/table-input";
+import TablePagination from "../../../common/table/table-pagination";
 import tableStore from "../../../../store/table.store";
 import {useTripsFiltering} from "../../../../api/trips/queries";
-import {useEffect} from "react";
+import {FilePlusIcon} from "@modulz/radix-icons";
+import {useNavigate} from "react-router-dom";
 
 const TableTrips = () => {
+  const navigate = useNavigate()
+
   const {
     queryPageIndex,
     queryPageSize,
@@ -28,7 +31,17 @@ const TableTrips = () => {
     queryPageSortBy,
     queryPageOrder,
   );
-  return (
+  return <>
+    <Button
+      compact
+      color={'pink'}
+      leftIcon={<FilePlusIcon style={{width: '17px', height: '17px'}}/>}
+      onClick={() => {
+        navigate('/admin/trips/add')
+      }}
+    >
+      Add Trip
+    </Button>
     <Stack>
       <TableInput
         value={queryPageFilter}
@@ -59,7 +72,7 @@ const TableTrips = () => {
         total={Math.ceil(data.count / queryPageSize)}
       />
     </Stack>
-  );
+  </>
 };
 
 export default TableTrips;

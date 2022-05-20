@@ -1,5 +1,5 @@
 import {NextFunction, Request, Response, Router} from 'express';
-import {authM} from "../middlewares/auth.middleware";
+import {authMiddleware} from "../middlewares/auth.middleware";
 import {asyncHandler} from "../utils/asyncHandler";
 import {deleteTag, getTags} from "../services/tag.service";
 
@@ -12,7 +12,7 @@ const router = Router();
  * @returns tags list of tag names
  */
 router.get('/tags',
-  [authM.optional],
+  [authMiddleware.optional],
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const tags = await getTags(req.query);
     res.json(tags);
@@ -26,7 +26,7 @@ router.get('/tags',
  * @returns Tag
  */
 router.delete('/tag',
-  [authM.required],
+  [authMiddleware.required],
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const tag = await deleteTag(req.body?.tags);
     res.json(tag);

@@ -21,15 +21,11 @@ const MessageInputField = ({scrollToBottom}: any) => {
   const ref = useRef<any>();
   const matches = useMediaQuery('(min-width: 1045px)');
   const matchesMobile = useMediaQuery('(min-width: 475px)');
-  console.log(ref.current?.offsetHeight)
-
   const [sendButtonHeight, setSendButtonHeight] = useState<any>('44')
 
   useEffect(() => {
     setSendButtonHeight(ref.current?.offsetHeight)
   }, [ref.current?.offsetHeight])
-
-  const dat = (event: any) => console.log(event.key)
 
   return (
     <Paper

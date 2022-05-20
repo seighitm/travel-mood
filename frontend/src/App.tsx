@@ -1,4 +1,4 @@
-import Routes from './components/common/engine/Routes';
+import Routes from './components/common/Routes/Routes';
 import chatStore from './store/chat.store';
 import React, {useEffect} from 'react';
 import useStore from "./store/user.store";
@@ -39,7 +39,7 @@ function App({socketIo}: any) {
   console.log(location)
   console.log(socket)
   useEffect(() => {
-    if (socket) {
+    if (user && socket) {
       socket.on('get-reconnect-to-rooms', async () => {
         await queryClient.invalidateQueries('fetchMyChats');
         socket.emit('post-join-room-again')

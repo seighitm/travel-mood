@@ -1,4 +1,4 @@
-import {Grid, Group, Tabs, TabsProps} from '@mantine/core';
+import {Grid, Group} from '@mantine/core';
 import React, {useEffect, useState} from 'react';
 import useStore from '../../store/user.store';
 import {useGetAllFavorites} from '../../api/users/queries';
@@ -10,55 +10,6 @@ import {useNavigate, useParams} from "react-router-dom";
 import {useQueryClient} from "react-query";
 import {getFullUserName} from "../../utils/utils-func";
 import TabItemComponent from "./TabItemComponent";
-
-function StyledTabs(props: TabsProps & { active: any, onTabChange: any } | any) {
-  return (
-    <Tabs
-      active={props.activeTab}
-      onTabChange={props.setActiveTab}
-      variant="unstyled"
-      styles={(theme) => ({
-        body: {
-          paddingTop: '27px',
-        },
-        tabControl: {
-          // backgroundImage: "linear-gradient(60deg, #12b886 0%, #228be6 100%)",
-          backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
-          color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.colors.gray[9],
-          border: `1px solid ${
-            theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[4]
-          }`,
-          fontSize: theme.fontSizes.md,
-          padding: `${theme.spacing.lg}px ${theme.spacing.xl}px`,
-
-          '&:not(:first-of-type)': {
-            borderLeft: 0,
-          },
-
-          '&:first-of-type': {
-            borderTopLeftRadius: theme.radius.md,
-            borderBottomLeftRadius: theme.radius.md,
-          },
-
-          '&:last-of-type': {
-            borderTopRightRadius: theme.radius.md,
-            borderBottomRightRadius: theme.radius.md,
-          },
-        },
-        tabsList: {
-          justifyContent: 'center',
-        },
-        tabActive: {
-          backgroundImage: 'linear-gradient(60deg, #92c1e6 0%, #0a5799 100%)',
-          // backgroundColor: theme.colors.blue[7],
-          borderColor: theme.colors.blue[7],
-          color: theme.white,
-        },
-      })}
-      {...props}
-    />
-  );
-}
 
 const AllFavorites = () => {
   const {type} = useParams()
@@ -73,19 +24,8 @@ const AllFavorites = () => {
     setTypeOfFavoriteItems(type)
   }, [])
 
-  // useEffect(() => {
-  //   navigate(activeTab == 0
-  //     ? '/favorites/trips'
-  //     : activeTab == 1
-  //       ? '/favorites/articles'
-  //       : activeTab == 2
-  //         ? '/favorites/users'
-  //         : '')
-  // }, [activeTab])
-
-
   useEffect(() => {
-    navigate(`/favorites/${typeOfFavoriteItems.toLowerCase()}`)
+    navigate(`${user.role == 'ADMIN' ? '/admin' : ''}/favorites/${typeOfFavoriteItems.toLowerCase()}`)
   }, [typeOfFavoriteItems])
 
   return (
@@ -133,11 +73,14 @@ const AllFavorites = () => {
                   ?.filter((item: any) => item.id != user?.id)
                   ?.map((us: any) => (
                     <Grid.Col xs={12} sm={6} md={4} lg={3} key={us.id}>
-                      <UserCard picture={us.picture}
-                                id={us.id}
-                                name={getFullUserName(us)}
-                                onlineUsers={onlineUsers}
-                                isFollowedByUser={true}/>
+                      <UserCard
+                        role={us?.role.role}
+                        picture={us.picture}
+                        id={us.id}
+                        name={getFullUserName(us)}
+                        onlineUsers={onlineUsers}
+                        isFollowedByUser={true}
+                      />
                     </Grid.Col>
                   ))}
               </Grid>

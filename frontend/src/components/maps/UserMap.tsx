@@ -294,7 +294,6 @@ function UserMap({
     <div className="map" style={{borderRadius: '10px', width: '100%'}}>
       <MapContainer
         style={{borderRadius: '10px', width: '100%'}}
-        // @ts-ignore
         fullscreenControl={false}
         whenCreated={setMap}
         defaultPosition={[38.82259, -2.8125]}
@@ -307,10 +306,10 @@ function UserMap({
           [-58.995311187950925, 174],
         ]}
       >
-        <LocationButton/>
-        <LoadingOverlay visible={isLoading || !geoDate}/>
+        {/*<LocationButton/>*/}
+        {/*<LoadingOverlay visible={isLoading || !geoDate}/>*/}
         <CustomTileLayer/>
-        <SearchField/>
+        {/*<SearchField/>*/}
         {!isEditMode && geoDate && !openedModal && (
           <GeoJSONWithLayer
             setOpenedModal={setOpenedModal}

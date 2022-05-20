@@ -10,9 +10,9 @@ function CustomNavbarAdmin() {
   return (
     <MediaQuery smallerThan="sm" styles={{display: 'none'}}>
       <Navbar p="xs" width={{
-        sm: !matches ? 70 : 230,
-        lg: 240,
-        xl: 240,
+        sm: !matches ? 70 : 180,
+        lg: 180,
+        xl: 180,
         base: 0,
       }}>
         <Navbar.Section grow component={ScrollArea} mx="-xs" px="xs">

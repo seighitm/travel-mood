@@ -9,7 +9,6 @@ import {getFullUserName} from "../../../utils/utils-func";
 function ModalChatParticipants({openedChatDetailsModal, handlersChatDetailsModal, chat}: any) {
   const navigate = useNavigate();
   const {selectedChat} = chatStore((state: any) => state);
-  console.log(chat)
   return <>
     {selectedChat.id != -1 &&
       <Modal

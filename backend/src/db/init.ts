@@ -4,12 +4,10 @@ import * as path from 'path';
 import {addNewCountry, addNewLanguage} from "../services/base.service";
 
 export const initDatabaseScript = async () => {
-  console.log(__dirname)
-  console.log('__dirname')
   const countLanguages = await prisma.language.count()
   if (countLanguages <= 10) {
     try {
-      const data = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'languages.json'), 'utf8');
+      const data = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'data-json','languages.json'), 'utf8');
       const array: any = []
       Object.entries(JSON.parse(data)).forEach((entry: any) => array.push(entry[1].name));
       await addNewLanguage([...array])
@@ -20,7 +18,7 @@ export const initDatabaseScript = async () => {
   const countCountries = await prisma.countries.count()
   if (countCountries <= 10) {
     try {
-      const data = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'data_json.json'), 'utf8');
+      const data = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'data-json','data_json.json'), 'utf8');
       await addNewCountry(JSON.parse(data))
     } catch (err) {
       console.error(err);

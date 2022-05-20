@@ -1,7 +1,8 @@
 import React, {FC, useEffect, useRef, useState} from 'react';
+import L from 'leaflet';
+
 import {Group, LoadingOverlay, Text,} from '@mantine/core';
-import {SearchField} from './UtilsComponent/SearchComponent';
-import {CustomLoader} from '../common/engine/Routes';
+import {CustomLoader} from '../common/CustomLoader';
 import {Link} from 'react-router-dom';
 
 import {
@@ -14,7 +15,6 @@ import {
   Popup,
   useMapEvents,
 } from 'react-leaflet';
-import L from 'leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import '../../assets/map-utils/Leaflet.fullscreen.min';
 import 'leaflet-geosearch/dist/geosearch.css';
@@ -29,11 +29,10 @@ import {fetchGeoJsonData} from "../../api/map/axios";
 import CustomTileLayer from "./UtilsComponent/CustomTileLayer";
 import LocationButton from "./UtilsComponent/LocationButton";
 import {MAP_CENTER, MAP_MAX_BOUNDS} from './UtilsComponent/Constants';
-// import {Search, SearchField} from './MapObjects';
-import LeafletSearch from "./LeafletSearch";
-import LeafletGeoSearch from "./LeafletSearch";
-import {OpenStreetMapProvider} from "leaflet-geosearch";
+// import {SearchField.tsx} from './MapObjects';
 import 'leaflet-geosearch/dist/geosearch';
+import useStore from "../../store/user.store";
+// import {SearchField.tsx} from './UtilsComponent/SearchComponent';
 
 const GeoJSONWithLayer = (props: any) => {
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
@@ -187,6 +186,7 @@ const GeneralMap: React.FC<any> = ({setDestinations, setPlaces}: any) => {
   const [map, setMap] = useState<any>(null);
   const [geoDate, setGeoDate] = useState<any>(null);
   const [selectedMarker, setSelectedMarker] = useState<any>(-1)
+  const {user, onlineUsers} = useStore((state: any) => state);
 
   const {data: locations, isFetching} = useGetAllMarkers();
   const {data: tripMarkers, refetch} = useGetTripsByMarkerId(selectedMarker)
@@ -195,8 +195,6 @@ const GeneralMap: React.FC<any> = ({setDestinations, setPlaces}: any) => {
     if (geoDate == null) fetchGeoJsonData(setGeoDate);
   }, []);
 
-  console.log(geoDate)
-
   useEffect(() => {
     if (tripMarkers?.places?.find((marker: any) => marker.id == selectedMarker) == undefined)
       refetch()
@@ -204,11 +202,16 @@ const GeneralMap: React.FC<any> = ({setDestinations, setPlaces}: any) => {
 
   if (isFetching) return <CustomLoader/>;
 
-  return <div className="map" style={{height: '80vh', borderRadius: '10px'}}>
+  // @ts-ignore
+  return <div className="map" style={{
+    // top: 62, left: 0, position: "fixed",
+    height: '87vh',
+    borderRadius: '2px'
+  }}>
     <MapContainer
-      style={{width: '100%', borderRadius: '10px'}}
-      // style={{}}
-      // fullscreenControl={true}
+      style={{width: '100%', borderRadius: '2px'}}
+      // @ts-ignore
+      fullscreenControl={true}
       // @ts-ignore
       whenCreated={(map) => setMap(map)}
       // whenCreated={setMap}
@@ -221,11 +224,35 @@ const GeneralMap: React.FC<any> = ({setDestinations, setPlaces}: any) => {
       keyboard={true}
       keyboardPanDelta={80}
     >
+      {/*<ActionIcon radius={0}*/}
+      {/*            onClick={openSpotlight}*/}
+      {/*            variant={'filled'}*/}
+      {/*            style={{*/}
+      {/*              zIndex: 400,*/}
+      {/*              top: '170px',*/}
+      {/*              left: '11px',*/}
+      {/*              backgroundColor: '#fff',*/}
+      {/*              border: '2px solid rgba(0.2, 0.2, 0.2, 0.3)',*/}
+      {/*            }}*/}
+      {/*            styles={{*/}
+      {/*              root: {*/}
+      {/*                height: '33px!important',*/}
+      {/*                width: '33px!important'*/}
+      {/*              }*/}
+      {/*            }}*/}
+      {/*>*/}
+      {/*  <Search size={15} color={'gray'}/>*/}
+      {/*</ActionIcon>*/}
+
+      {/*<SpotlightControl />*/}
+
       <ClickOutsideOfMarker setSelectedMarker={setSelectedMarker}/>
       <LoadingOverlay visible={!geoDate || isFetching}/>
       <CustomTileLayer/>
-      <SearchField/>
-      {/*<SearchField/>*/}
+      {/*<SearchField.tsx/>*/}
+      {/*{map &&*/}
+      {/*  <SearchField.tsx/>*/}
+      {/*}*/}
       {/*<Search provider={new OpenStreetMapProvider()} />*/}
       {/*<LocationButton customStyles='margin-top: 93px;'/>*/}
       <LocationButton customStyles='margin-top: 47px'/>

@@ -25,6 +25,7 @@ import useStore from "../../store/user.store";
 import {useMutateFavoriteTrip, useMutateUnFavoriteTrip} from "../../api/trips/mutations";
 import CustomPaper from "../common/CustomPaper";
 import {Star} from "../../assets/Icons";
+import {isNullOrUndefined} from "../../utils/primitive-checks";
 
 
 const useStyles = createStyles((theme) => ({
@@ -93,7 +94,6 @@ const UserTripCard = React.memo(({trip}: any) => {
   const {classes} = useStyles();
   const theme = useMantineTheme();
   let location = useLocation();
-  console.log(location)
   const {mutate: mutateUnFavorite, isLoading: isLoadingUF} = useMutateUnFavoriteTrip();
   const {mutate: mutateFavorite, isLoading: isLoadingFF} = useMutateFavoriteTrip();
 
@@ -104,7 +104,6 @@ const UserTripCard = React.memo(({trip}: any) => {
       mutateUnFavorite({id: trip.id});
   };
 
-  console.log(trip)
   const [opened, setOpen] = useState(false);
   return <Box key={trip.id}>
     <CustomPaper style={{position: 'relative'}}>
@@ -138,8 +137,8 @@ const UserTripCard = React.memo(({trip}: any) => {
             >
               <Star
                 size={17}
-                color={theme.colors.red[6]}
-                fill={trip.tripFavoritedBy?.find((item: any) => item.id == user?.id) === undefined
+                color={isNullOrUndefined(user) ? 'gray' : theme.colors.red[6]}
+                fill={trip.tripFavoritedBy?.find((item: any) => item.id == user?.id) !== undefined
                   ? theme.colors.red[6]
                   : 'none'
                 }/>
@@ -166,7 +165,6 @@ const UserTripCard = React.memo(({trip}: any) => {
       </Group>
       {/*}*/}
       <Box className={classes.body}>
-
         <Divider
           style={{width: '100%'}}
           my={'xs'}

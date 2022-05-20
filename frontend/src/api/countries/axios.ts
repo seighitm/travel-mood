@@ -19,7 +19,6 @@ export const fetchCountriesJsonData = async (setGeoDate: any) => {
   return await fetch(`${import.meta.env.VITE_API_URL}api/countries-data`)
     .then((response) => response.json())
     .then((data) => {
-      console.log(data)
       setGeoDate(data)
     });
 };

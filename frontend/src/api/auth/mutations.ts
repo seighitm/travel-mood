@@ -8,7 +8,6 @@ import {ROLE} from "../../types/enums";
 export const useMutateSignIn = () => {
   const navigate = useNavigate();
   const {setUser} = useStore((state: any) => state);
-
   return useMutation((payload: any) => apiSignIn(payload), {
     onSuccess: async (data: any) => {
       setUser(data);
@@ -34,7 +33,7 @@ export const useMutateSignUp = () => {
         message: '',
         color: 'blue'
       });
-      // navigate('/auth/login');
+      navigate('/auth/login');
     },
     onError: async (err: any) => {
       showNotification({

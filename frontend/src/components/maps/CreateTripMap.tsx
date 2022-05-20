@@ -10,8 +10,7 @@ import redIcon from '../../assets/svg-map-markers/img/marker-icon-2x-red.png';
 import blueIconShadow from '../../assets/svg-map-markers/img/marker-shadow.png';
 import MarkerSetModal from "../trip/CreateTrip/MarkerSetModal";
 import CustomTileLayer from "./UtilsComponent/CustomTileLayer";
-import {SearchField} from "./MapObjects";
-// import {SearchField} from "./UtilsComponent/SearchComponent";
+// import {SearchField.tsx} from "./UtilsComponent/SearchComponent";
 
 const GeoJSONWithLayer = (props: any) => {
   const geoJsonLayerRef = useRef<LeafletGeoJSON | null>(null);
@@ -98,7 +97,6 @@ const ShowMarkers = ({mapContainer, allMarkers, setAllMarkers, setRefresh}: any)
 
     let latlng2 = L.latLng(allMarkers[1].place[0], allMarkers[1].place[1]);
     let distance = latlng1.distanceTo(latlng2) / 1000
-    console.log(distance);
   }
   return allMarkers.map((item: any, index: number) => {
     return (
@@ -286,7 +284,7 @@ const CreateTripMap = React.memo(
                 style={{weight: 0.01, fillColor: 'rgba(255,255,255,0)'}}
               />
             )}
-            <SearchField/>
+            {/*<SearchField.tsx/>*/}
           </MapContainer>
         </div>
       </>

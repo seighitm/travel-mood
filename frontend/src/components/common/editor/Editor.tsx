@@ -1,7 +1,6 @@
 import {RichTextEditor} from '@mantine/rte';
-import React, {useCallback, useEffect, useMemo} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {TypographyStylesProvider} from '@mantine/core';
-import {useForceUpdate} from "@mantine/hooks";
 
 const Editor = (({value, onChange, setEditorImages, initialContent}: any) => {
   const handleImageUpload = useCallback((file: File): Promise<string> =>
@@ -17,7 +16,6 @@ const Editor = (({value, onChange, setEditorImages, initialContent}: any) => {
           if (setEditorImages) {
             const imgName = result.url.split('/')[result.url.split('/').length - 1]
             setEditorImages((prev: any) => {
-              console.log(prev)
               return (prev && prev?.length != 0) ? [...prev, imgName] : [imgName]
             });
           }
@@ -25,8 +23,7 @@ const Editor = (({value, onChange, setEditorImages, initialContent}: any) => {
         })
         .catch(() => reject(new Error('Upload failed')));
     }), [value])
-  console.log(value)
-  console.log(typeof value)
+
   return (
     <TypographyStylesProvider mt={'md'} mb={'md'}>
       <RichTextEditor

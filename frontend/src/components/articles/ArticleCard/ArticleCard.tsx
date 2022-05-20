@@ -19,7 +19,7 @@ import {useMutationFavoriteArticle, useMutationUnFavoriteArticle,} from '../../.
 import {articleImage, creteAuthorShortName, cutString, dateFormatedToIsoString, userPicture} from '../../common/Utils';
 import {FacebookIcon, TwitterIcon} from "react-share";
 import useStore from "../../../store/user.store";
-import SocialSharButtons from "../../common/SocialShare/SocialSharButtons";
+import SocialSharButtons from "../../common/socialShare/SocialSharButtons";
 import {ArrowNarrowDown, ArrowNarrowUp, Share, Star} from "../../../assets/Icons";
 import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
 
@@ -67,8 +67,6 @@ export function ArticleCard({article, page}: any) {
       mutateFavorite({id: article.id});
     }
   };
-
-  console.log(article)
 
   return (
     <Card
