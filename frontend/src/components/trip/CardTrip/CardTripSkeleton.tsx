@@ -1,27 +1,51 @@
 import React from 'react';
-import {Box, Grid, Paper, Skeleton} from '@mantine/core';
+import {Box, createStyles, Grid, Group, Paper, Skeleton} from '@mantine/core';
+
+const useStyles = createStyles((theme) => ({
+  card: {
+    border: '2px solid ',
+    borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[1],
+    position: 'relative',
+    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0],
+  },
+}));
 
 const CardTripSkeleton = () => {
+  const {classes} = useStyles();
+
   return (
-    <Box mt={60}>
-      {Array.from({length: 12}, (_: any, index: number) => (
+    <Box>
+      {Array.from({ length: 6 }, (item: any, index: number) => (
         <Paper
-          key={index}
           mb={'xl'}
-          sx={(theme) => ({
-            position: 'relative',
-            backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
-          })}
+          className={classes.card}
         >
           <Grid columns={24}>
-            <Grid.Col lg={5} xl={5} md={7} sm={8} style={{position: 'relative'}}>
-              <Skeleton mr={8} ml={8} height={'300px'} width={'97%'} mb="md"/>
+            <Grid.Col lg={5} xl={5} md={7} sm={8} style={{ position: 'relative' }}>
+              <Skeleton mx={8} height={'220px'} width={'97%'} mb="xs" />
+              <Skeleton mx={8} height={'20px'} width={'97%'} mb="md" />
             </Grid.Col>
-            <Grid.Col lg={19} xl={19} md={17} sm={16}>
-              <Skeleton height={50} mt={'sm'} ml={'3%'} mb={25} width={'50%'}/>
-              {Array.from({length: 5}, (_: any, index: number) =>
-                <Skeleton key={index} height={20} ml={'3%'} mb={25} width={'95%'}/>
-              )}
+            <Grid.Col pt={'sm'} lg={19} xl={19} md={17} sm={16}>
+              <Group mb={'sm'} direction={'row'} position={'apart'}>
+                <Skeleton radius={'lg'} height={40} ml={'3%'} width={'50%'} />
+                <Skeleton height={25} mr={'3%'} width={'9%'} radius={'xl'} />
+              </Group>
+              <Skeleton height={1} ml={'3%'} mb={'xs'} width={'95%'} />
+              <Group mb={'xs'}>
+                {Array.from({ length: 5 }, (_: any, index: number) => (
+                  <Skeleton key={index} height={20} ml={'3%'} width={'10%'} radius={'lg'} />
+                ))}
+              </Group>
+              <Skeleton height={1} ml={'3%'} mt={'sm'} mb={'xs'} width={'95%'} />
+              <Skeleton height={15} ml={'3%'} width={'95%'} mb={'xs'} radius={'xs'} />
+              <Skeleton height={15} ml={'3%'} width={'95%'} mb={'xs'} radius={'xs'} />
+              <Skeleton height={15} ml={'3%'} width={'95%'} radius={'xs'} />
+              <Skeleton height={1} ml={'3%'} mt={'sm'} mb={'xs'} width={'95%'} />
+              <Group mb={'xs'}>
+                {Array.from({ length: 4 }, (item: any, index: number) => (
+                  <Skeleton key={index} height={20} ml={'3%'} width={'10%'} radius={'lg'} />
+                ))}
+              </Group>
             </Grid.Col>
           </Grid>
         </Paper>
@@ -31,15 +55,3 @@ const CardTripSkeleton = () => {
 };
 
 export default CardTripSkeleton;
-
-/*
-<Skeleton height={15} ml={'1%'} mt={15} mb={30} radius="xl" width={'98%'}/>
-                        <Group>
-                            <Skeleton height={15} ml={'1%'} mt={15} radius="xl" width={'20%'}/>
-                            <Skeleton height={15} ml={'1%'} mt={15} radius="xl" width={'20%'}/>
-                            <Skeleton height={15} ml={'1%'} mt={15} radius="xl" width={'20%'}/>
-                            <Skeleton height={15} ml={'1%'} mt={15} radius="xl" width={'20%'}/>
-                        </Group>
-                        <Skeleton height={15} ml={'1%'} mt={15} radius="xl" width={'98%'}/>
-                        <Skeleton height={15} ml={'1%'} mt={15} radius="xl" width={'98%'}/>
- */

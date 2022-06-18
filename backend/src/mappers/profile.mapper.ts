@@ -1,5 +1,5 @@
-import {Profile, User} from '../models/user.model';
-import {ProfileResponse} from "../models/profile.model";
+import { Profile, User } from '../types/user.model'
+import { ProfileResponse } from '../types/profile.model'
 
 const profileMapper = (profile: ProfileResponse, userId: number): Profile => ({
   id: profile.id,
@@ -7,10 +7,8 @@ const profileMapper = (profile: ProfileResponse, userId: number): Profile => ({
   firstName: profile.firstName,
   lastName: profile.lastName,
   following: userId
-    ? profile?.followedBy.some(
-      (followingUser: Pick<User, 'id'>) => followingUser.id === userId,
-    )
+    ? profile?.followedBy.some((followingUser: Pick<User, 'id'>) => followingUser.id === userId)
     : false,
-});
+})
 
-export default profileMapper;
+export default profileMapper

@@ -1,48 +1,88 @@
-import React, {useMemo, useState} from 'react';
-import {Button, Group, Modal, Textarea} from "@mantine/core";
+import React, { Dispatch, useMemo, useState } from 'react';
+import { Button, Group, Modal, Progress, Textarea } from '@mantine/core';
+import { getHotkeyHandler } from '@mantine/hooks';
+import { Check, X } from '../../common/Icons';
 
-function MarkerSetModal({openedMarkerModal, setOpenedMarkerModal, segmentControl, handlerCreateMarker}: any) {
-  const [placeDescription, setPlaceDescription] = useState<any>('')
+interface MarkerSetModalComponentProps {
+  openedMarkerModal: boolean;
+  setOpenedMarkerModal: Dispatch<React.SetStateAction<any>>;
+  handlerCreateMarker: (desc: any) => void;
+}
 
-  return <Modal
-    opened={openedMarkerModal && segmentControl == 'markers'}
-    onClose={() => setOpenedMarkerModal(false)}
-    withCloseButton={false}
-    centered
-  >
-    {useMemo(() =>
-      <Textarea
-        value={placeDescription}
-        onChange={(event) => setPlaceDescription(event.currentTarget.value)}
-        placeholder="Description"
-        autosize
-        minRows={2}
-        maxRows={4}
-        mb={'md'}
-      />, [placeDescription])}
+function MarkerSetModal({
+  openedMarkerModal,
+  setOpenedMarkerModal,
+  handlerCreateMarker,
+}: MarkerSetModalComponentProps) {
+  const [placeDescription, setPlaceDescription] = useState<string>('');
+  const MAX_CHARACTER_LENGTH: number = 150;
 
-    <Group grow position={'center'}>
-      <Button
-        color={'pink'}
-        onClick={() => {
-          setPlaceDescription('')
-          handlerCreateMarker(placeDescription)
-        }}
-      >
-        Set
-      </Button>
-      <Button
-        variant={'outline'}
-        color={'blue'}
-        onClick={() => {
-          setPlaceDescription('');
-          setOpenedMarkerModal(false);
-        }}
-      >
-        Close
-      </Button>
-    </Group>
-  </Modal>
+  return (
+    <Modal
+      opened={openedMarkerModal}
+      onClose={() => setOpenedMarkerModal(false)}
+      withCloseButton={false}
+      centered
+    >
+      {useMemo(
+        () => (
+          <Textarea
+            value={
+              placeDescription?.length <= MAX_CHARACTER_LENGTH
+                ? placeDescription
+                : placeDescription.slice(0, MAX_CHARACTER_LENGTH)
+            }
+            onChange={(event) => setPlaceDescription(event.currentTarget.value)}
+            placeholder="Description"
+            autosize
+            mb={'xs'}
+            minRows={2}
+            maxRows={4}
+            onKeyDown={getHotkeyHandler([
+              [
+                'Enter',
+                () => {
+                  setPlaceDescription('');
+                  handlerCreateMarker(placeDescription);
+                },
+              ],
+            ])}
+          />
+        ),
+        [placeDescription]
+      )}
+      <Progress
+        size="lg"
+        striped
+        animate
+        value={(placeDescription.length * 100) / MAX_CHARACTER_LENGTH}
+        color={placeDescription.length <= MAX_CHARACTER_LENGTH ? 'teal' : 'red'}
+      />
+      <Group mt={'xs'} grow position={'center'}>
+        <Button
+          color={'blue'}
+          leftIcon={<Check size={17} />}
+          onClick={() => {
+            setPlaceDescription('');
+            handlerCreateMarker(placeDescription.slice(0, MAX_CHARACTER_LENGTH));
+          }}
+        >
+          Set
+        </Button>
+        <Button
+          leftIcon={<X size={17} />}
+          variant={'outline'}
+          color={'pink'}
+          onClick={() => {
+            setPlaceDescription('');
+            setOpenedMarkerModal(false);
+          }}
+        >
+          Close
+        </Button>
+      </Group>
+    </Modal>
+  );
 }
 
 export default MarkerSetModal;

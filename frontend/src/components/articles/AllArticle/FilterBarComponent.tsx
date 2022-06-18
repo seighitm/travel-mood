@@ -1,13 +1,23 @@
-import React, {useState} from 'react';
-import {Accordion, Autocomplete, Button, createStyles, Grid, Group, MultiSelect, TextInput,} from '@mantine/core';
-import {useGetUsersByNameOrEmail} from '../../../api/users/queries';
-import {useTagsQuery} from "../../../api/tags/queries";
-import {getHotkeyHandler, useDebouncedValue} from "@mantine/hooks";
-import {ChevronDown, Search, User, World, X} from "../../../assets/Icons";
-import {useGetAllArticles} from "../../../api/articles/queries";
-import {useGetLocations} from "../../../api/countries/queries";
-import {getFullUserName} from "../../../utils/utils-func";
-import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
+import React, { useState } from 'react';
+import {
+  Accordion,
+  Autocomplete,
+  Button,
+  createStyles,
+  Grid,
+  Group,
+  MultiSelect,
+  TextInput,
+} from '@mantine/core';
+import { useGetUsersByNameOrEmail } from '../../../api/users/queries';
+import { useTagsQuery } from '../../../api/tags/queries';
+import { getHotkeyHandler, useDebouncedValue } from '@mantine/hooks';
+import { ArrowBackUp, ChevronDown, Search, User, World } from '../../common/Icons';
+import { useGetAllArticles } from '../../../api/articles/queries';
+import { useGetCountries } from '../../../api/info/queries';
+import { getFullUserName } from '../../../utils/utils-func';
+import { isEmptyArray, isNullOrUndefined } from '../../../utils/primitive-checks';
+import { LG_ICON_SIZE, MD_ICON_SIZE } from '../../../utils/constants';
 
 const useStyles = createStyles((theme, _params, getRef) => {
   const icon = getRef('control');
@@ -39,28 +49,27 @@ const useStyles = createStyles((theme, _params, getRef) => {
       ref: icon,
       marginLeft: theme.spacing.md,
     },
-    gradient: {
-      backgroundImage: `radial-gradient(${theme.colors[theme.primaryColor][6]} 0%, ${
-        theme.colors[theme.primaryColor][5]
-      } 100%)`,
-    },
   };
 });
 
-export function FilterBarComponent({activePage}: any) {
-  const {classes} = useStyles();
+interface FilterBarComponentComponentProps {
+  activePage: string | number;
+}
+
+export function FilterBarComponent({ activePage }: FilterBarComponentComponentProps) {
+  const { classes } = useStyles();
 
   const [selectedCountries, setSelectedCountries] = useState<any>([]);
   const [userName, setUserName] = useState<string>('');
   const [selectedTags, setSelectedTags] = useState<any>([]);
   const [debouncedFirstName] = useDebouncedValue(userName, 200);
-  const [title, setTitle] = useState<string>('')
+  const [title, setTitle] = useState<string>('');
 
-  const {data: dbUsers} = useGetUsersByNameOrEmail(debouncedFirstName);
-  const {data: dbCountries} = useGetLocations({isEnabled: true});
-  const {data: dbTags} = useTagsQuery({});
+  const { data: dbUsers } = useGetUsersByNameOrEmail(debouncedFirstName);
+  const { data: dbCountries } = useGetCountries({ isEnabled: true });
+  const { data: dbTags } = useTagsQuery({});
 
-  const {refetch: refetchArticles} = useGetAllArticles({
+  const { refetch: refetchArticles, isFetching } = useGetAllArticles({
     page: activePage,
     author: userName,
     countries: selectedCountries,
@@ -72,10 +81,11 @@ export function FilterBarComponent({activePage}: any) {
     setSelectedCountries([]);
     setUserName('');
     setSelectedTags([]);
-    setTimeout(() => refetchArticles(), 5)
+    setTitle('');
+    setTimeout(() => refetchArticles(), 4);
   };
 
-  const handlerRrefetchArticles = async () => {
+  const handlerPrefetchArticles = async () => {
     await refetchArticles();
   };
 
@@ -84,7 +94,7 @@ export function FilterBarComponent({activePage}: any) {
       <Accordion
         iconPosition="right"
         initialItem={-1}
-        icon={<ChevronDown size={17}/>}
+        icon={<ChevronDown size={17} />}
         classNames={{
           item: classes.item,
           control: classes.control,
@@ -92,73 +102,76 @@ export function FilterBarComponent({activePage}: any) {
           contentInner: classes.content,
         }}
       >
-        <Accordion.Item label="Filter">
+        <Accordion.Item label="Filter articles">
           <TextInput
-            onKeyDown={getHotkeyHandler([
-              ['Enter', handlerRrefetchArticles],
-            ])}
+            onKeyDown={getHotkeyHandler([['Enter', handlerPrefetchArticles]])}
             mb={'sm'}
-            icon={<Search size={15}/>}
+            icon={<Search size={MD_ICON_SIZE} />}
             value={title}
-            onChange={({currentTarget}: any) => setTitle(currentTarget.value)}
+            onChange={({ currentTarget }: any) => setTitle(currentTarget.value)}
             placeholder="Title"
           />
           <Grid>
             <Grid.Col md={6} lg={4}>
-
               <MultiSelect
                 clearButtonLabel="Clear selection"
-                data={!isNullOrUndefined(dbTags) && !isEmptyArray(dbTags)
-                  ? dbTags?.map((item: any) => ({
-                    value: item.name,
-                    label: item.name,
-                  })) : []
-                }
                 icon={'#'}
                 clearable
                 searchable
                 placeholder="Tags"
                 value={selectedTags}
                 onChange={setSelectedTags}
+                data={
+                  !isNullOrUndefined(dbTags) && !isEmptyArray(dbTags)
+                    ? dbTags?.map((item: any) => ({
+                        value: item.name,
+                        label: item.name,
+                      }))
+                    : []
+                }
               />
             </Grid.Col>
             <Grid.Col md={6} lg={4}>
               <MultiSelect
                 limit={20}
                 clearButtonLabel="Clear selection"
-                data={!isNullOrUndefined(dbCountries) && !isEmptyArray(dbCountries)
-                  ? dbCountries?.map((item: any) => ({
-                    value: item.code,
-                    label: item.name,
-                  })) : []
-                }
                 clearable
-                icon={<World size={15}/>}
+                icon={<World size={15} />}
                 searchable
                 value={selectedCountries}
                 onChange={setSelectedCountries}
                 placeholder="Countries"
+                data={
+                  !isNullOrUndefined(dbCountries) && !isEmptyArray(dbCountries)
+                    ? dbCountries?.map((item: any) => ({
+                        value: item.code,
+                        label: item.name,
+                      }))
+                    : []
+                }
               />
             </Grid.Col>
             <Grid.Col md={6} lg={4}>
               <Autocomplete
-                icon={<User size={15}/>}
+                icon={<User size={15} />}
                 placeholder="Users"
                 value={userName}
                 onChange={setUserName}
-                data={userName && dbUsers ? dbUsers.map((us: any) => (getFullUserName(us))) : []}
+                data={
+                  !isNullOrUndefined(userName) && !isNullOrUndefined(dbUsers)
+                    ? dbUsers.map((us: any) => getFullUserName(us))
+                    : []
+                }
               />
             </Grid.Col>
             <Grid.Col md={6} lg={8}>
               <Group grow position={'right'}>
-                <Button
-                  leftIcon={<Search size={17}/>}
-                  onClick={handlerRrefetchArticles}
-                >
+                <Button loading={isFetching} leftIcon={<Search size={LG_ICON_SIZE} />} onClick={handlerPrefetchArticles}>
                   Filter
                 </Button>
                 <Button
-                  leftIcon={<X size={17}/>}
+                  loading={isFetching}
+                  leftIcon={<ArrowBackUp size={LG_ICON_SIZE} />}
                   color="red"
                   variant={'light'}
                   onClick={handlerResetFilter}

@@ -1,4 +1,4 @@
-import { AuthorQueryResponse, Profile } from '../models/user.model';
+import { AuthorQueryResponse, Profile } from '../types/user.model'
 
 const authorMapper = (author: AuthorQueryResponse, userId?: string | number): Profile => ({
   id: author.id,
@@ -6,7 +6,7 @@ const authorMapper = (author: AuthorQueryResponse, userId?: string | number): Pr
   firstName: author.firstName,
   lastName: author.lastName,
   gender: author.gender,
-  following: author.followedBy.some(follow => follow.id === userId),
-});
+  following: author.followedBy.some((follow) => follow.id === userId),
+})
 
-export default authorMapper;
+export default authorMapper

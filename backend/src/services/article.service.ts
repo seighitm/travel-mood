@@ -5,69 +5,96 @@ import {
   ArticleQueryResponse,
   ArticleResponse,
   ArticleTitle,
-  ArticleUpdatePayload
-} from "../models/article.model";
-import {ArticleImage, Prisma} from '@prisma/client';
-import prisma from "../../prisma/PrismaClient";
-import {articleSelector, articlesSelector} from "../selectors/article.selector";
-import ApiError from "../utils/api-error";
-import {CommentListResponse, CommentResponse} from "../models/comment.model";
-import commentSelector from "../selectors/comment.selector";
-import commentMapper from "../mappers/comment.mapper";
-import {articleMapper, articlesMapper} from "../mappers/article.mapper";
-import {isEmptyArray, isEmptyString, isLongArrayLengthThan, isNullOrUndefined} from "../utils/primitive-checks";
-import {ArticleCreateOrUpdateValidator} from "../validators/article.validator";
-import {ROLE} from "./auth.service";
+  ArticleUpdatePayload,
+} from '../types/article.model'
+import {Prisma} from '@prisma/client'
+import prisma from '../../prisma/PrismaClient'
+import {articleSelector, articlesSelector} from '../selectors/article.selector'
+import ApiError from '../utils/api-error'
+import {articleMapper, articlesMapper} from '../mappers/article.mapper'
+import {isEmptyArray, isEmptyString, isLongArrayLengthThan, isNullOrUndefined} from '../utils/primitive-checks'
+import {ArticleCreateOrUpdateValidator} from '../validators/article.validator'
+import {ROLE} from './auth.service'
+import {TagsResponse} from '../types/tag.model'
+import fs from 'fs-extra'
+import path from 'path'
 
-export const getArticles = async (
-  query: ArticleFindQuery | any,
-  userId?: number,
-): Promise<ArticleListResponse> => {
-  const queries = buildFindAllQuery(query);
+export const getArticles = async (query: ArticleFindQuery | any, userId?: number): Promise<ArticleListResponse> => {
+  const queries = buildFindAllQuery(query)
   const page = (query.page - 1) * (Number(query.limit) || 12) || 0
-  const articles = await findManyArticles(queries, Number(page), Number(query.limit));
+  const articles = await findManyArticles(queries, Number(page), Number(query.limit))
   const totalArticles = await prisma.article.count()
   return {
-    articles: articles.map(article => articlesMapper(article, userId)),
+    articles: articles.map((article: any) => articlesMapper(article, userId)),
     articlesCountOnPage: articles.length,
-    totalCount: totalArticles
-  };
-};
-
-export const removeUnusedImages = async (
-  imagesToRemove: any
-): Promise<void> => {
-  if (!isNullOrUndefined(imagesToRemove) && !isEmptyArray(imagesToRemove)) {
-    // await removeFiles(imagesToRemove.map((image: any) => image?.name))
-
-    for (let i = 0; i < imagesToRemove.length; i++) {
-      await prisma.articleImage.delete({
-        where: {
-          name: imagesToRemove[i].name
-        }
-      });
-    }
+    totalCount: totalArticles,
   }
-};
+}
+
+// export const removeUnusedImages = async (
+//   imagesToRemove: any
+// ): Promise<void> => {
+//   if (!isNullOrUndefined(imagesToRemove) && !isEmptyArray(imagesToRemove)) {
+//     // await removeFiles(imagesToRemove.map((image: any) => image?.name))
+//
+//     for (let i = 0; i < imagesToRemove.length; i++) {
+//       await prisma.articleImage.delete({
+//         where: {
+//           name: imagesToRemove[i].name
+//         }
+//       });
+//     }
+//   }
+// };
+
+const removeUnusedImages = async (imagesToRemove: any[]) => {
+  if (!isNullOrUndefined(imagesToRemove) && !isEmptyArray(imagesToRemove)) {
+    if (process.env.NODE_ENV !== 'PRODUCTION')
+      for (let i = 0; i < imagesToRemove.length; i++) {
+        fs.remove(path.resolve(__dirname, '..', 'uploads', imagesToRemove[i]), (err) => {
+          if (err) console.log(err)
+          console.log('File deleted successfully!')
+        })
+
+        // s3.deleteObject({Bucket: process.env.AWS_BUCKET_NAME, Key: imagesToRemove[0]}, (err, data) => {
+        //   if (err) console.log(err, err.stack);
+        //   else console.log('delete', data);
+        // })
+      }
+    await prisma.articleImage.deleteMany({
+      where: {
+        name: {
+          in: imagesToRemove,
+        },
+      },
+    })
+  }
+}
 
 const findArticlesByTitle = async (title: string): Promise<ArticleTitle[]> => {
   return await prisma.article.findMany({
     where: {
-      title: title
+      title: title,
     },
     select: {
+      author: {
+        select: {
+          id: true,
+        },
+      },
+      body: true,
       id: true,
       title: true,
-      images: true
+      images: true,
     },
-  });
+  })
 }
 
 export const findManyArticles = async (
   query: Prisma.ArticleWhereInput,
   offset: number,
-  limit: number,
-): Promise<ArticleQueryResponse[]> =>
+  limit: number
+): Promise<ArticleQueryResponse[] | any> =>
   await prisma.article.findMany({
     where: query,
     orderBy: {
@@ -79,201 +106,255 @@ export const findManyArticles = async (
   })
 
 export const createArticle = async (
-  {
-    title,
-    description,
-    body,
-    tagList,
-    countries,
-    isPrimaryImage
-  }: ArticleCreatePayload,
+  {title, body, tagList, countries, isPrimaryImage, editorImages}: ArticleCreatePayload | any,
   images: any[],
-  userId: number | string,
+  userId: number | string
 ): Promise<ArticleResponse> => {
-  ArticleCreateOrUpdateValidator({title, description, countries, body})
-
-  console.log({
-    title,
-    description,
-    body,
-    tagList,
-    countries,
-    isPrimaryImage
-  })
+  ArticleCreateOrUpdateValidator({title, body})
 
   const countOfExistingTitles = await prisma.article.count({
     where: {
-      title
-    }
+      title,
+    },
   })
 
   if (countOfExistingTitles != 0) {
-    throw new ApiError(422, {message: 'Title already exists!'});
+    throw new ApiError(422, {message: 'Title already exists!'})
   }
+
+  if (!isNullOrUndefined(tagList) && !isEmptyArray(tagList)) {
+    let blockedTags: string = ''
+    for (let i = 0; i < tagList.length; i++) {
+      const findTag = await prisma.tag.findFirst({
+        where: {
+          status: 'BLOCKED',
+          name: tagList[i][0] == '#' ? tagList[i] : '#' + tagList[i],
+        },
+      })
+      if (findTag) blockedTags += findTag.name + ', '
+    }
+    blockedTags = blockedTags.slice(0, -2)
+
+    if (blockedTags?.length != 0) {
+      throw new ApiError(422, {message: 'Tags [' + blockedTags + '] are not allowed!'})
+    }
+  }
+
+  const allImages: any = body
+    .match(/http:\/\/localhost([^"]*)/g)
+    ?.map((item: any) => item.split('/')[item.split('/').length - 1])
+
+  if (!isNullOrUndefined(editorImages))
+    if (allImages && allImages?.length != 0) {
+      const imagesToRemove = editorImages.filter((image: any) => !allImages.includes(image))
+      await removeUnusedImages(imagesToRemove)
+    } else {
+      await removeUnusedImages(editorImages)
+    }
 
   const article = await prisma.article.create({
     data: {
       title,
-      description,
       body,
-      ...((!isNullOrUndefined(tagList) && !isEmptyArray(tagList)) ? {
-        tagList: {
-          connectOrCreate: tagList.map((tag: string) => ({
-            create: {name: tag[0] == '#' ? tag : `#${tag}`},
-            where: {name: tag[0] == '#' ? tag : `#${tag}`},
-          })),
-        },
-      } : []),
-      ...(isPrimaryImage != 'false' ? {
-        primaryImage: images[0]?.key
-      } : {}),
-      countries: {
-        connect: countries.map((item: string) => ({code: item}))
-      },
+      ...(!isNullOrUndefined(tagList) && !isEmptyArray(tagList)
+        ? {
+          tagList: {
+            connectOrCreate: tagList.map((tag: string) => ({
+              where: {name: tag},
+              create: {name: tag[0] == '#' ? tag : `#${tag}`},
+            })),
+          },
+        }
+        : []),
+      ...(isPrimaryImage != 'false'
+        ? {
+          primaryImage: images[0][process.env.NODE_ENV == 'PRODUCTION' ? 'key' : 'filename']
+        }
+        : {}),
+      ...(!isNullOrUndefined(countries) && !isEmptyArray(countries)
+        ? {
+          countries: {
+            connect: countries.map((item: string) => ({code: item})),
+          },
+        }
+        : []),
       author: {
         connect: {
           id: Number(userId),
         },
       },
-      ...((!isNullOrUndefined(images) && !isEmptyArray(images))
+      ...(!isNullOrUndefined(images) && !isEmptyArray(images)
         ? {
           images: {
-            create: images.map((file: { filename: string }) => ({name: file.filename}))
-          }
-        } : []),
+            create: images.map((file: any) => ({name: file[process.env.NODE_ENV == 'PRODUCTION' ? 'key' : 'filename']})),
+          },
+        }
+        : []),
     },
     select: articleSelector,
-  });
+  })
 
-  return articleMapper(article, userId);
-};
+  return articleMapper(article, userId)
+}
 
 export const getArticleById = async (id: string, userId?: number): Promise<ArticleResponse> => {
   const article = await prisma.article.findUnique({
-    where: {
-      id: Number(id)
-    },
+    where: {id: Number(id)},
     select: articleSelector,
-  });
-
+  })
   if (isNullOrUndefined(article)) {
-    throw new ApiError(404, {message: 'Article not found!'});
+    throw new ApiError(404, {message: 'Article not found!'})
   }
-  return articleMapper(article, userId);
-};
+  return articleMapper(article, userId)
+}
 
 export const updateArticle = async (
-  {
-    title,
-    description,
-    body,
-    tagList,
-    countries,
-    isPrimaryImage,
-    oldImages,
-    oldPrimaryImage,
-  }: ArticleUpdatePayload,
+  {title, body, tagList, countries, isPrimaryImage, oldImages, oldPrimaryImage, editorImages}: ArticleUpdatePayload,
   id: string,
   userId: number,
   userRole: string,
   files: any
 ): Promise<ArticleResponse> => {
-
-  ArticleCreateOrUpdateValidator({title, description, countries, body})
-  const articles = await findArticlesByTitle(title)
+  ArticleCreateOrUpdateValidator({title, body})
+  const article: any = await findArticlesByTitle(title)
 
   const art = await getArticleById(id)
 
-  if (!isNullOrUndefined(articles) && ((isLongArrayLengthThan(articles, 1))
-    || (!isEmptyArray(articles) && articles[0]?.id != Number(id)))
+  if (
+    !isNullOrUndefined(article) &&
+    (isLongArrayLengthThan(article, 1) || (!isEmptyArray(article) && article[0]?.id != Number(id)))
   ) {
-    throw new ApiError(422, {message: 'Article already exists!'});
+    throw new ApiError(422, {message: 'Article already exists!'})
   }
 
-  let imagesToRemove: Array<ArticleImage> = articles[0]?.images?.filter((image: ArticleImage) => !oldImages?.includes(image.name))
+  if (article[0]?.author.id != userId && userRole != ROLE.MODERATOR && userRole != ROLE.ADMIN) {
+    throw new ApiError(404, {message: 'You are not the author of the comment!'})
+  }
 
-  await removeUnusedImages(imagesToRemove)
-  await disconnectArticlesTags(id);
-  await disconnectArticlesDestinations(id);
+  if (!isNullOrUndefined(tagList) && !isEmptyArray(tagList)) {
+    let blockedTags: string = ''
+    for (let i = 0; i < tagList.length; i++) {
+      const findTag = await prisma.tag.findFirst({
+        where: {
+          status: 'BLOCKED',
+          name: tagList[i][0] == '#' ? tagList[i] : '#' + tagList[i],
+        },
+      })
+      if (findTag) blockedTags += findTag.name + ', '
+    }
+    blockedTags = blockedTags.slice(0, -2)
+
+    if (blockedTags?.length != 0) {
+      throw new ApiError(422, {message: 'Tags [' + blockedTags + '] are not allowed!'})
+    }
+  }
+  let imagesToRemove: any = article[0]?.images?.filter((image: any) => !oldImages?.includes(image.name))
+
+  if (!isNullOrUndefined(imagesToRemove) && !isEmptyArray(imagesToRemove)) {
+    await removeUnusedImages(imagesToRemove.map((item: any) => item.name))
+  }
+
+  const currentAllImages: any = art?.body
+    ?.match(/http:\/\/localhost([^"]*)/g)
+    ?.map((item: any) => item.split('/')[item.split('/').length - 1])
+
+  const allImages: any = body
+    .match(/http:\/\/localhost([^"]*)/g)
+    ?.map((item: any) => item.split('/')[item.split('/').length - 1])
+
+  if (allImages && allImages?.length != 0) {
+    const imagesToRemove = editorImages?.filter((image: any) => !allImages.includes(image))
+    await removeUnusedImages(imagesToRemove)
+  } else {
+    await removeUnusedImages(editorImages)
+  }
+
+  if (currentAllImages && currentAllImages?.length != 0) {
+    const imagesToRemove = currentAllImages.filter((image: any) => !allImages?.includes(image))
+    await removeUnusedImages(imagesToRemove)
+  }
+
+  await disconnectArticlesTags(id)
+  await disconnectArticlesDestinations(id)
 
   const updatedArticle = await prisma.article.update({
     where: {
       id: Number(id),
     },
     data: {
-      ...((art && art.author.id != userId && userRole == ROLE.ADMIN)
-          ? {isUpdatedByAdmin: true}
-          : art && art.author.id == userId
-            ? {isUpdatedByAdmin: false}
-            : {}
-      ),
+      ...(art && art.author.id != userId && (userRole == ROLE.ADMIN || userRole == ROLE.MODERATOR)
+        ? {isUpdatedByAdmin: true}
+        : art && art.author.id == userId
+          ? {isUpdatedByAdmin: false}
+          : {}),
       title: title,
       body: body,
-      description: description,
       ...(!isNullOrUndefined(files) && {
         images: {
           createMany: {
-            data: files?.map((item: { filename: string }) => ({name: item.filename})),
-          }
-        }
+            data: files?.map((item: any) => ({name: item[process.env.NODE_ENV == 'PRODUCTION' ? 'key' : 'filename']})),
+          },
+        },
       }),
-      ...(isPrimaryImage != 'false' ? {
-          primaryImage: files[0]?.key,
+      ...(isPrimaryImage != 'false'
+        ? {
+          primaryImage: files[0][process.env.NODE_ENV == 'PRODUCTION' ? 'key' : 'filename'],
         }
         : {
-          primaryImage: (oldPrimaryImage != "null" && oldPrimaryImage != "" && oldPrimaryImage != null)
-            ? oldPrimaryImage
-            : null,
+          primaryImage:
+            oldPrimaryImage != 'null' && oldPrimaryImage != '' && oldPrimaryImage != null ? oldPrimaryImage : null,
         }),
-      ...(!isNullOrUndefined(tagList) && !isEmptyArray(tagList) && {
+      ...(!isNullOrUndefined(tagList) &&
+        !isEmptyArray(tagList) && {
           tagList: {
             connectOrCreate: tagList.map((tag: string) => ({
               create: {name: tag},
               where: {name: tag},
-            }))
-          }
+            })),
+          },
+        }),
+      ...(!isNullOrUndefined(countries) && !isEmptyArray(countries)
+        ? {
+          countries: {
+            connect: countries.map((item: string) => ({name: item})),
+          },
         }
-      ),
-      ...(!isEmptyArray(countries) ? {
-        countries: {
-          connect: countries.map((item: string) => ({name: item}))
-        },
-      } : {})
+        : []),
     },
     select: articleSelector,
-  });
+  })
 
-  return articleMapper(updatedArticle, userId);
-};
+  return articleMapper(updatedArticle, userId)
+}
 
 export const deleteArticle = async (id: string, userId: number, userRole: string): Promise<ArticleResponse> => {
   const article = await prisma.article.findUnique({
     where: {
-      id: Number(id)
+      id: Number(id),
     },
     select: articleSelector,
-  });
+  })
 
   if (isNullOrUndefined(article)) {
-    throw new ApiError(404, {message: 'Article not found!'});
-  } else if (article.author.id !== userId && userRole != ROLE.ADMIN) {
-    throw new ApiError(403, {message: 'User is not article owner!'});
+    throw new ApiError(404, {message: 'Article not found!'})
+  } else if (article.author.id !== userId && userRole != ROLE.ADMIN && userRole != ROLE.MODERATOR) {
+    throw new ApiError(403, {message: 'User is not article owner!'})
   }
 
   await prisma.article.delete({
     where: {
-      id: Number(id)
+      id: Number(id),
     },
     select: articleSelector,
-  });
+  })
 
-  return articleMapper(article, userId);
-};
+  return articleMapper(article, userId)
+}
 
 export const favoriteArticle = async (id: string, userId: number): Promise<ArticleResponse> => {
   const article = await prisma.article.update({
     where: {
-      id: Number(id)
+      id: Number(id),
     },
     data: {
       favoritedBy: {
@@ -281,22 +362,19 @@ export const favoriteArticle = async (id: string, userId: number): Promise<Artic
       },
     },
     select: articleSelector,
-  });
+  })
 
   if (isNullOrUndefined(article)) {
-    throw new ApiError(404, {message: 'Article to favorite not found!'});
+    throw new ApiError(404, {message: 'Article to favorite not found!'})
   }
 
-  return {...articleMapper(article, userId)};
-};
+  return {...articleMapper(article, userId)}
+}
 
-export const unFavoriteArticle = async (
-  id: string,
-  userId: number,
-): Promise<ArticleResponse> => {
+export const unFavoriteArticle = async (id: string, userId: number): Promise<ArticleResponse> => {
   const article = await prisma.article.update({
     where: {
-      id: Number(id)
+      id: Number(id),
     },
     data: {
       favoritedBy: {
@@ -304,86 +382,89 @@ export const unFavoriteArticle = async (
       },
     },
     select: articleSelector,
-  });
+  })
 
   if (isNullOrUndefined(article)) {
-    throw new ApiError(404, {message: 'Article to favorite not found!'});
+    throw new ApiError(404, {message: 'Article to favorite not found!'})
   }
 
-  return articleMapper(article, userId);
-};
+  return articleMapper(article, userId)
+}
 
-const buildFindAllQuery = (query: ArticleFindQuery): Prisma.ArticleWhereInput => {
-  const queries: Array<Prisma.ArticleWhereInput> = [];
-  // console.log(query)
-  // console.log(query.author.split(' ')[0])
-  // console.log(query.author.split(' ')[1])
+const buildFindAllQuery = (query: ArticleFindQuery | any): Prisma.ArticleWhereInput => {
+  const queries: Array<Prisma.ArticleWhereInput> = []
 
   if (query.author) {
-    queries.push(
-      {
-        OR: [
-          {
-            OR: [
-              {
-                author: {
-                  firstName: {
-                    contains: query.author?.split(' ')[0]
-                  }
-                }
+    const authorName = query.author.toLowerCase()
+    queries.push({
+      OR: [
+        {
+          AND: [
+            {
+              author: {
+                lastName: {
+                  equals: authorName?.split(' ')[0],
+                  mode: 'insensitive',
+                },
               },
-              {
-                author: {
-                  firstName: {
-                    contains: query.author?.split(' ')[1] ?? query.author?.split(' ')[0]
-                  }
-                }
-              }
-            ],
-          },
-          {
-            OR: [
-              {
-                author: {
-                  lastName: {
-                    contains: query.author?.split(' ')[0]
-                  }
-                }
+            },
+            {
+              author: {
+                firstName: {
+                  startsWith: authorName?.split(' ')[1] ?? authorName?.split(' ')[0],
+                  mode: 'insensitive',
+                },
               },
-              {
-                author: {
-                  lastName: {
-                    contains: query.author?.split(' ')[1] ?? query.author?.split(' ')[0]
-                  }
-                }
-              }
-            ]
-          }
-        ]
-      }
-    )
+            },
+          ],
+        },
+        {
+          AND: [
+            {
+              author: {
+                firstName: {
+                  contains: authorName,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          ],
+        },
+        {
+          AND: [
+            {
+              author: {
+                lastName: {
+                  contains: authorName,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          ],
+        },
+      ],
+    })
   }
-  console.log(query)
-
 
   if (query.tags && query.tags.length != 0) {
     queries.push({
       tagList: {
         some: {
           name: {
-            in: query.tags
-          }
-        }
+            in: query.tags,
+          },
+        },
       },
-    });
+    })
   }
 
   if (!isNullOrUndefined(query.title) && !isEmptyString(query.title)) {
     queries.push({
       title: {
-        contains: query.title
-      }
-    });
+        contains: query.title?.toLowerCase(),
+        mode: 'insensitive',
+      },
+    })
   }
 
   if (query.countries && query.countries.length != 0) {
@@ -391,190 +472,41 @@ const buildFindAllQuery = (query: ArticleFindQuery): Prisma.ArticleWhereInput =>
       countries: {
         some: {
           code: {
-            in: query.countries
-          }
-        }
-      }
-    });
+            in: query.countries,
+          },
+        },
+      },
+    })
   }
 
-  return {AND: queries};
-};
+  return {AND: queries}
+}
 
 const disconnectArticlesTags = async (id: string): Promise<void> => {
   await prisma.article.update({
     where: {
-      id: Number(id)
+      id: Number(id),
     },
     data: {
       tagList: {
-        set: []
-      }
+        set: [],
+      },
     },
-  });
-};
+  })
+}
 
 const disconnectArticlesDestinations = async (id: string): Promise<void> => {
   await prisma.article.update({
     where: {
-      id: Number(id)
+      id: Number(id),
     },
     data: {
       countries: {
-        set: []
-      }
-    }
-  });
-};
-
-export const getCommentsByArticle = async (
-  id: string | number,
-): Promise<CommentListResponse> => {
-  const comments = await prisma.articleComment.findMany({
-    where: {
-      article: {id: Number(id)},
-    },
-    select: commentSelector,
-  });
-
-  return comments.map(comment => commentMapper(comment));
-};
-
-export const addComment = async (
-  content: string,
-  id: string,
-  userId: number,
-): Promise<CommentResponse> => {
-  if (isNullOrUndefined(content) || isEmptyString(content)) {
-    throw new ApiError(422, {message: "Comment can't be blank"});
-  }
-
-  const article = await prisma.article.findUnique({
-    where: {
-      id: Number(id)
-    },
-    select: {
-      id: true
-    },
-  });
-
-  const comment = await prisma.articleComment.create({
-    data: {
-      body: content,
-      article: {
-        connect: {id: article?.id},
-      },
-      author: {
-        connect: {id: Number(userId)},
+        set: [],
       },
     },
-    select: commentSelector,
-  });
-
-  return commentMapper(comment);
-};
-
-export const deleteComment = async (commentId: string, userId: number, userRole: ROLE): Promise<any> => {
-  const comment = await prisma.articleComment.findUnique({
-    where: {
-      id: Number(commentId)
-    },
-    select: {
-      author: {
-        select: {
-          id: true
-        }
-      }
-    }
   })
-
-  if (comment.author.id !== userId && userRole != ROLE.ADMIN) {
-    throw new ApiError(403, {message: 'User is not comment owner!'});
-  }
-
-  return await prisma.articleComment.delete({
-    where: {
-      id: Number(commentId)
-    },
-  })
-};
-
-
-export const getArticlesForAdmin = async (
-  {
-    search,
-    sortBy,
-    order,
-    limit,
-    page,
-  }: any
-): Promise<any> => {
-  const activePage = (Number(page) - 1) * limit || 0
-  const totalArticlesCount = await prisma.article.count({
-    where: {
-      OR: [
-        {
-          title: {
-            contains: search
-          }
-        },
-        getUsersQuery(search),
-      ]
-    }
-  })
-
-  const articles = await prisma.article.findMany({
-    where: {
-      OR: [
-        {
-          title: {
-            contains: search
-          }
-        },
-        getUsersQuery(search),
-      ]
-    },
-    select: {
-      id: true,
-      title: true,
-      createdAt: true,
-      comments: true,
-      author: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          picture: true
-        }
-      },
-      favoritedBy: {
-        select: {
-          id: true,
-        }
-      },
-    },
-    ...(sortBy == 'date' && order != 'none' ? {orderBy: {createdAt: order}} : {}),
-    ...(sortBy == 'likes' && order != 'none' ? {orderBy: {favoritedBy: {_count: order}}} : {}),
-    ...(sortBy == 'comments' && order != 'none' ? {orderBy: {comments: {_count: order}}} : {}),
-    ...(sortBy == 'author' && order != 'none' ? {orderBy: {author: {firstName: order}}} : {}),
-    ...(sortBy == 'title' && order != 'none' ? {orderBy: {title: order}} : {}),
-    skip: activePage,
-    take: Number(limit),
-  })
-
-  return {
-    articles: articles.map(article => ({
-      id: article.id,
-      title: article.title,
-      author: article.author.firstName,
-      date: article.createdAt,
-      likes: article.favoritedBy.length,
-      comments: article.comments.length,
-    })),
-    count: totalArticlesCount,
-  };
-};
-
+}
 
 export const getUsersQuery = (search: string) => {
   return {
@@ -584,17 +516,17 @@ export const getUsersQuery = (search: string) => {
           {
             author: {
               firstName: {
-                contains: search?.split(' ')[0]
-              }
-            }
+                contains: search?.split(' ')[0],
+              },
+            },
           },
           {
             author: {
               firstName: {
-                contains: search?.split(' ')[1] ?? search?.split(' ')[0]
-              }
-            }
-          }
+                contains: search?.split(' ')[1] ?? search?.split(' ')[0],
+              },
+            },
+          },
         ],
       },
       {
@@ -602,19 +534,56 @@ export const getUsersQuery = (search: string) => {
           {
             author: {
               lastName: {
-                contains: search?.split(' ')[0]
-              }
-            }
+                contains: search?.split(' ')[0],
+              },
+            },
           },
           {
             author: {
               lastName: {
-                contains: search?.split(' ')[1] ?? search?.split(' ')[0]
-              }
-            }
-          }
-        ]
-      }
-    ]
+                contains: search?.split(' ')[1] ?? search?.split(' ')[0],
+              },
+            },
+          },
+        ],
+      },
+    ],
   }
+}
+
+export const getTags = async (query: { tagName: string } & any, userRole: number | string): Promise<TagsResponse[]> => {
+  const queries: Array<Prisma.TagWhereInput> = []
+
+  if (!isNullOrUndefined(query.tagName) && !isEmptyArray(query.tagName)) {
+    queries.push({
+      name: {
+        contains: query.tagName,
+      },
+    })
+  }
+
+  if (!(userRole == ROLE.ADMIN && query.showBlocked == 'true'))
+    // if (userRole != ROLE.ADMIN && (!isNullOrUndefined(query.showBlocked) && query.showBlocked == false))
+    queries.push({
+      status: {
+        equals: 'ACTIVATED',
+      },
+    })
+
+  return await prisma.tag.findMany({
+    where: {
+      AND: queries,
+    },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      _count: true,
+    },
+    orderBy: {
+      articles: {
+        _count: 'desc',
+      },
+    },
+  })
 }

@@ -14,6 +14,8 @@ code {
 }
 
 .editor {
+  padding-left: 5px;
+  padding-right: 10px;
   -webkit-line-clamp: 3 !important;
 }
 .editor > iframe {
@@ -40,6 +42,19 @@ code {
 }
 .editor > .ql-align-right {
   text-align: right;
+}
+
+.ql-editor > p > img {
+  display: flex !important;
+  justify-content: center !important;
+}
+.ql-editor > p:has(img) {
+  display: flex !important;
+  justify-content: center !important;
+}
+
+.open-legend {
+  display: none;
 }
 
 /*# sourceMappingURL=index.css.map */

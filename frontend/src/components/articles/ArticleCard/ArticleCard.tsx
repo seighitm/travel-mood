@@ -1,27 +1,32 @@
-import React, {useRef} from 'react';
+import React from 'react';
 import {
   ActionIcon,
   Avatar,
   Badge,
   Card,
   createStyles,
+  Grid,
   Group,
   Image,
-  Menu,
-  SimpleGrid,
   Spoiler,
   Text,
   Tooltip,
-  UnstyledButton,
 } from '@mantine/core';
 import {Link, useNavigate} from 'react-router-dom';
 import {useMutationFavoriteArticle, useMutationUnFavoriteArticle,} from '../../../api/articles/mutations';
-import {articleImage, creteAuthorShortName, cutString, dateFormatedToIsoString, userPicture} from '../../common/Utils';
-import {FacebookIcon, TwitterIcon} from "react-share";
-import useStore from "../../../store/user.store";
-import SocialSharButtons from "../../common/socialShare/SocialSharButtons";
-import {ArrowNarrowDown, ArrowNarrowUp, Share, Star} from "../../../assets/Icons";
-import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
+import useStore from '../../../store/user.store';
+import SocialSharButtons from '../../common/social-share/SocialSharButtons';
+import {ArrowDown, ArrowNarrowDown, ArrowNarrowUp, ArrowUp, Star} from '../../common/Icons';
+import {isEmptyArray, isNullOrUndefined} from '../../../utils/primitive-checks';
+import {
+  articleImage,
+  customNavigation,
+  dateFormattedToIsoString,
+  getFullUserName,
+  userPicture,
+} from '../../../utils/utils-func';
+import {IArticle} from '../../../types/IArticle';
+import {MD_ICON_SIZE} from '../../../utils/constants';
 
 const useStyles = createStyles((theme) => ({
   card: {
@@ -30,12 +35,13 @@ const useStyles = createStyles((theme) => ({
   },
 
   title: {
+    fontSize: '20px',
     fontFamily: `Greycliff CF, ${theme.fontFamily}`,
   },
 
   footer: {
-    padding: `${theme.spacing.xs}px ${theme.spacing.lg}px`,
-    marginTop: theme.spacing.md,
+    padding: `${theme.spacing.xs / 2}px ${theme.spacing.lg}px`,
+    marginTop: theme.spacing.sm,
     borderTop: `1px solid ${
       theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]
     }`,
@@ -48,17 +54,29 @@ const useStyles = createStyles((theme) => ({
       theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]
     }`,
   },
+
+  countriesBox: {
+    minHeight: '25px',
+    padding: `${theme.spacing.xs}px ${theme.spacing.lg}px`,
+    borderBottom: `1px solid ${
+      theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]
+    }`,
+  },
 }));
 
-export function ArticleCard({article, page}: any) {
+interface ArticleCardComponentProps {
+  article: IArticle;
+  page?: number | string;
+}
+
+export function ArticleCard({article, page}: ArticleCardComponentProps) {
   const {classes, theme} = useStyles();
   const navigate = useNavigate();
-  const faceboocRef: any = useRef<any>();
-  const twitterRef: any = useRef<any>();
   const {user} = useStore((state: any) => state);
-
-  const {mutate: mutateFavorite, isLoading: isLoadingFavoriteHandler} = useMutationFavoriteArticle({page});
-  const {mutate: mutateUnFavorite, isLoading: isLoadingUnFavoriteHandler} = useMutationUnFavoriteArticle({page});
+  const {mutate: mutateFavorite, isLoading: isLoadingFavoriteHandler} =
+    useMutationFavoriteArticle({page});
+  const {mutate: mutateUnFavorite, isLoading: isLoadingUnFavoriteHandler} =
+    useMutationUnFavoriteArticle({page});
 
   const handlerFavoriteArticle = () => {
     if (article.favorited) {
@@ -69,28 +87,30 @@ export function ArticleCard({article, page}: any) {
   };
 
   return (
-    <Card
-      withBorder
-      p="lg"
-      radius="md"
-      className={classes.card}
-    >
-      <Card.Section style={{position: 'relative'}}>
+    <Card withBorder p="lg" radius="md" className={classes.card}>
+      <Card.Section
+        onClick={() => navigate(`/articles/${article.id}`)}
+        style={{position: 'relative', cursor: 'pointer'}}
+      >
         <Image
           src={articleImage(article)}
-          withPlaceholder={!!article?.picture}
+          withPlaceholder
           alt={'Article image'}
           height={180}
         />
-        {article.isUpdatedByAdmin &&
-          <Badge color={'pink'} variant={'outline'} style={{position: 'absolute', top: 10, right: 10}}>
+        {article.isUpdatedByAdmin && (
+          <Badge
+            color={'pink'}
+            variant={'outline'}
+            style={{position: 'absolute', top: 10, right: 10}}
+          >
             Edited by admin
           </Badge>
-        }
+        )}
       </Card.Section>
 
       <Card.Section className={classes.header}>
-        {!isNullOrUndefined(article) && !isEmptyArray(article?.tagList) &&
+        {!isNullOrUndefined(article) && !isEmptyArray(article?.tagList) && (
           <Spoiler
             maxHeight={25}
             style={{display: 'flex'}}
@@ -108,97 +128,109 @@ export function ArticleCard({article, page}: any) {
               </Badge>
             ))}
           </Spoiler>
-        }
+        )}
       </Card.Section>
 
       <Text
-        weight={700}
         className={classes.title}
         mt="xs"
+        lineClamp={1}
         component={Link}
-        to={`/article/${article.id}`}
+        to={`/articles/${article.id}`}
+        size={'xl'}
+        weight={700}
+        variant="gradient"
+        gradient={{from: '#4c6be8', to: '#cd832e', deg: 45}}
       >
         {article.title}
       </Text>
 
-      <Text
-        size="sm"
-        lineClamp={3}
-        variant="gradient"
-        weight={500}
-        gradient={{from: 'indigo', to: 'teal', deg: 45}}
-      >
-        {article.description}
-      </Text>
-
-      <Group
-        mt="lg"
-        position={'apart'}
-      >
-        <Group>
-          <UnstyledButton onClick={() => navigate(`/user/${article.author.id}`)}>
-            <Avatar src={userPicture(article?.author)}>
-              {creteAuthorShortName(`${article?.author?.lastName} ${article?.author?.firstName}`)}
-            </Avatar>
-          </UnstyledButton>
-          <div>
-            <UnstyledButton onClick={() => navigate(`/user/${article.author.id}`)}>
-              <Text weight={500}>
-                {cutString(`${article?.author?.lastName} ${article?.author?.firstName}`, 15)}
-              </Text>
-            </UnstyledButton>
-            <Text size="xs" color="dimmed">
-              posted {dateFormatedToIsoString(article.createdAt)}
+      <Group mt="lg" position={'apart'}>
+        <Grid>
+          <Grid.Col span={2}>
+            <Group position={'center'} style={{width: '100%', height: '100%'}}>
+              <Avatar
+                ml={'md'}
+                radius={'xl'}
+                src={userPicture(article?.author)}
+                style={{cursor: 'pointer'}}
+                onClick={() =>
+                  customNavigation(user?.role, navigate, `/users/${article.author.id}`)
+                }
+              />
+            </Group>
+          </Grid.Col>
+          <Grid.Col ml={'md'} span={9}>
+            <Text
+              size={'sm'}
+              lineClamp={1}
+              weight={500}
+              style={{cursor: 'pointer'}}
+              onClick={() => customNavigation(user?.role, navigate, `/users/${article.author.id}`)}
+            >
+              {getFullUserName(article?.author)}
             </Text>
-          </div>
-        </Group>
+            <Text size="xs" color="dimmed">
+              posted {dateFormattedToIsoString(article.createdAt)}
+            </Text>
+          </Grid.Col>
+        </Grid>
 
         <Group
+          style={{width: '100%'}}
           position={'left'}
           spacing={2}
         >
-          <SimpleGrid
-            spacing={2}
-            cols={6}
+          <Spoiler
+            m={0}
+            pr={'md'}
+            className={classes.countriesBox}
+            maxHeight={18}
+            showLabel={<ArrowDown size={MD_ICON_SIZE}/>}
+            hideLabel={<ArrowUp size={MD_ICON_SIZE}/>}
           >
-            {!isNullOrUndefined(article) && !isEmptyArray(article?.countries) &&
-              article.countries?.map((destination: any) => (
-                <Tooltip
-                  key={destination.name}
-                  position="bottom"
-                  placement="center"
-                  label={destination.name}
-                  withArrow
-                >
-                  <ActionIcon
-                    size="xs"
-                    color="blue"
-                    radius="xl"
-                    variant="transparent"
+            <Group mr={'xs'} spacing={theme.spacing.xs / 2}>
+              {!isNullOrUndefined(article) &&
+                !isEmptyArray(article?.countries) &&
+                article.countries?.map((destination: any) => (
+                  <Tooltip
+                    key={destination.name}
+                    position="bottom"
+                    placement="center"
+                    label={destination.name}
+                    withArrow
                   >
-                    <Image
-                      mb={0}
-                      style={{height: '12px'}}
-                      src={`${import.meta.env.VITE_API_URL}uploads/flags/${destination.code.toLowerCase()}.svg`}
-                      alt={''}
-                    />
-                  </ActionIcon>
-                </Tooltip>
-              ))}
-          </SimpleGrid>
+                    <ActionIcon
+                      size="xs"
+                      color="blue"
+                      radius="xl"
+                      variant="transparent"
+                    >
+                      <Image
+                        mb={0}
+                        style={{height: '12px'}}
+                        withPlaceholder
+                        src={`${import.meta.env.VITE_API_URL}uploads/flags/${destination.code.toLowerCase()}.svg`}
+                      />
+                    </ActionIcon>
+                  </Tooltip>
+                ))}
+            </Group>
+          </Spoiler>
         </Group>
       </Group>
 
       <Card.Section className={classes.footer}>
         <Group position="right">
-          {article?.favoritedBy?.length != 0 &&
+          {article?.favoritedBy?.length != 0 && (
             <Text size="xs" color="dimmed">
               {article?.favoritedBy?.length} people liked this post
             </Text>
-          }
+          )}
           <Group spacing={0}>
-            {!isNullOrUndefined(user) &&
+            {!isNullOrUndefined(user) && (
               <ActionIcon
+                loading={isLoadingFavoriteHandler || isLoadingUnFavoriteHandler}
                 radius={'xl'}
                 disabled={isLoadingFavoriteHandler || isLoadingUnFavoriteHandler}
                 onClick={handlerFavoriteArticle}
@@ -209,41 +241,11 @@ export function ArticleCard({article, page}: any) {
                   fill={article?.favorited ? theme.colors.red[6] : 'none'}
                 />
               </ActionIcon>
-            }
-            <Menu size={'sm'}
-                  control={
-                    <ActionIcon>
-                      <Share size={17} color={theme.colors.blue[6]}/>
-                    </ActionIcon>
-                  }
-            >
-              <Menu.Item onClick={() => faceboocRef.current.click()}
-                         icon={<FacebookIcon size={14}/>}
-              >
-                facebooc
-              </Menu.Item>
-              <Menu.Item onClick={() => twitterRef.current.click()}
-                         icon={<TwitterIcon size={14}/>}
-              >
-                twitter
-              </Menu.Item>
-            </Menu>
+            )}
+            <SocialSharButtons url={`/articles/${article.id}`}/>
           </Group>
-          <SocialSharButtons
-            faceboocRef={faceboocRef}
-            twitterRef={twitterRef}
-          />
         </Group>
       </Card.Section>
     </Card>
   );
 }
-
-
-/*
-  const {mutate: mutateDeleteArticle} = useMutationDeleteArticle({
-    articlesCount: articlesCountOnPage,
-    setActivePage: setActivePage,
-    page: page,
-  });
- */

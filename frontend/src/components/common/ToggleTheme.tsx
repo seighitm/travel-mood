@@ -1,9 +1,10 @@
 import React from 'react';
-import {ActionIcon, Group, useMantineColorScheme} from '@mantine/core';
-import {MoonIcon, SunIcon} from "@modulz/radix-icons";
+import { ActionIcon, Group, useMantineColorScheme } from '@mantine/core';
+import { MoonStars, Sun } from './Icons';
+import { XL_ICON_SIZE } from '../../utils/constants';
 
-function ToggleTheme() {
-  const {colorScheme, toggleColorScheme} = useMantineColorScheme();
+const ToggleTheme = () => {
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   return (
     <Group position="center">
       <ActionIcon
@@ -15,12 +16,10 @@ function ToggleTheme() {
           color: theme.colorScheme === 'dark' ? theme.colors.yellow[4] : theme.colors.blue[6],
         })}
       >
-        {colorScheme === 'dark'
-          ? <SunIcon style={{width: '20px', height: '20px'}}/>
-          : <MoonIcon style={{width: '20px', height: '20px'}}/>}
+        {colorScheme === 'dark' ? <Sun size={XL_ICON_SIZE} /> : <MoonStars size={XL_ICON_SIZE} />}
       </ActionIcon>
     </Group>
   );
-}
+};
 
 export default ToggleTheme;

@@ -1,10 +1,10 @@
-import React, {useState} from 'react';
-import {Accordion, Grid, Image, Paper} from '@mantine/core';
+import React, { useState } from 'react';
+import { Accordion, Grid, Image, Paper } from '@mantine/core';
 import ViewImageModal from './user-images/modals/ViewImageModal';
 
-function UserImages({images}: any) {
+function UserImages({ images }: any) {
   const [openedModalViewImage, setOpenedModalViewImage] = useState(false);
-  const [selectedViewImage, setSelectedViewImage] = useState<any>(null);
+  const [selectedViewImage, setSelectedViewImage] = useState<string | null>(null);
 
   return (
     <>
@@ -28,29 +28,34 @@ function UserImages({images}: any) {
           <Accordion.Item
             label={`Images (${images?.length})`}
             styles={() => ({
-              itemTitle: {margin: '0!important'},
-              content: {paddingLeft: 0},
+              itemTitle: { margin: '0!important' },
+              content: { paddingLeft: 0 },
             })}
           >
             <Grid>
-              {images?.length != 0 && images.map((image: any) =>
-                <Grid.Col
-                  key={image.id}
-                  sm={6} md={4} lg={3} xl={3}
-                  style={{position: 'relative'}}
-                >
-                  <Image
-                    style={{cursor: 'pointer'}}
-                    radius='md'
-                    height={150}
-                    onClick={() => {
-                      setSelectedViewImage(image.image);
-                      setOpenedModalViewImage(true);
-                    }}
-                    src={`${import.meta.env.VITE_STORE_AWS}${image.image}`}
-                  />
-                </Grid.Col>
-              )}
+              {images?.length != 0 &&
+                images.map((image: any) => (
+                  <Grid.Col
+                    key={image.id}
+                    sm={6}
+                    md={4}
+                    lg={3}
+                    xl={3}
+                    style={{ position: 'relative' }}
+                  >
+                    <Image
+                      withPlaceholder
+                      style={{ cursor: 'pointer' }}
+                      radius="md"
+                      height={150}
+                      onClick={() => {
+                        setSelectedViewImage(image);
+                        setOpenedModalViewImage(true);
+                      }}
+                      src={`${import.meta.env.VITE_STORE_AWS}${image.image}`}
+                    />
+                  </Grid.Col>
+                ))}
             </Grid>
           </Accordion.Item>
         </Accordion>

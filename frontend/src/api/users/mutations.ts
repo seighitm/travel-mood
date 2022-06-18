@@ -1,271 +1,296 @@
-import {useMutation, useQueryClient} from "react-query";
+import { useMutation, useQueryClient } from 'react-query';
 import {
+  apiAddImageCaption,
   apiAddNewProfileVisit,
   apiCheckAllProfileVisits,
   apiSendComplaint,
   apiSetUserRating,
-  apiSwitchUserRole,
-  apiUpdateUser,
   apiUpdateUserGeneralInfo,
   apiUpdateUserImages,
   apiUpdateUserMap,
   apiUpdateUserPersonalInfo,
-  apiUserAccountActivate,
-  apiUserAccountBlock,
   apiUserFollow,
   apiUserUnFollow,
-} from "./axios";
-import useStore from "../../store/user.store";
+} from './axios';
+import useStore from '../../store/user.store';
+import { showNotification } from '@mantine/notifications';
+import { IUser } from '../../types/IUser';
+import { isNullOrUndefined } from '../../utils/primitive-checks';
 
-//##################################################################################
-//##################################################################################
-export const useUserAccountActivate = () => {
-  const queryClient = useQueryClient();
-  return useMutation(({userId}: any) => apiUserAccountActivate({userId}),
-    {
-      onSettled: async () => {
-        await queryClient.invalidateQueries(['userFiltering'])
-      }
-    });
-};
-
-//##################################################################################
-//##################################################################################
-export const useUserAccountBlock = () => {
-  const queryClient = useQueryClient();
-  return useMutation(({userId, expiredBlockDate}: any) => apiUserAccountBlock({userId, expiredBlockDate}),
-    {
-      onSettled: async () => {
-        await queryClient.invalidateQueries(['userFiltering'])
-      }
-    });
-};
-
-//##################################################################################
-//##################################################################################
-export const useMutateSwitchUserRole = () => {
-  const queryClient = useQueryClient();
-  return useMutation(({userId}: any) => apiSwitchUserRole({userId}),
-    {
-      onSuccess: async (data: any) => {
-        await queryClient.invalidateQueries(['userFiltering'])
-
-        // const prevUserProfile: any = await queryClient.getQueryData(['users', 'filter']);
-        // if (prevUserProfile) {
-        //   await queryClient.cancelQueries(['users', 'filter']);
-        //   const findUserIndex = prevUserProfile.findIndex((user: any) => user.id == data.id)
-        //   prevUserProfile[findUserIndex] = {
-        //     ...prevUserProfile[findUserIndex],
-        //     role: data.role,
-        //   }
-        //   queryClient.setQueryData(['users', 'filter'], () => prevUserProfile);
-        // }
-      }
-    });
-};
-
-//##################################################################################
-//##################################################################################
 export const useMutateSetUserRating = () => {
   const queryClient = useQueryClient();
-  return useMutation(({userId, rating}: any) => apiSetUserRating({userId, rating}),
-    {
-      onSettled: async (data: any) => {
-        const prevUserProfile: any = await queryClient.getQueryData(['users', 'one']);
-        if (prevUserProfile) {
-          await queryClient.cancelQueries(['users', 'one']);
-          prevUserProfile.rating = data;
-          queryClient.setQueryData(['users', 'one'], () => prevUserProfile);
-        }
-      },
-    });
+  return useMutation(({ userId, rating }: any) => apiSetUserRating({ userId, rating }), {
+    onSuccess: async (data: any) => {
+      const prevUserProfile: IUser | undefined = await queryClient.getQueryData([
+        'users',
+        'one',
+        data?.profileId.toString(),
+      ]);
+      if (prevUserProfile) {
+        await queryClient.cancelQueries(['users', 'one', data?.profileId.toString()]);
+        prevUserProfile.rating = data;
+        prevUserProfile.myRatings = data?.myRatings;
+        queryClient.setQueryData(
+          ['users', 'one', data?.profileId.toString()],
+          () => prevUserProfile
+        );
+      }
+    },
+  });
 };
 
-//##################################################################################
-//##################################################################################
-export const useFollowMutate = (state: any) => {
+export const useFollowMutate = () => {
   const queryClient = useQueryClient();
-  const {user} = useStore((state: any) => state);
+  const { user } = useStore((state: any) => state);
+  return useMutation((userId: any) => apiUserFollow(userId), {
+    onSuccess: async (data: any) => {
+      const prev: IUser[] | undefined = await queryClient.getQueryData(['users', 'filter']);
+      if (prev) {
+        await queryClient.cancelQueries(['users', 'filter']);
+        const findUserIndex: number = prev.findIndex((us: IUser) => us.id == data?.profile.id);
+        if (!isNullOrUndefined(findUserIndex)) {
+          prev[findUserIndex].followedBy?.push({ id: user.id });
+        }
+        queryClient.setQueryData(['users', 'filter'], () => prev);
+      }
 
-  return useMutation(['users', state], (userId: any) => apiUserFollow(userId), {
-    onSettled: async (data: any) => {
-      console.log(data)
-
-      queryClient.invalidateQueries(['users', 'all']);
-      queryClient.invalidateQueries(['users', 'filter']);
-      // queryClient.invalidateQueries(['favorites', 'all'])
-
-      // const prev: any = queryClient.getQueryData(['user', 'one'])
-      //
-      // console.log(data)
-      //
-      // if(prev){
-      //     await queryClient.cancelQueries(['user', 'one'])
-      //     console.log(prev)
-      //     // const findUserIndex = prev.followedBy.findIndex((item: any) => item.id == item.id)
-      //     prev.followedBy.push({...data.profile})
-      //
-      //     queryClient.setQueryData(['user', 'one'], () => prev)
-      // }
-
-      const userPage: any = queryClient.getQueryData(['users', 'one', data?.profile?.id.toString()]);
+      const userPage: IUser | undefined = queryClient.getQueryData([
+        'users',
+        'one',
+        data?.profile?.id.toString(),
+      ]);
       if (userPage) {
         await queryClient.cancelQueries(['users', 'one', data?.profile?.id.toString()]);
-        userPage.followedBy.push({...user});
-        queryClient.setQueryData(['users', 'one'], () => userPage);
+        userPage.followedBy?.push({ ...user });
+        queryClient.setQueryData(['users', 'one', data?.profile?.id.toString()], () => userPage);
       }
     },
   });
 };
 
-//##################################################################################
-//##################################################################################
-export const useUnFollowMutate = (state: any) => {
+export const useUnFollowMutate = () => {
   const queryClient = useQueryClient();
-  const {user} = useStore((state: any) => state);
-
+  const { user } = useStore((state: any) => state);
   return useMutation((userId: any) => apiUserUnFollow(userId), {
-    onSettled: async (data: any) => {
-      console.log(data)
-      const prevAllUsers: any = queryClient.getQueryData(['users', 'all']);
-      if (prevAllUsers) await queryClient.invalidateQueries(['users', 'all']);
+    onSuccess: async (data: any) => {
+      const prevAllFilteringUsers: IUser[] | undefined = await queryClient.getQueryData([
+        'users',
+        'filter',
+      ]);
+      if (prevAllFilteringUsers) {
+        await queryClient.invalidateQueries(['users', 'filter']);
+      }
 
-      const prevAllFilteringUsers: any = queryClient.getQueryData(['users', 'filter']);
-      if (prevAllFilteringUsers) await queryClient.invalidateQueries(['users', 'filter']);
+      const prevAllFollowingUsers: IUser[] | undefined = await queryClient.getQueryData([
+        'favorites',
+        'all',
+        'users',
+      ]);
+      if (prevAllFollowingUsers) {
+        await queryClient.invalidateQueries(['favorites', 'all', 'users']);
+      }
 
-      const prevAllFollowingUsers: any = queryClient.getQueryData(['favorites', 'all', 'Users']);
-      if (prevAllFollowingUsers) await queryClient.invalidateQueries(['favorites', 'all', 'Users']);
-
-      const prevAllFavoritesArticles: any = queryClient.getQueryData(['favorites', 'all', 'Articles']);
-      if (prevAllFavoritesArticles) await queryClient.invalidateQueries(['favorites', 'all', 'Articles']);
-
-      const prevAllFavoritesTrips: any = queryClient.getQueryData(['favorites', 'all', 'Trips']);
-      if (prevAllFavoritesTrips) await queryClient.invalidateQueries(['favorites', 'all', 'Trips']);
-
-      const userPage: any = queryClient.getQueryData(['users', 'one', data?.profile?.id.toString()]);
+      const userPage: IUser | undefined = queryClient.getQueryData([
+        'users',
+        'one',
+        data?.profile?.id.toString(),
+      ]);
       if (userPage) {
-        await queryClient.cancelQueries(['users', 'one', data?.profile?.id]);
-        const newArrayOFfollowedBy = userPage.followedBy.filter((item: any) => item.id != user.id);
+        await queryClient.cancelQueries(['users', 'one', data?.profile?.id.toString()]);
+        const newArrayOFfollowedBy: IUser[] | any = userPage.followedBy?.filter(
+          (item: any) => item.id != user.id
+        );
         userPage.followedBy = [...newArrayOFfollowedBy];
-        queryClient.setQueryData(['users', 'one'], () => userPage);
+        queryClient.setQueryData(['users', 'one', data?.profile?.id.toString()], () => userPage);
       }
     },
   });
 };
 
-//##################################################################################
-//##################################################################################
 export const useCheckAllProfileView = () => {
   const queryClient = useQueryClient();
-  return useMutation(['profile', 'read'], () => apiCheckAllProfileVisits(), {
+  return useMutation(() => apiCheckAllProfileVisits(), {
     onSuccess: async () => {
-      await queryClient.invalidateQueries(['users', 'profile-visits']);
+      const prevUserProfileVisits: IUser | undefined = await queryClient.getQueryData([
+        'users',
+        'profile-visits',
+      ]);
+      if (prevUserProfileVisits) {
+        await queryClient.invalidateQueries(['users', 'profile-visits']);
+      }
     },
   });
 };
 
-//##################################################################################
-//##################################################################################
-export const useMutateUserProfileUpdate = () => {
-  const {fetchUser} = useStore((state: any) => state);
-  const queryClient = useQueryClient();
-
-  return useMutation(['profile', 'update'],
-    (formData: any) => apiUpdateUser(formData), {
-      onSettled: async (data: any) => {
-        // console.log(data);
-
-        // const prev: any = queryClient.getQueryData(['user', 'one']);
-        // if (prev) {
-        //   await queryClient.cancelQueries(['user', 'one']);
-        //   // prev.picture = data.picture;
-        //   prev.images = data?.images;
-        //   queryClient.setQueryData(['user', 'one'], () => prev);
-        // }
-
-        // localStorage.setItem('accessToken', data.accessToken);
-        fetchUser();
-        await queryClient.invalidateQueries(['users', 'one']);
-      },
-      onError: (e: any) => {
-        console.log(e);
-      },
-    });
-};
-
-
 export const useMutateUserProfileUpdateImages = () => {
-  const {fetchUser} = useStore((state: any) => state);
+  const { fetchUser } = useStore((state: any) => state);
   const queryClient = useQueryClient();
-
-  return useMutation(['profile', 'update'],
-    (formData: any) => apiUpdateUserImages(formData), {
-      onSettled: async (data: any) => {
-        fetchUser();
-        await queryClient.invalidateQueries(['users', 'one']);
-      },
-      onError: (e: any) => {
-        console.log(e);
-      },
-    });
-};
-
-export const useMutateUserProfileUpdateGeneralInfo = () => {
-  const {fetchUser, user} = useStore((state: any) => state);
-  const queryClient = useQueryClient();
-
-  return useMutation(['profile', 'update'],
-    (formData: any) => apiUpdateUserGeneralInfo(formData), {
-      onSuccess: async (data: any) => {
-        fetchUser();
-        await queryClient.invalidateQueries(['users', 'one', user?.id]);
-      },
-      onError: (e: any) => {
-        console.log(e);
-      },
-    });
-};
-
-export const useMutateUserProfileUpdatePerosnalInfo = () => {
-  const {fetchUser, user} = useStore((state: any) => state);
-  const queryClient = useQueryClient();
-  return useMutation((userPeronalInfo: any) => apiUpdateUserPersonalInfo(userPeronalInfo), {
-    onSettled: async () => {
+  return useMutation((formData: any) => apiUpdateUserImages(formData), {
+    onSuccess: async (data: any) => {
       fetchUser();
-      await queryClient.invalidateQueries(['users', 'one', user?.id]);
+      const prevUserProfile: IUser | undefined = await queryClient.getQueryData([
+        'users',
+        'one',
+        data?.id.toString(),
+      ]);
+      if (prevUserProfile) {
+        await queryClient.invalidateQueries(['users', 'one', data?.id.toString()]);
+      }
     },
-    onError: (e: any) => {
-      console.log(e);
+    onError: async (err: any) => {
+      showNotification({
+        title: 'Error!',
+        message: err.response?.data?.message,
+        color: 'red',
+      });
+    },
+  });
+};
+
+export const useMutateAddImageCaption = (onSuccessEvent: () => void) => {
+  const { fetchUser } = useStore((state: any) => state);
+  const queryClient = useQueryClient();
+  return useMutation(({ caption, imageId }: any) => apiAddImageCaption(caption, imageId), {
+    onSuccess: async (data: any) => {
+      fetchUser();
+      if (onSuccessEvent) {
+        onSuccessEvent();
+      }
+      const prevUserProfile: IUser | undefined = await queryClient.getQueryData([
+        'users',
+        'one',
+        data?.userId.toString(),
+      ]);
+      if (prevUserProfile) {
+        await queryClient.invalidateQueries(['users', 'one', data?.userId.toString()]);
+      }
+    },
+    onError: async (err: any) => {
+      showNotification({
+        title: 'Error!',
+        message: err.response?.data?.message,
+        color: 'red',
+      });
+    },
+  });
+};
+
+export const useMutateUserProfileUpdateGeneralInfo = (onSuccessEvent?: () => void) => {
+  const { fetchUser, user } = useStore((state: any) => state);
+  const queryClient = useQueryClient();
+  return useMutation(['profile', 'update'], (formData: any) => apiUpdateUserGeneralInfo(formData), {
+    onSuccess: async (data: any) => {
+      fetchUser();
+      if (onSuccessEvent) onSuccessEvent();
+      const prevUserProfile: IUser | undefined = await queryClient.getQueryData([
+        'users',
+        'one',
+        user?.id.toString(),
+      ]);
+      if (prevUserProfile) {
+        await queryClient.invalidateQueries(['users', 'one', user?.id.toString()]);
+      }
+    },
+    onError: async (err: any) => {
+      showNotification({
+        title: 'Error!',
+        message: err.response?.data?.message,
+        color: 'red',
+      });
+    },
+  });
+};
+
+export const useMutateUserProfileUpdatePersonalInfo = () => {
+  const { fetchUser, user } = useStore((state: any) => state);
+  const queryClient = useQueryClient();
+  return useMutation((userPersonalInfo: any) => apiUpdateUserPersonalInfo(userPersonalInfo), {
+    onSuccess: async () => {
+      fetchUser();
+      const prevUserProfile: IUser | undefined = await queryClient.getQueryData([
+        'users',
+        'one',
+        user?.id.toString(),
+      ]);
+      if (prevUserProfile) {
+        await queryClient.invalidateQueries(['users', 'one', user?.id.toString()]);
+      }
+    },
+    onError: async (err: any) => {
+      showNotification({
+        title: 'Error!',
+        message: err.response?.data?.message,
+        color: 'red',
+      });
     },
   });
 };
 
 export const useMutateUserProfileUpdateMap = () => {
-  const {fetchUser, user} = useStore((state: any) => state);
+  const { fetchUser, user } = useStore((state: any) => state);
   const queryClient = useQueryClient();
-  return useMutation((countries: string[]) => apiUpdateUserMap(countries), {
-    onSettled: async () => {
+  return useMutation((countries: any) => apiUpdateUserMap(countries), {
+    onSuccess: async () => {
       fetchUser();
-      await queryClient.invalidateQueries(['users', 'one', user?.id]);
+      const prevUserProfile: IUser | undefined = await queryClient.getQueryData([
+        'users',
+        'one',
+        user?.id.toString(),
+      ]);
+      if (prevUserProfile) {
+        await queryClient.invalidateQueries(['users', 'one', user?.id.toString()]);
+      }
     },
-    onError: (e: any) => {
-      console.log(e);
+    onError: async (err: any) => {
+      showNotification({
+        title: 'Error!',
+        message: err.response?.data?.message,
+        color: 'red',
+      });
     },
   });
 };
 
 export const useMutateAddNewProfileVisit = () => {
-  const {user} = useStore((state: any) => state);
+  const { user } = useStore((state: any) => state);
   const queryClient = useQueryClient();
   return useMutation((userId: any) => apiAddNewProfileVisit(userId), {
-    onSettled: async () => {
-      await queryClient.invalidateQueries(['users', 'one', user?.id]);
+    onSuccess: async () => {
+      const prevUserProfile: IUser | undefined = await queryClient.getQueryData([
+        'users',
+        'one',
+        user?.id.toString(),
+      ]);
+      if (prevUserProfile) {
+        await queryClient.invalidateQueries(['users', 'one', user?.id.toString()]);
+      }
     },
   });
 };
 
-//##################################################################################
-//##################################################################################
-export const useMutateSendComplaint = ({profileId}: { profileId: string | number }) => {
-  return useMutation((complaintPayload: any) => apiSendComplaint({profileId, complaintPayload}), {});
+export const useMutateSendComplaint = ({
+  profileId,
+  onSuccessEvent,
+}: {
+  profileId: string | number | undefined;
+  onSuccessEvent?: () => void;
+}) => {
+  return useMutation((complaintPayload: any) => apiSendComplaint({ profileId, complaintPayload }), {
+    onSuccess: () => {
+      if (onSuccessEvent) {
+        onSuccessEvent();
+      }
+      showNotification({
+        title: 'Report successful send!',
+        message: undefined,
+      });
+    },
+    onError: (err: any) => {
+      showNotification({
+        title: 'Error',
+        message: err.response?.data?.message,
+        color: 'red',
+      });
+    },
+  });
 };

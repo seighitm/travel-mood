@@ -1,12 +1,13 @@
-import React, {useState} from 'react';
-import {Anchor, createStyles, Group, LoadingOverlay, Paper, Text,} from '@mantine/core';
+import React, { useState } from 'react';
+import { createStyles, Group, LoadingOverlay, Paper, Text } from '@mantine/core';
 import AccountInfo from './AccountInfo';
 import PersonalInfo from './PersonalInfo';
-import {useMutateSignUp} from '../../api/auth/mutations';
-import {useForm} from '@mantine/form';
-import {useNavigate} from 'react-router-dom';
-import {GENDER, RELATIONSHIP_STATUS} from "../../types/enums";
-import {isValidEmail} from "../../utils/utils-func";
+import { useMutateSignUp } from '../../api/auth/mutations';
+import { useForm } from '@mantine/form';
+import { Link } from 'react-router-dom';
+import { GENDER, RELATIONSHIP_STATUS } from '../../types/enums';
+import { calculateAge, isValidEmail } from '../../utils/utils-func';
+import { isEmptyArray, isEmptyString, isNullOrUndefined } from '../../utils/primitive-checks';
 
 const useStyles = createStyles((theme) => ({
   container: {
@@ -15,20 +16,22 @@ const useStyles = createStyles((theme) => ({
   body: {
     width: '420px',
     position: 'relative',
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
+    border: '2px solid ',
+    borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[3],
+    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
   },
   themeIcon: {
     position: 'absolute',
     top: 0,
-    right: 0
+    right: 0,
   },
 }));
 
 const SignUp = () => {
-  const {classes} = useStyles();
-  const navigate = useNavigate();
+  const { classes } = useStyles();
   const [stateRegistration, setStateRegistration] = useState('account-info');
-  const {mutate: mutateRegistration, isLoading: isLoadingRegistrationMutation} = useMutateSignUp();
+  const { mutate: mutateRegistration, isLoading: isLoadingRegistrationMutation } =
+    useMutateSignUp();
   const [profileImage, setProfileImage] = useState<any>();
 
   const accountInfoForm = useForm({
@@ -39,20 +42,14 @@ const SignUp = () => {
       password: '',
     },
     validate: {
-      password: (value) => {
-        if (value?.trim().length < 8) return 'Password should have at least 8 letters!'
-      },
-      lastName: (value) => {
-        if (value?.trim().length < 2) return 'Last name should have at least 2 letters!'
-      },
-      firstName: (value) => {
-        if (value?.trim().length < 2) return 'First name should have at least 2 letters!'
-      },
-      email: (value) => {
-        if (!isValidEmail(value))
-          return 'Invalid email!'
-      },
-    }
+      password: (value) =>
+        value?.trim().length < 8 ? 'Password should have at least 8 letters!' : null,
+      firstName: (value) =>
+        value?.trim().length < 2 ? 'First name should have at least 2 letters!' : null,
+      lastName: (value) =>
+        value?.trim().length < 2 ? 'Last name should have at least 2 letters!' : null,
+      email: (value) => (!isValidEmail(value?.trim()) ? 'Invalid email!' : null),
+    },
   });
 
   const personalInfoForm = useForm({
@@ -60,29 +57,38 @@ const SignUp = () => {
       country: '',
       gender: '',
       relationshipStatus: '',
-      birthday: new Date(),
+      birthday: null,
       languages: [],
     },
     validate: {
-      gender: (value) => {
-        if (!(value in GENDER)) return 'Invalid gender format!'
-      },
-      languages: (value) => {
-        if (value.length == 0) return 'Add at least one language!'
-      },
-      country: (value) => {
-        if (value == '' || value == null) return 'You did not indicate the country!'
-      },
-      relationshipStatus: (value) => {
-        if (!(value in RELATIONSHIP_STATUS)) return 'Invalid relationship status format!'
-      },
-    }
+      birthday: (value) =>
+        isNullOrUndefined(value)
+          ? 'Date is required!'
+          : calculateAge(value) < 18
+          ? 'You have to be at least 18 to use travel mood!'
+          : null,
+      gender: (value) =>
+        isEmptyString(value)
+          ? 'Gender is required!'
+          : !(value in GENDER)
+          ? 'Invalid gender format!'
+          : null,
+      languages: (value) => (isEmptyArray(value) ? 'Languages are required!' : null),
+      country: (value) =>
+        isNullOrUndefined(value) || isEmptyString(value) ? 'Country is required!' : null,
+      relationshipStatus: (value) =>
+        !isEmptyString(value) && !(value in RELATIONSHIP_STATUS)
+          ? 'Invalid relationship status format!'
+          : null,
+    },
   });
 
   const handleSubmit = (data: any) => {
     const formData = new FormData();
-    const obj = {...data, ...accountInfoForm.values, birthday: new Date(data.birthday),};
-    Object.entries(obj).forEach((entry: any) => entry[0] != 'languages' && formData.append(entry[0], entry[1]));
+    const obj = { ...data, ...accountInfoForm.values };
+    Object.entries(obj).forEach(
+      (entry: any) => entry[0] != 'languages' && formData.append(entry[0], entry[1])
+    );
     data.languages.forEach((lang: any) => formData.append('languages[]', lang));
     formData.append('image', profileImage);
     mutateRegistration(formData);
@@ -91,49 +97,37 @@ const SignUp = () => {
   return (
     <Group
       position={'center'}
-      className={classes.container}
+      // className={classes.container}
     >
-      <Paper
-        withBorder
-        shadow="md"
-        p={'md'}
-        m={'sm'}
-        radius="md"
-        className={classes.body}
-      >
-        <LoadingOverlay visible={isLoadingRegistrationMutation}/>
-        {stateRegistration == 'account-info'
-          ? <AccountInfo
+      <Paper withBorder shadow="md" p={'md'} m={'sm'} radius="md" className={classes.body}>
+        <LoadingOverlay visible={isLoadingRegistrationMutation} />
+        {stateRegistration == 'account-info' ? (
+          <AccountInfo
             form={accountInfoForm}
             setProfileImage={setProfileImage}
             profileImage={profileImage}
             setStateRegistration={setStateRegistration}
           />
-          : <PersonalInfo
+        ) : (
+          <PersonalInfo
             form={personalInfoForm}
             handleSubmit={handleSubmit}
             setStateRegistration={setStateRegistration}
           />
-        }
-        <Group
-          mt={'sm'}
-          position={'right'}
-        >
-          <Text
-            color="dimmed"
-            size="md"
-            align="center"
-            mt={5}
-          >
+        )}
+        <Group mt={'xs'} position={'right'}>
+          <Text color="dimmed" size="md" align="center" mt={5}>
             Have an account?{' '}
-            <Anchor<'a'>
-              href="#"
+            <Text
+              align={'right'}
+              weight={500}
+              color={'blue'}
+              component={Link}
+              to={'/auth/login'}
               size="md"
-              weight={700}
-              onClick={() => navigate('/auth/login')}
             >
               Login
-            </Anchor>
+            </Text>
           </Text>
         </Group>
       </Paper>

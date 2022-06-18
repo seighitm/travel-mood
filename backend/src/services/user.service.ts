@@ -1,111 +1,101 @@
-import prisma from "../../prisma/PrismaClient";
-import fs from "fs-extra";
-import path from "path";
-import {Prisma} from "@prisma/client";
-import {generateTokens, saveToken} from "./token.service";
-import ApiError from "../utils/api-error";
-import bcrypt from "bcryptjs";
+import prisma from '../../prisma/PrismaClient'
+import {Prisma} from '@prisma/client'
+import {generateTokens, saveToken} from './token.service'
+import ApiError from '../utils/api-error'
+import bcrypt from 'bcryptjs'
 import {
+  Profile,
   UserId,
   UserUpdateGeneralInfoPayload,
   UserUpdateGeneralInfoResponse,
   UserUpdateMap,
-  UserUpdatePersonalInfoPayload
-} from "../models/user.model";
-import {isEmptyArray, isEmptyString, isNullOrUndefined, isShortStringThan} from "../utils/primitive-checks";
-import {UserPayloadValidator} from "../validators/user.validator";
-import {s3} from "../middlewares/aws-multer";
+  UserUpdatePersonalInfoPayload,
+} from '../types/user.model'
+import {isEmptyArray, isEmptyString, isNullOrUndefined, isShortStringThan} from '../utils/primitive-checks'
+import {UserPayloadValidator} from '../validators/user.validator'
+import fs from 'fs-extra'
+import path from 'path'
+import profileSelector from "../selectors/profile.selector";
+import profileMapper from "../mappers/profile.mapper";
 
 const removeUnusedImages = async (imagesToRemove: any[]) => {
-
-
   if (!isNullOrUndefined(imagesToRemove) && !isEmptyArray(imagesToRemove)) {
-    for (let i = 0; i < imagesToRemove.length; i++) {
-      fs.remove(path.resolve(__dirname, '..', 'uploads', imagesToRemove[i].image), (err) => {
-        if (err) console.log(err);
-        console.log('File deleted successfully!');
-      })
-
-      console.log(imagesToRemove[i].image)
-      s3.deleteObject({Bucket: process.env.AWS_BUCKET_NAME, Key: imagesToRemove[0].image}, (err, data) => {
-        if (err) console.log(err, err.stack);
-        else console.log('delete', data);
-      })
-    }
+    if (process.env.NODE_ENV !== 'PRODUCTION')
+      for (let i = 0; i < imagesToRemove.length; i++) {
+        fs.remove(path.resolve(__dirname, '..', 'uploads', imagesToRemove[i].image), (err) => {
+          if (err) console.log(err)
+          console.log('File deleted successfully!')
+        })
+        //
+        // s3.deleteObject({ Bucket: process.env.AWS_BUCKET_NAME, Key: imagesToRemove[0].image }, (err, data) => {
+        //   if (err) console.log(err, err.stack)
+        //   else console.log('delete', data)
+        // })
+      }
   }
-
   for (let i = 0; i < imagesToRemove.length; i++) {
     await prisma.userImage.delete({
       where: {image: imagesToRemove[i].image},
-    });
+    })
   }
 }
 
 export const updateUserMap = async (
   userId: number,
-  {
-    interestedInCountries,
-    visitedCountries
-  }: UserUpdateMap,
+  {interestedInCountries, visitedCountries}: UserUpdateMap
 ): Promise<UserId> => {
-
   return await prisma.user.update({
     where: {
-      id: Number(userId)
+      id: Number(userId),
     },
     data: {
       interestedInCountries: {
-        set: interestedInCountries.map((item: any) => ({code: item}))
+        set: interestedInCountries.map((item: any) => ({code: item})),
       },
       visitedCountries: {
-        connect: visitedCountries.map((item: any) => ({code: item}))
-      }
+        connect: visitedCountries.map((item: any) => ({code: item})),
+      },
     },
     select: {
-      id: true
-    }
-  });
-};
+      id: true,
+    },
+  })
+}
 
 export const updateUserPersonalInfo = async (
   userId: number,
-  {
-    email,
-    password,
-    oldPassword
-  }: UserUpdatePersonalInfoPayload,
+  {email, password, oldPassword}: UserUpdatePersonalInfoPayload
 ): Promise<any> => {
-
   if (isNullOrUndefined(password)) {
-    throw new ApiError(404, {message: 'You did not enter your password!'});
+    throw new ApiError(404, {message: 'You did not enter your password!'})
   } else if (!isNullOrUndefined(password) && isShortStringThan(password, 8)) {
-    throw new ApiError(404, {message: 'Password should have at least 8 letters!'});
+    throw new ApiError(404, {message: 'Password should have at least 8 letters!'})
   }
 
   if (isNullOrUndefined(oldPassword)) {
-    throw new ApiError(404, {message: 'You did not enter your old password!'});
+    throw new ApiError(404, {message: 'You did not enter your old password!'})
   } else if (!isNullOrUndefined(oldPassword) && isShortStringThan(oldPassword, 8)) {
-    throw new ApiError(404, {message: 'Password should have at least 8 letters!'});
+    throw new ApiError(404, {message: 'Password should have at least 8 letters!'})
   }
 
   const userInfo = await prisma.user.findUnique({
     where: {
-      id: Number(userId)
+      id: Number(userId),
     },
     select: {
-      password: true
+      password: true,
     },
-  });
+  })
 
   if (!bcrypt.compareSync(oldPassword, userInfo.password)) {
-    throw new ApiError(404, {message: 'The old password is incorrect!'});
+    throw new ApiError(404, {message: 'The old password is incorrect!'})
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, 10)
 
   const user = await prisma.user.update({
     where: {
-      id: Number(userId)
+      id: Number(userId),
     },
     data: {
       email,
@@ -115,21 +105,21 @@ export const updateUserPersonalInfo = async (
       id: true,
       role: {
         select: {
-          role: true
-        }
-      }
-    }
-  });
+          role: true,
+        },
+      },
+    },
+  })
 
-  await saveToken(user.id, generateTokens(user).refreshToken);
+  await saveToken(user.id, generateTokens(user).refreshToken)
 
   return {
     ...user,
     role: user.role.role,
     accessToken: generateTokens(user).accessToken,
     refreshToken: generateTokens(user).refreshToken,
-  };
-};
+  }
+}
 
 export const updateUserGeneralInfo = async (
   userId: number,
@@ -140,47 +130,60 @@ export const updateUserGeneralInfo = async (
     birthday,
     languages,
     gender,
-  }: UserUpdateGeneralInfoPayload,
+    aboutMe,
+    relationshipStatus,
+  }: UserUpdateGeneralInfoPayload
 ): Promise<UserUpdateGeneralInfoResponse> => {
-  UserPayloadValidator({gender, birthday, languages})
+  UserPayloadValidator({
+    gender,
+    birthday,
+    languages,
+    country,
+    accountDataPayload: {
+      firstName: firstName?.trim(),
+      lastName: lastName?.trim(),
+    },
+  })
 
   const user = await prisma.user.update({
     where: {
-      id: Number(userId)
+      id: Number(userId),
     },
     data: {
       firstName,
       lastName,
       ...(!isNullOrUndefined(gender)
-          ? {
-            gender: {
-              connect: {
-                gender: gender
-              }
-            }
-          } : {}
-      ),
-      ...(!isNullOrUndefined(birthday)
-          ? {birthday: birthday}
-          : {birthday: null}
-      ),
-      ...(!isNullOrUndefined(country)
-          ? {
-            country: {
-              connect: {
-                code: country
-              }
+        ? {
+          gender: {
+            connect: {
+              gender: gender,
             },
-          }
-          : {
-            country: {
-              disconnect: true
-            }
-          }
-      ),
+          },
+        }
+        : {}),
+      aboutMe: aboutMe,
+      relationshipStatus: {
+        connect: {
+          status: relationshipStatus,
+        },
+      },
+      ...(!isNullOrUndefined(birthday) ? {birthday: birthday} : {birthday: null}),
+      ...(!isNullOrUndefined(country)
+        ? {
+          country: {
+            connect: {
+              code: country,
+            },
+          },
+        }
+        : {
+          country: {
+            disconnect: true,
+          },
+        }),
       languages: {
         set: languages.map((language: string) => ({
-          name: language
+          name: language,
         })),
       },
     },
@@ -193,32 +196,23 @@ export const updateUserGeneralInfo = async (
       gender: true,
       role: {
         select: {
-          role: true
-        }
-      }
+          role: true,
+        },
+      },
     },
-  });
+  })
 
-  await saveToken(user.id, generateTokens(user).refreshToken);
+  await saveToken(user.id, generateTokens(user).refreshToken)
 
   return {
     ...user,
     role: user.role.role,
     accessToken: generateTokens(user).accessToken,
     refreshToken: generateTokens(user).refreshToken,
-  };
-};
+  }
+}
 
-export const updateUserImages = async (
-  userId: number,
-  {
-    oldImages,
-    profileImage,
-  }: any,
-  files: any
-): Promise<any> => {
-  console.log(files)
-
+export const updateUserImages = async (userId: number, {oldImages, profileImage}: any, files: any): Promise<any> => {
   const dbUser = await prisma.user.findUnique({
     where: {
       id: Number(userId),
@@ -231,54 +225,48 @@ export const updateUserImages = async (
         },
       },
     },
-  });
+  })
 
   if (!isNullOrUndefined(dbUser)) {
     if (!isNullOrUndefined(oldImages) && !isEmptyArray(oldImages)) {
-
-      const imagesToRemove: Array<any> = dbUser?.images?.filter((item: any) => !oldImages?.includes(item.image));
-      console.log(imagesToRemove)
+      const imagesToRemove: Array<any> = dbUser?.images?.filter((item: any) => !oldImages?.includes(item.image))
       await removeUnusedImages(imagesToRemove)
     } else {
       await removeUnusedImages(dbUser?.images)
     }
   }
-  console.log(files?.map((imageName: any) => ({
-    image: imageName.filename
-  })))
 
   const user = await prisma.user.update({
     where: {id: Number(userId)},
     data: {
       ...(profileImage != 'null' && profileImage != null && oldImages && oldImages?.includes(profileImage)
-          ? {
-            picture: {
-              connect: {
-                image: profileImage
-              }
-            }
-          }
-          : {
-            picture: {
-              disconnect: true
-            }
-          }
-      ),
+        ? {
+          picture: {
+            connect: {
+              image: profileImage,
+            },
+          },
+        }
+        : {
+          picture: {
+            disconnect: true,
+          },
+        }),
       ...(!isNullOrUndefined(files) && !isEmptyArray(files)
-          ? {
-            images: {
-              create: files?.map((imageName: any) => ({
-                image: imageName.filename
-              }))
-            }
-          } : {
-            images: {
-              set: dbUser?.images
-                ?.filter((item: any) => oldImages?.includes(item.image))
-                .map((image: any) => ({image: image.image}))
-            }
-          }
-      ),
+        ? {
+          images: {
+            create: files?.map((imageName: any) => ({
+              image: imageName[process.env.NODE_ENV == 'PRODUCTION' ? 'key' : 'filename'],
+            })),
+          },
+        }
+        : {
+          images: {
+            set: dbUser?.images
+              ?.filter((item: any) => oldImages?.includes(item.image))
+              .map((image: any) => ({image: image.image})),
+          },
+        }),
     },
     select: Prisma.validator<Prisma.UserSelect>()({
       id: true,
@@ -287,169 +275,108 @@ export const updateUserImages = async (
       images: true,
       role: {
         select: {
-          role: true
-        }
-      }
+          role: true,
+        },
+      },
     }),
-  });
+  })
 
   return {
     ...user,
     accessToken: generateTokens(user).accessToken,
     refreshToken: generateTokens(user).refreshToken,
-  };
-};
+  }
+}
 
-export const addInterestedVisitedCountries = async (
-  userId: string | number,
-  payload: any,
-): Promise<any> => {
+export const addInterestedVisitedCountries = async (userId: string | number, payload: any): Promise<any> => {
   await prisma.user.update({
     where: {id: Number(userId)},
     data: {
       ...(payload.interestedInCountries
-          ? {
-            interestedInCountries: {
-              set: []
-            }
-          } : {}
-      ),
+        ? {
+          interestedInCountries: {
+            set: [],
+          },
+        }
+        : {}),
       ...(payload.visitedCountries
-          ? {
-            visitedCountries: {
-              set: []
-            }
-          } : {}
-      )
-    }
+        ? {
+          visitedCountries: {
+            set: [],
+          },
+        }
+        : {}),
+    },
   })
 
   return await prisma.user.update({
     where: {id: Number(userId)},
     data: {
       ...(!isNullOrUndefined(payload.interestedInCountries)
-          ? {
-            interestedInCountries: {
-              connect: payload.interestedInCountries.map((item: any) => ({where: {code: item}}))
-            },
-          } : {}
-      ),
+        ? {
+          interestedInCountries: {
+            connect: payload.interestedInCountries.map((item: any) => ({where: {code: item}})),
+          },
+        }
+        : {}),
       ...(!isNullOrUndefined(payload.visitedCountries)
-          ? {
-            visitedCountries: {
-              connect: payload.visitedCountries.map((item: any) => ({where: {code: item}}))
-            }
-          } : {}
-      )
+        ? {
+          visitedCountries: {
+            connect: payload.visitedCountries.map((item: any) => ({where: {code: item}})),
+          },
+        }
+        : {}),
+    },
+  })
+}
+
+export const checkUserProfileViews = async (userId: string | number): Promise<any> => {
+  const viewsCount = await prisma.profileViews.count({
+    where: {
+      guestId: Number(userId),
+      seen: false,
     }
   })
-};
 
-export const checkUserProfileViews = async (
-  userId: string | number
-): Promise<any> => {
+  if (viewsCount == 0) {
+    return []
+  }
+
   return await prisma.profileViews.updateMany({
     where: {
-      guestId: Number(userId)
+      guestId: Number(userId),
     },
     data: {
-      seen: true
-    }
+      seen: true,
+    },
   })
-};
+}
 
-export const blockUserProfile = async (
-  userId: string | number,
-  expiredBlockDate: string
-): Promise<any> => {
-  return await prisma.user.update({
-    where: {id: Number(userId)},
-    data: {
-      activatedStatus: 'BLOCKED',
-      blockExpiration: new Date(expiredBlockDate)
-    }
-  })
-};
-
-export const activateUserProfile = async (
-  userId: string | number
-): Promise<any> => {
-  return await prisma.user.update({
-    where: {id: Number(userId)},
-    data: {
-      activatedStatus: 'ACTIVATED',
-      blockExpiration: null
-    }
-  })
-};
-
-export const getUsersByNameOrEmail = async (
-  searchField: any,
-): Promise<any> => {
-  if (!isNullOrUndefined(searchField) && !isEmptyString(searchField))
-    return await prisma.user.findMany({
-        where: {
-          OR: [
-            {
-              OR: [
-                {firstName: {contains: searchField?.split(' ')[0]}},
-                {firstName: {contains: searchField?.split(' ')[1]}}
-              ],
-            },
-            {
-              OR: [
-                {lastName: {contains: searchField?.split(' ')[0]}},
-                {lastName: {contains: searchField?.split(' ')[1]}}
-              ]
-            }
-          ]
-        },
-        select: {
-          id: true,
-          followedBy: true,
-          following: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          picture: true,
-          favoritedArticle: true
-        },
-      }
-    )
-  else
-    return []
-};
-
-export const createProfileView = async (
-  userId: number | string,
-  guestId: number | string
-): Promise<void> => {
+export const createProfileView = async (userId: number | string, guestId: number | string): Promise<void> => {
   if (Number(guestId) != Number(userId))
     await prisma.profileViews.upsert({
       where: {
         guestId_userId: {
           userId: Number(userId),
-          guestId: Number(guestId)
-        }
+          guestId: Number(guestId),
+        },
       },
       update: {
-        createdAt: new Date().toISOString(),
-        seen: false
+        seen: false,
+        createdAt: new Date(),
       },
       create: {
         user: {
-          connect: {id: Number(userId)}
+          connect: {id: Number(userId)},
         },
         guest: {
-          connect: {id: Number(guestId)}
-        }
-      }
+          connect: {id: Number(guestId)},
+        },
+      },
     })
-};
+}
 
-export const getProfileViews = async (
-  userId: string | number,
-): Promise<any> => {
+export const getProfileViews = async (userId: string | number): Promise<any> => {
   return await prisma.user.findUnique({
     where: {id: Number(userId)},
     select: {
@@ -459,206 +386,237 @@ export const getProfileViews = async (
         select: {
           user: {
             include: {
-              picture: true
-            }
+              picture: true,
+            },
           },
           createdAt: true,
           seen: true,
         },
-        orderBy: {createdAt: 'desc'}
+        orderBy: {createdAt: 'desc'},
       },
       pofilesVisit: {
         select: {
           user: true,
-          createdAt: true
+          createdAt: true,
         },
-        orderBy: {id: 'asc'}
-      }
+        orderBy: {createdAt: 'asc'},
+      },
     },
   })
-};
+}
 
-export const getUserById = async (
-  userId: string | number,
-): Promise<any> => {
+export const getUserById = async (userId: string | number): Promise<any> => {
   const user = await prisma.user.findUnique({
-      where: {
-        id: Number(userId)
+    where: {
+      id: Number(userId),
+    },
+    include: {
+      role: {
+        select: {
+          role: true,
+        },
       },
-      include: {
-        role:{
-          select:{
-            role: true
-          }
+      country: true,
+      relationshipStatus: {
+        select: {
+          status: true,
         },
-        country: true,
-        followedBy: true,
-        following: {
-          include: {
-            picture: true
-          }
+      },
+      followedBy: true,
+      following: {
+        include: {
+          picture: true,
         },
-        languages: true,
-        favoritedArticle: true,
-        images: true,
-        picture: true,
-        gender: {
-          select: {
-            gender: true
-          }
+      },
+      languages: true,
+      favoritedArticle: true,
+      images: true,
+      picture: {
+        select: {
+          image: true,
+          caption: true,
         },
-        chats: {
-          select: {
-            id: true
-          }
+      },
+      gender: {
+        select: {
+          gender: true,
         },
-        trips: {
-          include: {
-            user: {
-              include: {
-                picture: true
-              }
+      },
+      myRatings: true,
+      chats: {
+        select: {
+          id: true,
+        },
+      },
+      trips: {
+        include: {
+          user: {
+            include: {
+              picture: {
+                select: {
+                  image: true,
+                },
+              },
             },
-            places: true,
-            destinations: true,
-            languages: true,
-            tripFavoritedBy: true,
-            usersJoinToTrip: {
-              include: {
-                user: true
-              }
-            }
-          }
+          },
+          gender: {
+            select: {
+              gender: true,
+            },
+          },
+          places: true,
+          destinations: true,
+          languages: true,
+          favoritedBy: {
+            include: {
+              picture: {
+                select: {
+                  image: true,
+                },
+              },
+            },
+          },
+          usersJoinToTrip: {
+            include: {
+              user: true,
+            },
+          },
         },
-        articles: {
-          include: {
-            favoritedBy: true,
-            countries: true,
-            author: true
-          }
+      },
+      articles: {
+        include: {
+          favoritedBy: {
+            include: {
+              picture: {
+                select: {
+                  image: true,
+                },
+              },
+            },
+          },
+          countries: true,
+          author: true,
         },
-        visitedCountries: true,
-        interestedInCountries: true
-      }
-    }
-  )
+      },
+      visitedCountries: true,
+      interestedInCountries: true,
+    },
+  })
 
-  if (isNullOrUndefined(user))
-    throw new ApiError(404, {message: 'User not found!'});
+  if (isNullOrUndefined(user)) throw new ApiError(404, {message: 'User not found!'})
 
   return user
-};
+}
 
-export const fullSearchUsers = async (
-  query: any,
-): Promise<any> => {
+export const fullSearchUsers = async (query: any): Promise<any> => {
   const users = await prisma.user.findMany({
     where: {
       ...(!isNullOrUndefined(query?.name) && !isEmptyString(query?.name)
-          ? {
-            OR: [
-              {
-                OR: [
-                  {firstName: {contains: query.name?.split(' ')[0]}},
-                  {firstName: {contains: query.name?.split(' ')[1]}}
-                ],
-              },
-              {
-                OR: [
-                  {lastName: {contains: query.name?.split(' ')[0]}},
-                  {lastName: {contains: query.name?.split(' ')[1]}}
-                ]
-              }
-            ]
-          }
-          : {}
-      ),
-      ...(!isNullOrUndefined(query?.isOnline)
-          ? {
-            id: {
-              in: global.onlineUsers?.map((item: any) => item.userId != undefined ? item.userId : -1)
-            }
-          } : {}
-      ),
+        ? {
+          OR: [
+            {
+              AND: [
+                {firstName: {equals: query.name?.split(' ')[0]}},
+                {lastName: {startsWith: query.name?.split(' ')[1]}},
+              ],
+            },
+            {firstName: {contains: query.name}},
+            {lastName: {contains: query.name}},
+          ],
+        }
+        : {}),
+      ...(!isNullOrUndefined(query?.isOnline) && query?.isOnline != 'false'
+        ? {
+          id: {
+            in: global.onlineUsers?.map((item: any) => (item.userId != undefined ? item.userId : -1)),
+          },
+        }
+        : {}),
       ...(!isNullOrUndefined(query?.languages) && !isEmptyArray(query?.languages)
-          ? {
-            languages: {
-              some: {
-                name: {
-                  in: query?.languages
-                }
-              }
-            }
-          }
-          : {}
-      ),
-      ...(!isNullOrUndefined(query?.gender)
-          ? {
-            sex: {
-              equals: query.sex
-            }
-          } : {}
-      ),
-      ...(!isNullOrUndefined(query?.countries) && !isEmptyArray(query?.countries)
-          ? {
-            country: {
+        ? {
+          languages: {
+            some: {
               name: {
-                in: query.countries
-              }
-            }
-          } : {}
-      ),
+                in: query?.languages,
+              },
+            },
+          },
+        }
+        : {}),
+      ...(!isNullOrUndefined(query?.gender)
+        ? {
+          gender: {
+            gender: {
+              equals: query.gender,
+            },
+          },
+        }
+        : {}),
+      ...(!isNullOrUndefined(query?.countries) && !isEmptyArray(query?.countries)
+        ? {
+          country: {
+            name: {
+              in: query.countries,
+            },
+          },
+        }
+        : {}),
       ...(!isNullOrUndefined(query?.tripTo)
-          ? {
-            trips: {
-              some: {
-                destinations: {
-                  some: {
-                    name: {
-                      in: query?.tripTo
-                    }
-                  }
-                }
-              }
-            }
-          } : {}
-      ),
+        ? {
+          trips: {
+            some: {
+              destinations: {
+                some: {
+                  name: {
+                    in: query?.tripTo,
+                  },
+                },
+              },
+            },
+          },
+        }
+        : {}),
     },
     select: {
       followedBy: {
         select: {
-          id: true
-        }
+          id: true,
+        },
       },
       following: {
         select: {
-          id: true
-        }
+          id: true,
+        },
       },
       favoritedArticle: {
         select: {
-          id: true
-        }
+          id: true,
+        },
       },
       picture: {
         select: {
-          image: true
-        }
+          image: true,
+        },
       },
       role: {
         select: {
-          role: true
-        }
+          role: true,
+        },
       },
       trips: {
         select: {
-          destinations: true
-        }
+          destinations: true,
+        },
       },
       articles: {
         select: {
-          countries: true
-        }
+          countries: true,
+        },
+      },
+      gender: {
+        select: {
+          gender: true,
+        },
       },
       firstName: true,
       lastName: true,
@@ -668,56 +626,70 @@ export const fullSearchUsers = async (
       rating: true,
       country: {
         select: {
-          name: true
-        }
-      }
+          name: true,
+        },
+      },
     },
   })
 
   if (!isNullOrUndefined(query.age)) {
     const ageMinMax = query.age.split('-')
-    return users
-      .filter((item: any) =>
-        Math.floor((new Date().getTime() - new Date(item.birthday).getTime()) / (1000 * 60 * 60 * 24 * 365)) > Number(ageMinMax[0]) &&
-        Math.floor((new Date().getTime() - new Date(item.birthday).getTime()) / (1000 * 60 * 60 * 24 * 365)) < Number(ageMinMax[1])
-      )
+    return users.filter(
+      (item: any) =>
+        Math.floor((new Date().getTime() - new Date(item.birthday).getTime()) / (1000 * 60 * 60 * 24 * 365)) >
+        Number(ageMinMax[0]) &&
+        Math.floor((new Date().getTime() - new Date(item.birthday).getTime()) / (1000 * 60 * 60 * 24 * 365)) <
+        Number(ageMinMax[1])
+    )
   }
 
   return users
-};
+}
 
-
-export const getAllFavoriteItems = async (
-  favoriteType: string,
-  userId: number
-): Promise<any> => {
+export const getAllFavoriteItems = async (favoriteType: string, userId: number): Promise<any> => {
   const articleSelector = {
     favoritedArticle: {
       include: {
         tagList: {
           select: {
-            name: true
-          }
+            name: true,
+          },
         },
         favoritedBy: {
           select: {
-            id: true
-          }
+            id: true,
+          },
         },
-        author: true,
-      }
+        author: {
+          include: {
+            picture: {
+              select: {
+                image: true,
+              },
+            },
+          },
+        },
+      },
     },
   }
 
   const tripSelector = {
     tripFavoritedBy: {
       include: {
-        tripFavoritedBy: true,
+        favoritedBy: true,
         destinations: true,
         gender: true,
         languages: true,
-        user: true
-      }
+        user: {
+          include: {
+            picture: {
+              select: {
+                image: true,
+              },
+            },
+          },
+        },
+      },
     },
   }
 
@@ -725,134 +697,65 @@ export const getAllFavoriteItems = async (
     followedBy: true,
     following: {
       include: {
-        role: true
-      }
+        role: true,
+        picture: {
+          select: {
+            image: true,
+          },
+        },
+      },
     },
   }
 
   return await prisma.user.findUnique({
-      where: {
-        id: Number(userId)
-      },
-      select: {
-        firstName: true,
-        lastName: true,
-        ...(favoriteType == 'users'
-            ? userSelector
-            : favoriteType == 'articles'
-              ? articleSelector
-              : favoriteType == 'trips'
-                ? tripSelector
-                : {...userSelector, ...articleSelector, ...tripSelector}
-        )
-      }
-    }
-  )
-};
-
-
-export const admin_users = async (
-  {
-    sortBy,
-    order,
-    search,
-    limit,
-    page
-  }: any
-): Promise<any> => {
-  const activePage = (Number(page) - 1) * limit || 0
-
-  console.log({
-    sortBy,
-    order,
-    search,
-    limit,
-    page
-  })
-
-  const count = await prisma.user.count()
-
-  const users = await prisma.user.findMany({
-    ...(search! !== '' && search! !== undefined
-      ? {
-        where: {
-          OR: [
-            {
-              email: {
-                contains: search
-              }
-            },
-            {
-              OR: [
-                {
-                  firstName: {
-                    contains: search?.split(' ')[0]
-                  }
-                },
-                {
-                  firstName: {
-                    contains: search?.split(' ')[1] ?? search?.split(' ')[0]
-                  }
-                }
-              ],
-            },
-            {
-              OR: [
-                {
-                  lastName: {
-                    contains: search?.split(' ')[0]
-                  }
-                },
-                {
-                  lastName: {
-                    contains: search?.split(' ')[1] ?? search?.split(' ')[0]
-                  }
-                }
-              ]
-            }
-          ]
-        },
-      }
-      : {}),
+    where: {
+      id: Number(userId),
+    },
     select: {
-      id: true,
-      email: true,
-      picture: {
-        select: {
-          image: true
-        }
-      },
-      role: {
-        select: {
-          role: true
-        }
-      },
       firstName: true,
       lastName: true,
-      activatedStatus: true,
-      rating: true,
+      ...(favoriteType == 'users'
+        ? userSelector
+        : favoriteType == 'articles'
+          ? articleSelector
+          : favoriteType == 'trips'
+            ? tripSelector
+            : {...userSelector, ...articleSelector, ...tripSelector}),
     },
-    ...(sortBy == 'email' && order != 'none' ? {orderBy: {email: order}} : {}),
-    ...(sortBy == 'name' && order != 'none' ? {orderBy: {firstName: order}} : {}),
-    ...(sortBy == 'id' && order != 'none' ? {orderBy: {id: order}} : {}),
-    ...(sortBy == 'rating' && order != 'none' ? {orderBy: {rating: order}} : {}),
-    skip: activePage,
-    take: Number(limit),
+  })
+}
+
+export const addImageCaption = async (
+  userId: string | number,
+  imageId: string | number,
+  caption: any
+): Promise<any> => {
+  if (isNullOrUndefined(imageId)) {
+    throw new ApiError(404, {message: 'Image error!'})
+  } else if (isNullOrUndefined(caption)) {
+    throw new ApiError(404, {message: 'You did not enter image caption!'})
+  }
+
+  const image = await prisma.userImage.findUnique({
+    where: {
+      id: Number(imageId),
+    },
   })
 
-  return {
-    users: users.map((user: any) => ({
-      id: user.id,
-      name: user.firstName,
-      email: user.email,
-      rating: user.rating,
-      role: user.role,
-      activatedStatus: user.activatedStatus
-    })),
-    count: count
+  if (isNullOrUndefined(image)) {
+    throw new ApiError(404, {message: 'Image not found!'})
   }
-};
 
+  await prisma.userImage.update({
+    where: {
+      id: Number(imageId),
+    },
+    data: {
+      caption: caption,
+    },
+  })
+  return image
+}
 
 //#############################################################################3
 //#############################################################################3
@@ -860,28 +763,173 @@ export const admin_users = async (
 //#############################################################################3
 //#############################################################################3
 
-
-export const addNewProfileVisit = async (
-  userId: string | number,
-  profileId: any,
-): Promise<any> => {
+export const addNewProfileVisit = async (userId: string | number, profileId: any): Promise<any> => {
   const profileView = await prisma.profileViews.upsert({
     where: {
       guestId_userId: {
         userId: Number(profileId),
-        guestId: Number(userId)
-      }
+        guestId: Number(userId),
+      },
     },
     create: {
       guestId: Number(userId),
-      userId: Number(profileId)
+      userId: Number(profileId),
     },
     update: {
-      createdAt: new Date(),
       guestId: Number(userId),
       userId: Number(profileId),
-      seen: false
-    }
+      seen: false,
+    },
   })
-  return profileView;
-};
+  return profileView
+}
+export const followUser = async (
+  userId: any,
+  ownerUserId: number
+): Promise<Profile> => {
+  if (!isNullOrUndefined(userId)) {
+    const findUser = await prisma.user.findUnique({
+      where: {
+        id: Number(userId)
+      }
+    })
+
+    if (isNullOrUndefined(findUser)) {
+      throw new ApiError(404, {message: 'User not found!'})
+    }
+  }
+
+  const profile = await prisma.user.update({
+    where: {
+      id: Number(userId),
+    },
+    data: {
+      followedBy: {
+        connect: {
+          id: Number(ownerUserId),
+        },
+      },
+    },
+    select: profileSelector,
+  })
+
+  return profileMapper(profile, ownerUserId)
+}
+export const unfollowUser = async (
+  userId: any,
+  ownerUserId: number
+): Promise<Profile> => {
+  if (!isNullOrUndefined(userId)) {
+    const findUser = await prisma.user.findUnique({
+      where: {
+        id: Number(userId)
+      }
+    })
+
+    if (isNullOrUndefined(findUser)) {
+      throw new ApiError(404, {message: 'User not found!'})
+    }
+  }
+
+  const profile = await prisma.user.update({
+    where: {
+      id: Number(userId),
+    },
+    data: {
+      followedBy: {
+        disconnect: {
+          id: Number(ownerUserId),
+        },
+      },
+    },
+    select: profileSelector,
+  })
+
+  return profileMapper(profile, ownerUserId)
+}
+export const setUserRating = async (
+  profileId: string | number,
+  rating: string | number,
+  userId: string | number
+): Promise<any> => {
+  const profileRating = await prisma.userRatings.upsert({
+    where: {
+      profileId_userId: {
+        profileId: Number(profileId),
+        userId: Number(userId),
+      },
+    },
+    update: {
+      rating: Number(rating),
+    },
+    create: {
+      rating: Number(rating),
+      profileId: Number(profileId),
+      userId: Number(userId),
+    },
+  })
+
+  const userRatings = await prisma.userRatings.findMany({
+    where: {
+      profileId: Number(profileId),
+    },
+  })
+
+  const arr = Object.values(userRatings)
+  const sum: any = (prev: any, cur: any) => ({rating: prev.rating + cur.rating})
+  const avg = arr.reduce(sum).rating / arr.length
+
+  const user = await prisma.user.update({
+    where: {
+      id: Number(profileId),
+    },
+    data: {
+      rating: avg,
+    },
+    select: {
+      myRatings: true,
+    },
+  })
+
+  return {
+    avgRating: Math.floor(avg),
+    myRatings: user.myRatings,
+    ...profileRating,
+  }
+}
+export const sendComplaint = async (
+  userId: number,
+  profileId: string,
+  reason: string,
+  image: any
+): Promise<any> => {
+  if (isNullOrUndefined(userId)) {
+    throw new ApiError(404, {message: 'User ID is not defined!'})
+  } else if (isNullOrUndefined(reason)) {
+    throw new ApiError(404, {message: 'Reason is not send!'})
+  } else if (isEmptyString(reason)) {
+    throw new ApiError(404, {message: 'Reason is empty!'})
+  }
+
+  const complaint = await prisma.complaint.create({
+    data: {
+      user: {
+        connect: {
+          id: Number(userId),
+        },
+      },
+      profile: {
+        connect: {
+          id: Number(profileId),
+        },
+      },
+      reason: reason,
+      ...(image
+        ? {
+          image: image.filename,
+        }
+        : {}),
+    },
+  })
+  return complaint
+}

@@ -1,49 +1,65 @@
-import React, {useRef, useState} from 'react';
-import {ActionIcon, Button, Group, Image, Modal, Textarea} from "@mantine/core";
-import {Check, Upload, X} from "../../assets/Icons";
-import {useMutateSendComplaint} from "../../api/users/mutations";
-import useStore from "../../store/user.store";
-import {isNullOrUndefined} from "../../utils/primitive-checks";
+import React, {useMemo, useRef, useState} from 'react';
+import {ActionIcon, Button, Group, Image, LoadingOverlay, Modal, Textarea} from '@mantine/core';
+import {Check, Upload, X} from '../common/Icons';
+import {useMutateSendComplaint} from '../../api/users/mutations';
+import {isNullOrUndefined} from '../../utils/primitive-checks';
 
-function ModalComplaint({profileId, openedComplaintModal, handlersComplaintModal}: any) {
-  const [reason, setReason] = useState<string>('')
-  const [image, setImage] = useState<any>(null)
-  const {user} = useStore((state: any) => state);
+interface ModalComplaintComponentProps {
+  profileId: string | number | undefined;
+  isOpenedComplaintModal: boolean;
+  setIsOpenedComplaintModal: any
+}
 
-  const {mutate: mutateSendComplaint} = useMutateSendComplaint({profileId: profileId})
-
+function ModalComplaint({
+                          profileId,
+                          isOpenedComplaintModal,
+                          setIsOpenedComplaintModal,
+                        }: ModalComplaintComponentProps) {
   const openRef = useRef<any>();
+  const [reason, setReason] = useState<string>('');
+  const [image, setImage] = useState<string | Blob | any>(null);
 
-    console.log(reason)
+  const {mutate: mutateSendComplaint, isLoading: isLoadingSendComplaint} = useMutateSendComplaint(
+    {
+      profileId: profileId,
+      onSuccessEvent: () => {
+        setIsOpenedComplaintModal(false);
+        setReason('');
+        setImage(null);
+      },
+    }
+  );
+
   const handlerSubmit = () => {
-    const formData = new FormData()
+    const formData = new FormData();
     formData.append('image', image);
     formData.append('reason', reason);
-    mutateSendComplaint(formData)
-  }
+    mutateSendComplaint(formData);
+  };
 
   const handlerRemoveImage = () => {
-    setImage(null)
+    setImage(null);
     openRef.current.value = '';
-  }
+  };
 
   return (
     <Modal
-      opened={openedComplaintModal}
+      opened={isOpenedComplaintModal}
       onClose={() => {
-        handlerRemoveImage()
-        setReason('')
-        handlersComplaintModal.close()
+        handlerRemoveImage();
+        setReason('');
+        setIsOpenedComplaintModal(false);
       }}
       centered
       withCloseButton={false}
       styles={{
         modal: {
           paddingTop: '10px!important',
-          paddingBottom: '10px!important'
-        }
+          paddingBottom: '10px!important',
+        },
       }}
     >
+      <LoadingOverlay visible={isLoadingSendComplaint}/>
       <input
         style={{display: 'none'}}
         onChange={(e: any) => setImage(e.target.files[0])}
@@ -61,23 +77,40 @@ function ModalComplaint({profileId, openedComplaintModal, handlersComplaintModal
         onChange={(event) => setReason(event.currentTarget.value)}
       />
 
-      <Button rightIcon={<Upload size={20}/>} fullWidth variant={'outline'} onClick={() => openRef.current.click()}>
+      <Button
+        mb={'sm'}
+        color={'pink'}
+        rightIcon={<Upload size={20}/>}
+        fullWidth
+        variant={'outline'}
+        onClick={() => openRef.current.click()}
+      >
         Upload image
       </Button>
 
-      {!isNullOrUndefined(image) && openedComplaintModal &&
-        <Group style={{position: 'relative'}}>
-          <Image src={URL.createObjectURL(image)} withPlaceholder/>
-          <ActionIcon radius={'xl'} variant={'filled'} color={'red'} style={{position: 'absolute', top: '30px', right: '30px'}}>
-            <X size={20}/>
-          </ActionIcon>
-        </Group>
-      }
+      {useMemo(
+        () => (
+          <Group style={{position: 'relative'}}>
+            {!isNullOrUndefined(image) && isOpenedComplaintModal && (
+              <>
+                <Image src={URL.createObjectURL(image)} withPlaceholder/>
+                <ActionIcon
+                  radius={'xl'}
+                  variant={'filled'}
+                  color={'red'}
+                  style={{position: 'absolute', top: '15px', right: '15px'}}
+                  onClick={handlerRemoveImage}
+                >
+                  <X size={20}/>
+                </ActionIcon>
+              </>
+            )}
+          </Group>
+        ),
+        [image]
+      )}
 
-      <Button rightIcon={<Check size={20}/>}
-              fullWidth
-              onClick={handlerSubmit}
-      >
+      <Button mt={'xs'} rightIcon={<Check size={20}/>} fullWidth onClick={handlerSubmit}>
         Send
       </Button>
     </Modal>

@@ -1,6 +1,6 @@
-import {IGetUserAuthInfoRequest} from "../utils/interfaces";
-import {NextFunction, Response, Router} from "express";
-import {authMiddleware, roleCheckMiddleware} from "../middlewares/auth.middleware";
+import {IGetUserAuthInfoRequest} from '../types/interfaces'
+import {NextFunction, Response, Router} from 'express'
+import {authMiddleware} from '../middlewares/auth.middleware'
 import {
   accessChat,
   addUsersToGroupChat,
@@ -8,101 +8,84 @@ import {
   deleteGroupChat,
   getMyChats,
   removeUsersFromGroupChat,
-  updateGroupChatName
-} from "../services/chat.service";
-import {asyncHandler} from "../utils/asyncHandler";
+  updateGroupChatName,
+} from '../services/chat.service'
+import {asyncHandler} from '../utils/asyncHandler'
 
-const router = Router();
+const router = Router()
 
 /**
- * Access chat
- * @auth required
- * @route {POST} /chat
- * @bodyparam  title
- * @returns created chat
+ * Create chat
+ * @returns Chat
  */
-router.post('/chat',
+router.post(
+  '/chat',
   [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const chat = await accessChat(req.body, req?.user?.id)
-    res.json(chat);
+    res.json(chat)
   })
 )
 
 /**
  * Get my chats
- * @auth required
- * @route {GET} /chat
- * @returns array of chats
+ * @returns Chat[]
  */
-router.get('/chat',
+router.get(
+  '/chat',
   [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const chats = await getMyChats(req.user.id)
-    res.json(chats);
+    res.json(chats)
   })
 )
 
 /**
  * Create group chat
- * @auth required
- * @route {POST} /chat
- * @bodyparam  chat name
- * @bodyparam  users
- * @returns created group chat
+ * @returns Chat
  */
-router.post('/chat/group',
+router.post(
+  '/chat/group',
   [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const groupChat = await createGroupChat(req.body?.users, req.body?.chatName, req?.user?.id)
-    res.json(groupChat);
+    res.json(groupChat)
   })
 )
 
 /**
- * Update group chat name
- * @auth required
- * @route {POST} /chat
- * @bodyparam  chatId
- * @bodyparam  chat name
- * @returns updated group chat
+ * Update name of group chat
+ * @returns Chat
  */
-router.put('/chat/group',
+router.put(
+  '/chat/group',
   [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const {chatId, chatName} = req.body;
-    const groupChat = await updateGroupChatName(chatName, chatId, req?.user?.id)
-    res.json(groupChat);
+    const groupChat = await updateGroupChatName(req.body?.chatName, req.body?.chatId, req?.user?.id)
+    res.json(groupChat)
   })
 )
 
 /**
  * Delete group chat
- * @auth required
- * @route {POST} /chat
- * @bodyparam  chatId
- * @bodyparam  chat name
- * @returns updated group chat
+ * @returns Chat
  */
-router.delete('/chat/group',
+router.delete(
+  '/chat/group',
   [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const {chatId, usersId} = req.body;
-    const groupChat = await deleteGroupChat(chatId, usersId)
-    res.json(groupChat);
+    const groupChat = await deleteGroupChat(req.body?.chatId, req.body?.usersId)
+    res.json(groupChat)
   })
 )
 
 /**
- * Add user to group chat
- * @auth required
- * @route {POST} /chat
- * @bodyparam  chatId
- * @bodyparam  chat name
- * @returns updated group chat
+ * Add users to group chat
+ * @returns Chat
  */
-router.put('/chat/group/users',
-  authMiddleware.required,
+router.put(
+  '/chat/group/users',
+  [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const groupChat = await addUsersToGroupChat(req.body)
     res.json(groupChat)
@@ -111,13 +94,10 @@ router.put('/chat/group/users',
 
 /**
  * Remove users from group chat
- * @auth required
- * @route {POST} /chat
- * @bodyparam  chatId
- * @bodyparam  chat name
- * @returns updated group chat
+ * @returns Chat
  */
-router.delete('/chat/group/users',
+router.delete(
+  '/chat/group/users',
   authMiddleware.required,
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const groupChat = await removeUsersFromGroupChat(req.body)
@@ -125,4 +105,4 @@ router.delete('/chat/group/users',
   })
 )
 
-export default router;
+export default router

@@ -1,156 +1,98 @@
-import {$authHost, $host} from "../api";
+import { $authHost, $host } from '../api';
+import { isEmptyArray, isEmptyString, isNullOrUndefined } from '../../utils/primitive-checks';
 
 export const apiGetAllProfileVisits = async () => {
-  const {data} = await $authHost.get('/user/profile-visits');
+  const { data } = await $authHost.get('/user/profile-visits');
   return data;
 };
 
 export const apiAddNewProfileVisit = async (userId: any) => {
-  const {data} = await $authHost.put('user/profile-visits/' + userId);
+  const { data } = await $authHost.put(`user/profile-visits/${userId}`);
   return data;
 };
 
 export const apiUpdateUserMap = async (countries: any) => {
-  const {data} = await $authHost.put('user/map', countries);
+  const { data } = await $authHost.put('user/map', countries);
   return data;
 };
 
-export const apiUpdateUserPersonalInfo = async (userPeronalInfo: any) => {
-  const {data} = await $authHost.put('user/personal-info', userPeronalInfo);
+export const apiUpdateUserPersonalInfo = async (userPersonalInfo: any) => {
+  const { data } = await $authHost.put('user/personal-info', userPersonalInfo);
   return data;
 };
 
 export const apiUpdateUserGeneralInfo = async (payload: any) => {
-  const {data} = await $authHost.put('user/general-info', payload);
+  const { data } = await $authHost.put('user/general-info', payload);
   return data;
 };
 
 export const apiUpdateUserImages = async (payload: any) => {
-  const {data} = await $authHost.put('user/images', payload);
+  const { data } = await $authHost.put('user/images', payload);
+  return data;
+};
+
+export const apiAddImageCaption = async (caption: any, imageId: any) => {
+  const { data } = await $authHost.put(`users/images/${imageId}/caption`, { caption: caption });
   return data;
 };
 
 export const apiCheckAllProfileVisits = async () => {
-  const {data} = await $authHost.put('users/profile-visits');
-  return data;
-};
-
-export const apiUpdateUser = async (payload: any) => {
-  const {data} = await $authHost.put('users', payload);
+  const { data } = await $authHost.put('user/profile-visits');
   return data;
 };
 
 export const apiUserFollow = async (userId: string) => {
-  const {data} = await $authHost.post(`user/${userId}/follow`);
+  const { data } = await $authHost.post(`user/${userId}/follow`);
   return data;
 };
 
 export const apiUserUnFollow = async (userId: string) => {
-  const {data} = await $authHost.delete(`user/${userId}/follow`);
+  const { data } = await $authHost.delete(`user/${userId}/follow`);
   return data;
 };
 
 export const apiGetUserById = async (id: any) => {
-  const {data} = await $host.get('user/' + id);
+  const { data } = await $host.get(`user/${id}`);
   return data;
 };
 
-export const apiSetUserRating = async ({userId, rating}: any) => {
-  const {data} = await $authHost.post(`user/${userId}/rating/${rating}`);
+export const apiSetUserRating = async ({ userId, rating }: any) => {
+  const { data } = await $authHost.post(`user/${userId}/rating/${rating}`);
   return data;
 };
 
-export const apiSwitchUserRole = async ({userId}: any) => {
-  const {data} = await $authHost.put(`user/${userId}/switch-role`);
+export const apiGetFavorites = async (queryKey: any) => {
+  const { data } = await $authHost.get(`user/all-favorites/${queryKey}`);
   return data;
 };
 
-export const apiUserAccountBlock = async ({userId, expiredBlockDate}: any) => {
-  const {data} = await $authHost.put(`user/${userId}/block`, {expiredBlockDate: expiredBlockDate.toString()});
+export const apiSendComplaint = async ({ profileId, complaintPayload }: any) => {
+  const { data } = await $authHost.post(`user/${profileId}/complaint`, complaintPayload);
   return data;
 };
 
-export const apiUserAccountActivate = async ({userId}: any) => {
-  const {data} = await $authHost.put(`user/${userId}/activate`);
-  return data;
-};
-
-export const getFavorites = async (queryKey: any) => {
-  const res = await $authHost.get('user/all-favorites/' + queryKey);
-  return res.data;
-};
-
-export const apiSendComplaint = async ({profileId, complaintPayload}: any) => {
-  const {data} = await $authHost.post(`user/${profileId}/complaint`, complaintPayload);
-  return data;
-};
-
-export const apiGetAllComplaints = async () => {
-  const {data} = await $authHost.get(`users/complaint`);
-  return data;
-};
-
-export const filterUsers = async (payload: any) => {
-  const {data} = await $host.get('users', {
+export const apiGetUsers = async (payload: any) => {
+  const { data } = await $host.get('users', {
     params: {
-      ...(payload?.name && payload?.name != ''
-        ? {name: payload?.name}
+      ...(!isNullOrUndefined(payload?.name) && !isEmptyString(payload?.name)
+        ? { name: payload?.name }
         : {}),
-      ...(payload?.age && payload?.age != ''
-        ? {age: payload?.age}
+      ...(!isNullOrUndefined(payload?.age) && !isEmptyString(payload?.age)
+        ? { age: payload?.age }
         : {}),
-      ...(payload?.sex && payload?.sex != ''
-        ? {sex: payload?.sex}
+      ...(!isNullOrUndefined(payload?.gender) && !isEmptyString(payload?.gender)
+        ? { gender: payload?.gender }
         : {}),
-      ...(payload?.languages != 0
-        ? {languages: payload?.languages}
+      ...(!isNullOrUndefined(payload?.languages) && !isEmptyArray(payload?.languages)
+        ? { languages: payload?.languages }
         : {}),
-      ...(payload?.countries != 0
-        ? {countries: payload?.countries}
+      ...(!isNullOrUndefined(payload?.countries) && !isEmptyArray(payload?.countries)
+        ? { countries: payload?.countries }
         : {}),
-      ...(payload?.tripTo != 0
-        ? {tripTo: payload?.tripTo}
+      ...(!isNullOrUndefined(payload?.tripTo) && !isEmptyArray(payload?.tripTo)
+        ? { tripTo: payload?.tripTo }
         : {}),
-      ...(payload?.isOnline
-        ? {isOnline: payload?.isOnline}
-        : {}),
-    },
-  });
-  return data;
-};
-
-export const getUsersWithAdminRole = async (
-  page: any,
-  limit: any,
-  search: any,
-  sortBy: any,
-  order: any,
-) => {
-  const {data} = await $authHost.get('/admin/users',{
-    params: {
-      page,
-      limit,
-      ...(search ? { search } : {}),
-      ...(sortBy ? { sortBy } : {}),
-      ...(order ? { order } : {}),
-    },
-  } );
-  return data;
-};
-
-
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-// RAU
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-export const getUsers = async ({searchField}: any) => {
-  const {data} = await $host.get('users', {
-    params: {
-      ...(searchField != undefined
-        ? {searchField: searchField}
-        : {}),
+      ...(!isNullOrUndefined(payload?.isOnline) ? { isOnline: payload?.isOnline } : {}),
     },
   });
   return data;

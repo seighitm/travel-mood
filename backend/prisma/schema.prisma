@@ -8,30 +8,29 @@ datasource db {
 }
 
 model RelationshipStatus {
-  id     Int    @id @default(autoincrement())
-  status String @unique
+  id     Int    @id @default(autoincrement()) @map("idRelationStatus")
+  status String @unique @db.VarChar(100)
   user   User[]
 }
 
 model Role {
-  id   Int    @id @default(autoincrement())
-  role String @unique
+  id   Int    @id @default(autoincrement()) @map("idRole")
+  role String @unique @db.VarChar(100)
   user User[]
 }
 
 model Gender {
-  id     Int    @id @default(autoincrement())
+  id     Int    @id @default(autoincrement()) @map("idGender")
   gender String @unique
-  user   User?  @relation(fields: [userId], references: [id])
-  userId Int?   @unique
-  trip   Trip?  @relation(fields: [tripId], references: [id])
-  tripId Int?   @unique
+  user   User[]
+  trip   Trip[]
 }
 
 model Tag {
   id       Int       @id @default(autoincrement())
   name     String    @unique
   articles Article[]
+  status   String?   @default("ACTIVATED")
 }
 
 model Language {
@@ -47,7 +46,7 @@ model Transport {
   trips Trip[]
 }
 
-model Countries {
+model Country {
   id             Int       @id @default(autoincrement())
   name           String    @unique
   code           String    @unique
@@ -62,8 +61,8 @@ model Chat {
   id              Int       @id @default(autoincrement())
   chatName        String?
   isGroupChat     Boolean   @default(false)
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   users           User[]    @relation("UsersOnChat")
   groupAdmin      User?     @relation("ChatAdmin", fields: [groupAdminId], references: [id])
   groupAdminId    Int?
@@ -77,8 +76,8 @@ model Message {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId          Int
   content         String
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   chat            Chat?    @relation("ChatMessages", fields: [chatId], references: [id], onDelete: Cascade)
   chatId          Int?
   readBy          User[]   @relation("MessageReadByUsers", references: [id])
@@ -99,7 +98,7 @@ model UserJoinToTrip {
 
 model ProfileViews {
   id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now())
   guest     User?    @relation("GuestsUser", fields: [guestId], references: [id])
   guestId   Int?
   user      User?    @relation("ProfileView", fields: [userId], references: [id])
@@ -110,104 +109,100 @@ model ProfileViews {
 }
 
 model User {
-  id                    Int                @id @default(autoincrement())
-  email                 String             @unique @db.VarChar(150)
-  password              String             @db.VarChar(150)
-  createdAt             DateTime           @default(now()) @map("created_at")
-  updatedAt             DateTime           @updatedAt @map("updated_at")
+  id                    Int                 @id @default(autoincrement())
+  email                 String              @unique @db.VarChar(100)
+  password              String              @db.VarChar(100)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
   refreshToken          RefreshToken?
-  role                  Role               @relation(fields: [roleId], references: [id])
-  roleId                Int                @map("user_id")
-  firstName             String             @map("first_name")
-  lastName              String             @map("last_name")
-  picture               UserImage?         @relation("UserProfileImage")
+  role                  Role                @relation(fields: [roleId], references: [id])
+  roleId                Int
+  firstName             String              @db.VarChar(100)
+  lastName              String              @db.VarChar(100)
+  picture               UserImage?          @relation("UserProfileImage")
+  aboutMe               String?
   birthday              DateTime?
   languages             Language[]
-  gender                Gender?
-  country               Countries?         @relation(fields: [countryId], references: [id])
+  gender                Gender?             @relation(fields: [genderId], references: [id])
+  genderId                Int?
+  country               Country?            @relation(fields: [countryId], references: [id])
   countryId             Int?
-  relationshipStatus    RelationshipStatus @relation(fields: [relationshipStatusId], references: [id])
-  relationshipStatusId  Int                @map("relationshipStatus_id")
-  resetPasswordToken    String?            @unique
-  resetPasswordExpire   DateTime?          @map("reset_password_expire")
+  relationshipStatus    RelationshipStatus? @relation(fields: [relationshipStatusId], references: [id])
+  relationshipStatusId  Int?
+  resetPasswordToken    String?             @unique
+  resetPasswordExpire   DateTime?
   messages              Message[]
-  chats                 Chat[]             @relation("UsersOnChat")
-  chatsAdmin            Chat[]             @relation("ChatAdmin")
-  followedBy            User[]             @relation("UserFollows", references: [id])
-  following             User[]             @relation("UserFollows", references: [id])
-  articles              Article[]          @relation("ArticleAuthor")
-  favoritedArticle      Article[]          @relation("ArticleFavoriteBy", references: [id])
-  articleComments       ArticleComment[]
+  chats                 Chat[]              @relation("UsersOnChat")
+  chatsAdmin            Chat[]              @relation("ChatAdmin")
+  followedBy            User[]              @relation("UserFollows", references: [id])
+  following             User[]              @relation("UserFollows", references: [id])
+  articles              Article[]           @relation("ArticleAuthor")
+  favoritedArticle      Article[]           @relation("ArticleFavoriteBy", references: [id])
   trips                 Trip[]
   usersJoinToTrip       UserJoinToTrip[]
-  tripComments          TripComment[]
-  tripFavoritedBy       Trip[]             @relation("TripFavoritedBy", references: [id])
-  guests                ProfileViews[]     @relation("GuestsUser")
-  pofilesVisit          ProfileViews[]     @relation("ProfileView")
-  visitedCountries      Countries[]        @relation("VisitedCountriesByUser")
-  interestedInCountries Countries[]        @relation("InteresetCountriesByUser")
-  activatedStatus       String             @default("ACTIVATED") @map("activated_status")
-  blockExpiration       DateTime?          @map("block_expiration")
-  myRatings             UserRatings[]      @relation("MyRatings")
-  providedRatings       UserRatings[]      @relation("ProvidedRatings")
-  rating                Float              @default(0)
-  images                UserImage[]        @relation("UserImages")
-  complaintEmit         Complaint[]        @relation("ComplaintUserEmit")
-  complaintReceive      Complaint[]        @relation("ComplaintUserReceive")
-  messgaesRead          Message[]          @relation("MessageReadByUsers", references: [id])
+  postComments          PostComment[]
+  tripFavoritedBy       Trip[]              @relation("TripFavoritedBy", references: [id])
+  guests                ProfileViews[]      @relation("GuestsUser")
+  pofilesVisit          ProfileViews[]      @relation("ProfileView")
+  visitedCountries      Country[]           @relation("VisitedCountriesByUser")
+  interestedInCountries Country[]           @relation("InteresetCountriesByUser")
+  activatedStatus       String              @default("ACTIVATED")
+  blockExpiration       DateTime?
+  myRatings             UserRatings[]       @relation("MyRatings")
+  providedRatings       UserRatings[]       @relation("ProvidedRatings")
+  rating                Float               @default(0)
+  images                UserImage[]         @relation("UserImages")
+  complaintEmit         Complaint[]         @relation("ComplaintUserEmit")
+  complaintReceive      Complaint[]         @relation("ComplaintUserReceive")
+  messgaesRead          Message[]           @relation("MessageReadByUsers", references: [id])
 
   @@unique([firstName, lastName])
-}
-
-model TripComment {
-  id        Int      @id @default(autoincrement())
-  comment   String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  Trip      Trip?    @relation(fields: [tripId], references: [id])
-  tripId    Int?
-  createdAt DateTime @default(now()) @map("created_at")
 }
 
 model Trip {
   id              Int              @id @default(autoincrement())
   user            User             @relation(fields: [userId], references: [id])
   userId          Int
-  dateFrom        DateTime?        @map("date_from")
-  dateTo          DateTime?        @map("date_to")
-  isAnytime       Boolean          @default(false) @map("is_anytime")
-  gender          Gender?
+  dateFrom        DateTime?
+  dateTo          DateTime?
+  isAnytime       Boolean          @default(false)
+  gender          Gender?           @relation(fields: [genderId], references: [id])
+  genderId          Int?
   languages       Language[]
-  title           String
+  title           String           @db.VarChar(300)
   description     String
   transports      Transport[]
-  budget          String?
-  splitCosts      Boolean?         @map("split_costs")
-  itinerary       String?
-  destinations    Countries[]
+  budget          String?          @db.VarChar(30)
+  splitCosts      Boolean?
+  itinerary       String?          @db.VarChar(100)
+  destinations    Country[]
   places          Marker[]
   usersJoinToTrip UserJoinToTrip[]
-  tripComments    TripComment[]
+  comments        PostComment[]
   isHidden        Boolean          @default(false)
-  tripFavoritedBy User[]           @relation("TripFavoritedBy", references: [id])
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
+  favoritedBy     User[]           @relation("TripFavoritedBy", references: [id])
+  maxNrOfPersons  Int
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
-model ArticleComment {
+model PostComment {
   id        Int      @id @default(autoincrement())
-  body      String
-  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  articleId Int
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId  Int
-  createdAt DateTime @default(now()) @map("created_at")
+  comment   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  trip      Trip?    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripId    Int?
+  article   Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model Marker {
   id          Int     @id @default(autoincrement())
-  lat         String
-  lon         String
+  lat         String  @db.VarChar(100)
+  lon         String  @db.VarChar(100)
   trip        Trip?   @relation(fields: [tripId], references: [id], onDelete: Cascade)
   tripId      Int?
   description String?
@@ -217,7 +212,7 @@ model Marker {
 
 model ArticleImage {
   id        Int     @id @default(autoincrement())
-  name      String  @unique
+  name      String  @unique @db.VarChar(100)
   article   Article @relation("ArticleImages", fields: [articleId], references: [id], onDelete: Cascade)
   articleId Int
 }
@@ -230,33 +225,31 @@ model RefreshToken {
 }
 
 model Article {
-  id               Int              @id @default(autoincrement())
-  title            String           @unique
-  description      String
+  id               Int            @id @default(autoincrement())
+  title            String         @unique @db.VarChar(100)
   body             String
-  primaryImage     String?
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
+  primaryImage     String?        @db.VarChar(100)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
   tagList          Tag[]
-  author           User             @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  author           User           @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   authorId         Int
-  favoritedBy      User[]           @relation("ArticleFavoriteBy", references: [id])
-  comments         ArticleComment[]
-  images           ArticleImage[]   @relation("ArticleImages")
-  countries        Countries[]
-  isHidden         Boolean          @default(false)
-  isUpdatedByAdmin Boolean          @default(false)
+  favoritedBy      User[]         @relation("ArticleFavoriteBy", references: [id])
+  comments         PostComment[]
+  images           ArticleImage[] @relation("ArticleImages")
+  countries        Country[]
+  isHidden         Boolean        @default(false)
+  isUpdatedByAdmin Boolean        @default(false)
 }
 
 model UserImage {
-  id                 Int        @id @default(autoincrement())
-  image              String     @unique
-  user               User?      @relation("UserImages", fields: [userId], references: [id], onDelete: Cascade)
+  id                 Int     @id @default(autoincrement())
+  image              String  @unique @db.VarChar(100)
+  user               User?   @relation("UserImages", fields: [userId], references: [id], onDelete: Cascade)
   userId             Int?
-  userProfileImage   User?      @relation("UserProfileImage", fields: [userProfileImageId], references: [id], onDelete: Cascade)
-  userProfileImageId Int?       @unique
-  complaint          Complaint? @relation("ComplaintImage", fields: [complaintId], references: [id])
-  complaintId        Int?       @unique
+  userProfileImage   User?   @relation("UserProfileImage", fields: [userProfileImageId], references: [id], onDelete: Cascade)
+  userProfileImageId Int?    @unique
+  caption            String?
 }
 
 model UserRatings {
@@ -271,12 +264,13 @@ model UserRatings {
 }
 
 model Complaint {
-  id        Int         @id @default(autoincrement())
-  user      User?       @relation("ComplaintUserEmit", fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  user      User?    @relation("ComplaintUserEmit", fields: [userId], references: [id])
   userId    Int
-  profile   User?       @relation("ComplaintUserReceive", fields: [profileId], references: [id])
+  profile   User?    @relation("ComplaintUserReceive", fields: [profileId], references: [id])
   profileId Int
   reason    String
-  image    UserImage?   @relation("ComplaintImage")
-    createdAt       DateTime  @default(now()) @map("created_at")
+  image     String?  @unique @db.VarChar(100)
+  createdAt DateTime @default(now())
+  status    String   @default("ACTIVE")
 }

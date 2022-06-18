@@ -1,19 +1,24 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {ActionIcon, Badge, Box, Button, Group, LoadingOverlay, Modal, Switch,} from '@mantine/core';
-import {CheckIcon, Cross2Icon, TrashIcon,} from '@modulz/radix-icons';
-import {GeoJSON, MapContainer, Marker, useMap} from 'react-leaflet';
-import L, {control, DomUtil, GeoJSON as LeafletGeoJSON, Icon} from 'leaflet';
-import blueIconShadow from '../../assets/svg-map-markers/img/marker-shadow.png';
+import React, { Dispatch, useEffect, useRef, useState } from 'react';
+import { GeoJSON as LeafletGeoJSON } from 'leaflet';
+import { ActionIcon, Badge, Box, Button, Group, Image, Modal, Switch } from '@mantine/core';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
+import 'react-leaflet-markercluster/dist/styles.min.css';
+import { apiFetchGeoJsonData } from '../../api/map/axios';
+import CustomTileLayer from './UtilsComponent/CustomTileLayer';
+import { GeoJSON } from 'react-leaflet';
 import useStore from '../../store/user.store';
-import {fetchGeoJsonData} from "../../api/map/axios";
-import LocationButton from './UtilsComponent/LocationButton';
-// import {SearchField} from "./UtilsComponent/SearchComponent";
-import CustomTileLayer from "./UtilsComponent/CustomTileLayer";
-import {SearchField} from "./MapObjects";
+import { Check, Trash, X } from '../common/Icons';
+import CustomMapContainer from './UtilsComponent/CustomMapContainer';
+import './UtilsComponent/LeafletFullscreen/Leaflet.fullscreen.min';
+import { useMutateUserProfileUpdateMap } from '../../api/users/mutations';
+import LeafletControlGeocoder from './UtilsComponent/LeafletControlGeocoder';
+import './MapStyles.css';
 
 const GeoJSONWithLayer = (props: any) => {
   const geoJsonLayerRef = useRef<LeafletGeoJSON | null>(null);
-  const {data, pathOptions, style, visCountries, intCountries, setAuxCountry, setOpenedModal} = props
+  const { data, pathOptions, style, visCountries, intCountries, setAuxCountry, setOpenedModal } =
+    props;
 
   useEffect(() => {
     const layer = geoJsonLayerRef.current;
@@ -27,22 +32,22 @@ const GeoJSONWithLayer = (props: any) => {
     let countryCode = '';
 
     if (feature.properties && feature.properties.admin) popupContent = feature.properties.admin;
-    if (feature.properties && feature.properties.iso_a2) countryCode = feature.properties.iso_a2
+    if (feature.properties && feature.properties.iso_a2) countryCode = feature.properties.iso_a2;
 
-    const findLocationVisited = visCountries.find((item: any) => item == countryCode);
-    const findLocationInterested = intCountries.find((item: any) => item == countryCode);
+    const findLocationVisited = visCountries.find((item: any) => item.code == countryCode);
+    const findLocationInterested = intCountries.find((item: any) => item.code == countryCode);
 
     if (findLocationVisited != undefined && findLocationInterested === undefined) {
       layer.setStyle({
-        fillColor: '#50ff0b',
+        fillColor: '#40c057',
         weight: 0.01,
-        color: '#1ee508',
+        color: '#40c057',
       });
     } else if (findLocationVisited === undefined && findLocationInterested != undefined) {
       layer.setStyle({
-        fillColor: '#b92222',
+        fillColor: '#fd7e14',
         weight: 0.01,
-        color: '#ab2626',
+        color: '#fd7e14',
       });
     } else if (findLocationVisited != undefined && findLocationInterested != undefined) {
       layer.setStyle({
@@ -63,7 +68,7 @@ const GeoJSONWithLayer = (props: any) => {
       click: (e: any) => {
         layer.bindPopup(popupContent);
         if (props.isEditMode) {
-          setAuxCountry(countryCode);
+          setAuxCountry({ code: countryCode, name: popupContent });
           setOpenedModal(true);
         }
       },
@@ -77,106 +82,62 @@ const GeoJSONWithLayer = (props: any) => {
     });
   };
 
-  return <GeoJSON {...props} ref={geoJsonLayerRef} onEachFeature={handleOnEachFeature}/>;
-};
-
-const ShowMarkers = ({markers, sidebar, map, setSelectedMarker, color}: any) => {
-  const [sel, setSel] = useState<any>(null);
-  return markers.map((marker: any, index: Element) => {
-    return (
-      <Marker
-        // @ts-ignore
-        key={index}
-        icon={
-          new Icon({
-            iconUrl: color,
-            shadowUrl: blueIconShadow,
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41],
-          })
-        }
-        uniceid={index}
-        position={marker.latlon}
-        draggable={false}
-        eventHandlers={{
-          click(e: any) {
-            setSelectedMarker(marker.id);
-            sidebar.addTo(map);
-            setTimeout(function () {
-              setSelectedMarker(marker.id);
-              setSel(marker.id);
-              if (sel == null) sidebar.open('home');
-              else if (sel != marker.id) sidebar.open('home');
-              else {
-                setSel(null);
-                sidebar.close();
-              }
-              const location = e.target.getLatLng();
-              map.flyToBounds([location], {maxZoom: 6});
-            }, 50);
-          },
-        }}
-        style={{filter: 'hue-rotate(120deg)!important'}}
-        className={'marker-color-red'}
-      />
-    );
-  });
-};
-
-const MyMarkers = ({map, marker, setMarker, sidebar, setSelectedMarker, color}: any) => {
-  useEffect(() => {
-    if (!map) return;
-    // @ts-ignore
-    const legend = control({position: 'bottomleft'});
-
-    const info = DomUtil.create('div', 'legend');
-
-    legend.onAdd = () => {
-      info.textContent = `click on the map, move the marker, click on the marker`;
-      return info;
-    };
-
-    if (setMarker)
-      map.on('click', (e: any) => {
-        const {lat, lng} = e.latlng;
-        setMarker((mar: any) => [...mar, [lat, lng]]);
-      });
-  }, [map]);
-
-  return marker.length > 0 ? (
-    <ShowMarkers
-      map={map}
-      color={color}
-      setSelectedMarker={setSelectedMarker}
-      sidebar={sidebar}
-      markers={marker}
+  return (
+    <GeoJSON
+      {...props}
+      ref={geoJsonLayerRef}
+      onEachFeature={handleOnEachFeature}
+      index={props.geoIndex}
+      key={props.geoIndex}
     />
-  ) : null;
+  );
 };
+
+interface UserMapComponentProps {
+  visCountries: {
+    code: string;
+    name: string;
+  }[];
+  intCountries: {
+    code: string;
+    name: string;
+  }[];
+  setVisitedCountries: Dispatch<React.SetStateAction<any>>;
+  setInterestedCountries: Dispatch<React.SetStateAction<any>>;
+  userId: string | undefined;
+}
 
 function UserMap({
-                   mutateSelectCountries,
-                   isLoading,
-                   visCountries,
-                   intCountries,
-                   setVisitedCountries,
-                   setinterestedCountries,
-                   userId,
-                 }: any) {
+  visCountries,
+  intCountries,
+  setVisitedCountries,
+  setInterestedCountries,
+  userId,
+}: UserMapComponentProps) {
   const [map, setMap] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState<any>(false);
   const [geoDate, setGeoDate] = useState<any>(null);
   const [openedModal, setOpenedModal] = useState(false);
-  const [auxCountry, setAuxCountry] = useState('');
+  const [auxCountry, setAuxCountry] = useState<any>({ name: '', code: '' });
   const [initVisitedCountries, setInitVisitedCountries] = useState<any>([]);
   const [initInterestedCountries, setInitInterestedCountries] = useState<any>([]);
+  const [geoIndex, setGeoIndex] = useState<any>(0);
 
-  const {user} = useStore((state: any) => state);
+  const { mutate: mutateUpdateUserCountries } = useMutateUserProfileUpdateMap();
+  const { user } = useStore((state: any) => state);
+
+  const checkIfInterestedCountryExist =
+    intCountries.find((prev: any) => prev.code == auxCountry.code) == undefined;
+  const checkIfVisitedCountryExist =
+    visCountries.find((prev: any) => prev.code == auxCountry.code) == undefined;
 
   useEffect(() => {
-    if (geoDate == null) fetchGeoJsonData(setGeoDate);
+    const fetchGeo = async () => {
+      await apiFetchGeoJsonData(setGeoDate);
+    };
+    if (geoDate == null) {
+      fetchGeo();
+    }
   }, []);
 
   useEffect(() => {
@@ -185,160 +146,163 @@ function UserMap({
   }, [map]);
 
   const handlerSaveSelectedCountries = () => {
-    mutateSelectCountries({
-      interestedInCountries: intCountries,
-      visitedCountries: visCountries,
+    mutateUpdateUserCountries({
+      interestedInCountries: intCountries.map((c: any) => c.code),
+      visitedCountries: visCountries.map((c: any) => c.code),
     });
     setIsEditMode(false);
     setInitInterestedCountries(intCountries);
     setInitVisitedCountries(visCountries);
-  }
+  };
 
   const handlerCancelSelection = () => {
     setIsEditMode(false);
-    setinterestedCountries(initInterestedCountries);
+    setInterestedCountries(initInterestedCountries);
     setVisitedCountries(initVisitedCountries);
-  }
+  };
 
-  return <Box mb={20}>
-    <Modal
-      opened={openedModal}
-      onClose={() => setOpenedModal(false)}
-      centered
-      withCloseButton={false}
-    >
-      <Group position={'center'} mb={10}>
-        <Badge>{auxCountry}</Badge>
-      </Group>
-      <Group position={'center'}>
-        <Button
-          color={'orange'}
-          leftIcon={intCountries.includes(auxCountry) ? <TrashIcon/> : <CheckIcon/>}
-          style={{width: '48%'}}
-          onClick={() => {
-            if (intCountries.includes(auxCountry)) {
-              for (let i = 0; i < intCountries.length; i++)
-                if (intCountries[i] === auxCountry)
-                  setinterestedCountries((prev: any) =>
-                    prev.filter((item: any) => item != auxCountry)
-                  );
-            } else {
-              setinterestedCountries((prev: any) => [...prev, auxCountry]);
+  const handlerAddNewCountry = (type: string) => {
+    if (type == 'interested') {
+      if (intCountries.find((prev: any) => prev.code == auxCountry.code) !== undefined)
+        for (let i = 0; i < intCountries.length; i++) {
+          if (intCountries[i].code === auxCountry.code) {
+            setInterestedCountries((prev: any) =>
+              prev.filter((item: any) => item.code != auxCountry.code)
+            );
+          }
+        }
+      else {
+        setInterestedCountries((prev: any) => [...prev, auxCountry]);
+      }
+    } else if (type == 'visited') {
+      if (visCountries.find((prev: any) => prev.code == auxCountry.code) !== undefined)
+        for (let i = 0; i < visCountries.length; i++) {
+          if (visCountries[i].code === auxCountry.code) {
+            setVisitedCountries((prev: any) =>
+              prev.filter((item: any) => item.code != auxCountry.code)
+            );
+          }
+        }
+      else {
+        setVisitedCountries((prev: any) => [...prev, auxCountry]);
+      }
+    }
+    setOpenedModal(false);
+  };
+
+  useEffect(() => {
+    setGeoIndex((prev: any) => prev + 1);
+  }, [isEditMode]);
+
+  return (
+    <Box mb={'xs'}>
+      <Modal
+        opened={openedModal}
+        onClose={() => setOpenedModal(false)}
+        centered
+        withCloseButton={false}
+      >
+        <Group position={'center'} mb={10}>
+          <Badge
+            size={'lg'}
+            variant={'outline'}
+            leftSection={
+              <ActionIcon size="xs" color="blue" radius="xl" variant="transparent">
+                <Image
+                  width={15}
+                  withPlaceholder
+                  styles={() => ({ image: { marginBottom: '0px!important' } })}
+                  src={`${
+                    import.meta.env.VITE_API_URL
+                  }uploads/flags/${auxCountry.code.toLowerCase()}.svg`}
+                />
+              </ActionIcon>
             }
-            setOpenedModal(false);
-          }}
-        >
-          {intCountries.includes(auxCountry) ? 'Delete from interested' : 'Interested'}
-        </Button>
-        <Button
-          color={'green'}
-          leftIcon={visCountries.includes(auxCountry) ? <TrashIcon/> : <CheckIcon/>}
-          style={{width: '48%'}}
-          onClick={() => {
-            if (visCountries.includes(auxCountry)) {
-              for (let i = 0; i < visCountries.length; i++)
-                if (visCountries[i] === auxCountry)
-                  setVisitedCountries((prev: any) =>
-                    prev.filter((item: any) => item != auxCountry)
-                  );
-            } else {
-              setVisitedCountries((prev: any) => [...prev, auxCountry]);
-            }
-            setOpenedModal(false);
-          }}
-        >
-          {visCountries.includes(auxCountry) ? 'Delete from visited' : 'Visited'}
-        </Button>
+          >
+            {auxCountry?.name}
+          </Badge>
+        </Group>
+        <Group position={'center'}>
+          <Button
+            compact
+            color={'orange'}
+            leftIcon={checkIfInterestedCountryExist ? <Check size={17} /> : <Trash size={17} />}
+            style={{ width: '45%' }}
+            onClick={() => handlerAddNewCountry('interested')}
+            variant={checkIfInterestedCountryExist ? 'outline' : 'filled'}
+          >
+            {checkIfInterestedCountryExist ? 'Interested' : 'Delete from interested'}
+          </Button>
+          <Button
+            compact
+            color={'green'}
+            leftIcon={checkIfVisitedCountryExist ? <Check size={17} /> : <Trash size={17} />}
+            style={{ width: '45%' }}
+            variant={checkIfVisitedCountryExist ? 'outline' : 'filled'}
+            onClick={() => handlerAddNewCountry('visited')}
+          >
+            {checkIfVisitedCountryExist ? 'Visited' : 'Delete from visited'}
+          </Button>
+        </Group>
+      </Modal>
+      <Group position={'center'} my={5}>
+        {user?.id == userId && !isEditMode && (
+          <Switch
+            size="md"
+            offLabel="Edit"
+            checked={isEditMode}
+            onChange={(event: any) => setIsEditMode(event.currentTarget.checked)}
+          />
+        )}
       </Group>
-    </Modal>
-    <Group position={'apart'} mb={5} mt={5}>
-      <Box> </Box>
-      <Box>
-        {user?.id == userId &&
-          !(
-            [...initVisitedCountries, ...initInterestedCountries].length !=
-            [...visCountries, ...intCountries].length && map
-          ) && (
-            <Switch
-              size="md"
-              offLabel="Edit"
-              checked={isEditMode}
-              onChange={(event: any) => setIsEditMode(event.currentTarget.checked)}
+      {isEditMode && (
+        <Group mb={10} position={'center'}>
+          <Button
+            compact
+            color="blue"
+            radius="xl"
+            size={'xs'}
+            variant="filled"
+            onClick={handlerSaveSelectedCountries}
+            leftIcon={<Check size={15} />}
+          >
+            Save
+          </Button>
+          <Button
+            compact
+            color="red"
+            radius="xl"
+            size={'xs'}
+            variant="filled"
+            onClick={handlerCancelSelection}
+            leftIcon={<X size={15} />}
+          >
+            Close
+          </Button>
+        </Group>
+      )}
+      <div className="map" style={{ height: '400px', borderRadius: '10px', width: '100%' }}>
+        <CustomMapContainer fullScreen={false} setMap={setMap}>
+          <LeafletControlGeocoder position={'topright'} />
+          <CustomTileLayer />
+          {geoDate && !openedModal && (
+            <GeoJSONWithLayer
+              geoIndex={geoIndex}
+              setOpenedModal={setOpenedModal}
+              data={geoDate}
+              isEditMode={isEditMode}
+              setAuxCountry={setAuxCountry}
+              visCountries={visCountries}
+              intCountries={intCountries}
+              setVisitedCountries={setVisitedCountries}
+              setInterestedCountries={setInterestedCountries}
+              style={{ weight: 0.01, fillColor: 'rgba(255,255,255,0)' }}
             />
           )}
-      </Box>
-      <Group>
-        {[...initVisitedCountries, ...initInterestedCountries].length !=
-          [...visCountries, ...intCountries].length && map &&
-          <>
-            <ActionIcon
-              color="blue"
-              radius="xl"
-              variant="filled"
-              onClick={handlerSaveSelectedCountries}
-            >
-              <CheckIcon/>
-            </ActionIcon>
-            <ActionIcon
-              color="red"
-              radius="xl"
-              variant="filled"
-              onClick={handlerCancelSelection}
-            >
-              <Cross2Icon/>
-            </ActionIcon>
-          </>
-        }
-      </Group>
-    </Group>
-    <div className="map" style={{borderRadius: '10px', width: '100%'}}>
-      <MapContainer
-        style={{borderRadius: '10px', width: '100%'}}
-        fullscreenControl={false}
-        whenCreated={setMap}
-        defaultPosition={[38.82259, -2.8125]}
-        center={[38.82259, -2.8125]}
-        zoom={3}
-        zoomControl={false}
-        minZoom={2}
-        maxBounds={[
-          [84.67351256610522, -174.0234375],
-          [-58.995311187950925, 174],
-        ]}
-      >
-        {/*<LocationButton/>*/}
-        {/*<LoadingOverlay visible={isLoading || !geoDate}/>*/}
-        <CustomTileLayer/>
-        {/*<SearchField/>*/}
-        {!isEditMode && geoDate && !openedModal && (
-          <GeoJSONWithLayer
-            setOpenedModal={setOpenedModal}
-            data={geoDate}
-            isEditMode={isEditMode}
-            setAuxCountry={setAuxCountry}
-            visCountries={visCountries}
-            intCountries={intCountries}
-            setVisitedCountries={setVisitedCountries}
-            setInterestedCountries={setinterestedCountries}
-            style={{weight: 0.01, fillColor: 'rgba(255,255,255,0)'}}
-          />
-        )}
-        {isEditMode && geoDate && !openedModal && (
-          <GeoJSONWithLayer
-            style={{weight: 0.01, fillColor: 'rgba(255,255,255,0)'}}
-            setOpenedModal={setOpenedModal}
-            data={geoDate}
-            isEditMode={isEditMode}
-            setAuxCountry={setAuxCountry}
-            visCountries={visCountries}
-            intCountries={intCountries}
-            setVisitedCountries={setVisitedCountries}
-            setInterestedCountries={setinterestedCountries}
-          />
-        )}
-      </MapContainer>
-    </div>
-  </Box>
+        </CustomMapContainer>
+      </div>
+    </Box>
+  );
 }
 
 export default UserMap;

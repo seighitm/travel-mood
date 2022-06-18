@@ -1,11 +1,10 @@
-import {Prisma} from '@prisma/client';
+import { Prisma } from '@prisma/client'
 
 export const articleSelector = Prisma.validator<Prisma.ArticleSelect>()({
   id: true,
   title: true,
   isUpdatedByAdmin: true,
   countries: true,
-  description: true,
   body: true,
   createdAt: true,
   updatedAt: true,
@@ -16,27 +15,36 @@ export const articleSelector = Prisma.validator<Prisma.ArticleSelect>()({
       id: 'desc',
     },
     select: {
-      author: {
+      user: {
         select: {
           firstName: true,
           lastName: true,
           picture: true,
           id: true,
           gender: true,
-          followedBy: true
+          followedBy: true,
         },
       },
       id: true,
-      body: true,
+      comment: true,
       createdAt: true,
-    }
+      updatedAt: true,
+    },
   },
   tagList: {
     select: {
       name: true,
     },
   },
-  favoritedBy: true,
+  favoritedBy: {
+    include: {
+      picture: {
+        select: {
+          image: true,
+        },
+      },
+    },
+  },
   author: {
     select: {
       id: true,
@@ -52,25 +60,25 @@ export const articleSelector = Prisma.validator<Prisma.ArticleSelect>()({
       favoritedBy: true,
     },
   },
-});
+})
 
 export const articlesSelector = Prisma.validator<Prisma.ArticleSelect>()({
   id: true,
   title: true,
   isUpdatedByAdmin: true,
   countries: true,
-  description: true,
   createdAt: true,
   updatedAt: true,
   primaryImage: true,
   comments: {
     select: {
-      id: true
-    }
+      id: true,
+    },
   },
   tagList: {
     select: {
       name: true,
+      status: true,
     },
   },
   favoritedBy: true,
@@ -89,5 +97,4 @@ export const articlesSelector = Prisma.validator<Prisma.ArticleSelect>()({
       favoritedBy: true,
     },
   },
-});
-
+})

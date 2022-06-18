@@ -1,7 +1,17 @@
-import React from 'react';
+import React, { Dispatch } from 'react';
 import { Image, Modal } from '@mantine/core';
 
-function ViewImageModal({openedModalViewImage, setOpenedModalViewImage, selectedViewImage}: any) {
+interface ViewImageModalComponentProps {
+  openedModalViewImage: boolean;
+  setOpenedModalViewImage: Dispatch<React.SetStateAction<any>>;
+  selectedViewImage: any;
+}
+
+function ViewImageModal({
+  openedModalViewImage,
+  setOpenedModalViewImage,
+  selectedViewImage,
+}: ViewImageModalComponentProps) {
   return (
     <Modal
       opened={openedModalViewImage}
@@ -10,12 +20,14 @@ function ViewImageModal({openedModalViewImage, setOpenedModalViewImage, selected
       size={'xl'}
     >
       <Image
-        radius='md'
+        radius="md"
+        caption={selectedViewImage ? selectedViewImage?.caption : undefined}
         src={
           selectedViewImage != null
-            ? `${import.meta.env.VITE_STORE_AWS}${selectedViewImage}`
+            ? `${import.meta.env.VITE_STORE_AWS}${selectedViewImage?.image}`
             : undefined
-        } />
+        }
+      />
     </Modal>
   );
 }

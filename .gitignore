@@ -4,12 +4,17 @@ yarn.*
 yarn-*
 build
 dist
-.env
+*.env
 node_modules
 
 frontend/modules
+frontend/dist
+frontend/node_modules
+frontend/.env
 frontend/tsconfig.tsbuildinfo
 
 backend/src/uploads
+backend/node_modules
 backend/prisma/migrations
-backend/tsconfig.release.json
+backend/.env
+backend/.git

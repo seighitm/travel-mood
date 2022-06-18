@@ -1,3 +1,3 @@
-export const ARTICLE_TITLE_MIN_LENGTH = 8
-export const ARTICLE_DESCRIPTION_MIN_LENGTH = 8
+export const POST_TILE_MIN_LENGTH = 3
+export const POST_TILE_MAX_LENGTH = 50
 export const ARTICLE_BODY_MIN_LENGTH = 30

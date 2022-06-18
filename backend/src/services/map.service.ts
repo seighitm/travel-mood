@@ -1,51 +1,65 @@
-import {Marker} from "@prisma/client";
-import prisma from "../../prisma/PrismaClient";
+import {Marker} from '@prisma/client'
+import prisma from '../../prisma/PrismaClient'
 
-export const getAllMarkers = async (): Promise<{ places: any[], destinations: any[] }> => {
+export const getAllMarkers = async (): Promise<{ places: any[]; destinations: any[] }> => {
   const places = await prisma.marker.findMany({
-    where:{
-      trip:{
-        isHidden: false
-      }
+    where: {
+      trip: {
+        isHidden: false,
+      },
     },
     include: {
       trip: {
         select: {
           id: true,
-          description: true
-        }
-      }
-    }
+          description: true,
+        },
+      },
+    },
   })
 
-  const destinations = await prisma.countries.findMany({
+  const destinations = await prisma.country.findMany({
     include: {
       articles: {
         select: {
-          id: true
-        }
+          id: true,
+        },
       },
       trips: {
         select: {
-          id: true
-        }
+          id: true,
+        },
       },
       interestedInBy: {
         select: {
-          id: true
-        }
+          id: true,
+          picture: {
+            select: {
+              image: true,
+            },
+          },
+          firstName: true,
+          lastName: true,
+        },
       },
       visitedBy: {
         select: {
-          id: true
-        }
-      }
-    }
+          id: true,
+          picture: {
+            select: {
+              image: true,
+            },
+          },
+          firstName: true,
+          lastName: true,
+        },
+      },
+    },
   })
 
   return {
     places,
-    destinations
+    destinations,
   }
 }
 
@@ -54,7 +68,7 @@ export const getMarkerById = async (
 ): Promise<any> => {
   return await prisma.marker.findUnique({
     where: {
-      id: Number(markerId)
+      id: Number(markerId),
     },
     select: {
       trip: {
@@ -66,32 +80,32 @@ export const getMarkerById = async (
               id: true,
               description: true,
               lat: true,
-              lon: true
-            }
-          }
-        }
+              lon: true,
+            },
+          },
+        },
       },
-    }
+    },
   })
 }
 
 export const createMarker = async (
   markerPayload: any,
-  description: string,
+  description: string
 ): Promise<Marker> => {
-  const cord = markerPayload.split(",")
+  const cord = markerPayload?.split(',')
   return await prisma.marker.upsert({
     where: {
       lat_lon: {
         lon: cord[0],
-        lat: cord[1]
-      }
+        lat: cord[1],
+      },
     },
     update: {},
     create: {
       lon: cord[0],
       lat: cord[1],
       description: description,
-    }
+    },
   })
 }

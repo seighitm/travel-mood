@@ -1,17 +1,10 @@
 import axios from 'axios';
-import {useNavigate} from "react-router-dom";
 
-const $host = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}api/`,
-});
-
-const $authHost = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}api/`,
-});
+const $host = axios.create({ baseURL: `${import.meta.env.VITE_API_URL}api/` });
+const $authHost = axios.create({ baseURL: `${import.meta.env.VITE_API_URL}api/` });
 
 const authInterceptor = (config: any) => {
   config.headers.authorization = `Bearer ${localStorage.getItem('accessToken')}`;
-
   return config;
 };
 
@@ -23,7 +16,6 @@ $authHost.interceptors.response.use(
   },
   async (error: any) => {
     const originalRequest = error.config;
-    // const navigate = useNavigate()
     if (error.response.status == 401 && error.config && !error.config._isRetry) {
       originalRequest._isRetry = true;
       // if (window.location.href.split('/').reverse()[0] != 'login')
@@ -45,4 +37,4 @@ $authHost.interceptors.response.use(
   }
 );
 
-export {$host, $authHost};
+export { $host, $authHost };

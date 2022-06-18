@@ -1,26 +1,30 @@
 import React from 'react';
-import {Avatar, Box, Group, Modal, ScrollArea, Text} from "@mantine/core";
-import CustomPaper from "../../common/CustomPaper";
-import {userPicture} from "../../common/Utils";
-import chatStore from "../../../store/chat.store";
-import {useNavigate} from "react-router-dom";
-import {getFullUserName} from "../../../utils/utils-func";
+import {ActionIcon, Avatar, Box, Group, Indicator, Modal, ScrollArea, Text} from '@mantine/core';
+import CustomPaper from '../../common/CustomPaper';
+import chatStore from '../../../store/chat.store';
+import {useNavigate} from 'react-router-dom';
+import {customNavigation, getFullUserName, userPicture} from '../../../utils/utils-func';
+import useStore from '../../../store/user.store';
+import {ChevronRight} from '../../common/Icons';
 
-function ModalChatParticipants({openedChatDetailsModal, handlersChatDetailsModal, chat}: any) {
+function ModalChatParticipants({isOpenedChatDetailsModal, setIsOpenedChatDetailsModal, chat}: any) {
   const navigate = useNavigate();
+  const {onlineUsers} = useStore((state: any) => state);
+  const {user} = useStore((state: any) => state);
+
   const {selectedChat} = chatStore((state: any) => state);
   return <>
-    {selectedChat.id != -1 &&
+    {selectedChat.id != -1 && (
       <Modal
-        opened={openedChatDetailsModal}
-        onClose={() => handlersChatDetailsModal.close()}
+        opened={isOpenedChatDetailsModal}
+        onClose={() => setIsOpenedChatDetailsModal(false)}
         centered
         withCloseButton={false}
         styles={{
           modal: {
             paddingTop: '10px!important',
-            paddingBottom: '10px!important'
-          }
+            paddingBottom: '10px!important',
+          },
         }}
       >
         <ScrollArea pr={'md'} offsetScrollbars style={{height: 400}}>
@@ -31,23 +35,28 @@ function ModalChatParticipants({openedChatDetailsModal, handlersChatDetailsModal
                 my={5}
                 noWrap
                 align={'center'}
-                onClick={() => navigate('/user/' + item.id)}
+                onClick={() => customNavigation(user?.role, navigate, '/users/' + item.id)}
                 style={{cursor: 'pointer'}}
               >
-                <Avatar
-                  size={'lg'}
-                  radius={'xl'}
-                  src={userPicture(item)}
-                />
+                <Indicator
+                  size={10}
+                  position={'bottom-center'}
+                  color={onlineUsers[item.id] ? 'green' : 'pink'}
+                >
+                  <Avatar size={'md'} radius={'xl'} src={userPicture(item)}/>
+                </Indicator>
                 <Box style={{width: '70%'}}>
-                  <Text>{getFullUserName(item)}</Text>
+                  <Text lineClamp={1}>{getFullUserName(item)}</Text>
                 </Box>
+                <ActionIcon>
+                  <ChevronRight/>
+                </ActionIcon>
               </Group>
             </CustomPaper>
           ))}
         </ScrollArea>
       </Modal>
-    }
+    )}
   </>
 }
 

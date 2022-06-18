@@ -1,7 +1,17 @@
-import React from 'react';
-import DropzoneProfileSettings from '../../settings/DropzoneProfileSettings';
-import { ActionIcon, Button, Grid, Group, Image, Modal } from '@mantine/core';
-import { Cross2Icon } from '@modulz/radix-icons';
+import React, {Dispatch} from 'react';
+import DropzoneProfileSettings from '../../../settings/DropzoneProfileSettings';
+import {ActionIcon, Button, Grid, Group, Image, Modal} from '@mantine/core';
+import {X} from '../../../common/Icons';
+
+interface AddNewImagesModalComponentProps {
+  openedModal: boolean;
+  setOpenedModal: Dispatch<React.SetStateAction<any>>;
+  newImages: File[];
+  setNewImages: Dispatch<React.SetStateAction<any>>;
+  handlerInitImages: () => void;
+  handlerSubmitProfileInfo: () => void;
+  isLoading?: any
+}
 
 function AddNewImagesModal({
                              openedModal,
@@ -10,7 +20,8 @@ function AddNewImagesModal({
                              setNewImages,
                              handlerInitImages,
                              handlerSubmitProfileInfo,
-                           }: any) {
+                             isLoading
+                           }: AddNewImagesModalComponentProps) {
   const handlerRemoveNewImage = (name: string) => {
     setNewImages(newImages.filter((item: any) => item.name != name));
   };
@@ -21,10 +32,8 @@ function AddNewImagesModal({
   };
 
   const handlerSubmit = () => {
-    if (newImages.length != 0)
-      handlerSubmitProfileInfo();
-    else
-      handlerClear();
+    if (newImages.length != 0) handlerSubmitProfileInfo();
+    else handlerClear();
   };
 
   return (
@@ -35,39 +44,40 @@ function AddNewImagesModal({
       size={'xl'}
       withCloseButton={false}
     >
-      <DropzoneProfileSettings files={newImages} setFiles={setNewImages} />
+      <DropzoneProfileSettings files={newImages} setFiles={setNewImages}/>
       <Grid mb={'md'}>
-        {newImages && newImages.map((image: any, index: number) => (
-          <Grid.Col key={image.filename + '' + index}
-                    sm={6} md={4} lg={3} xl={3}
-                    style={{ position: 'relative' }}
-          >
-            <Image
-              radius='md'
-              height={150}
-              alt={`file preview ${index}`}
-              src={URL.createObjectURL(image)}
-            />
-            <ActionIcon
-              color={'red'}
-              radius={50}
-              size={20}
-              onClick={() => handlerRemoveNewImage(image.name)}
-              style={{ position: 'absolute', bottom: '15px', left: '45%' }}
-              variant={'filled'}
+        {newImages &&
+          newImages.map((image: any, index: number) => (
+            <Grid.Col
+              key={image.filename + '' + index}
+              sm={6}
+              md={4}
+              lg={3}
+              xl={3}
+              style={{position: 'relative'}}
             >
-              <Cross2Icon style={{ width: '15px', height: '15px' }} />
-            </ActionIcon>
-          </Grid.Col>
-        ))}
+              <Image
+                radius="md"
+                height={150}
+                alt={`file preview ${index}`}
+                src={URL.createObjectURL(image)}
+              />
+              <ActionIcon
+                color={'red'}
+                radius={50}
+                size={20}
+                onClick={() => handlerRemoveNewImage(image.name)}
+                style={{position: 'absolute', bottom: '15px', left: '45%'}}
+                variant={'filled'}
+              >
+                <X size={15}/>
+              </ActionIcon>
+            </Grid.Col>
+          ))}
       </Grid>
       <Group position={'right'}>
-        <Button onClick={handlerSubmit}>
-          Save
-        </Button>
-        <Button color={'red'}
-                onClick={handlerClear}
-        >
+        <Button onClick={handlerSubmit} loading={isLoading}>Save</Button>
+        <Button loading={isLoading} color={'red'} onClick={handlerClear}>
           Close
         </Button>
       </Group>

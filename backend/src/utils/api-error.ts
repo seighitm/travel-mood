@@ -1,11 +1,11 @@
 class ApiError extends Error {
-  errorCode: number;
+  errorCode: number
 
   constructor(errorCode: number, message: string | any) {
-    super();
-    this.errorCode = errorCode;
-    this.message = message;
+    super()
+    this.errorCode = errorCode
+    this.message = message
   }
 }
 
-export default ApiError;
+export default ApiError

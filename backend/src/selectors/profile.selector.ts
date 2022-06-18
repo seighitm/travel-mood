@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client'
 
 const profileSelector = Prisma.validator<Prisma.UserSelect>()({
   id: true,
@@ -10,9 +10,9 @@ const profileSelector = Prisma.validator<Prisma.UserSelect>()({
       id: true,
       followedBy: true,
       following: true,
-      picture: true
+      picture: true,
     },
   },
-});
+})
 
-export default profileSelector;
+export default profileSelector

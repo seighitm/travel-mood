@@ -1,35 +1,45 @@
-import {$authHost, $host} from "../api";
-import useStore from "../../store/user.store";
+import { $authHost, $host } from '../api';
+import useStore from '../../store/user.store';
+import { IUser } from '../../types/IUser';
 
-export const apiSignIn = async (payload: any) => {
-  const {data} = await $host.post('auth/login', {user: payload});
+export const apiSignIn = async (payload: IUser) => {
+  const { data } = await $host.post('auth/login', { user: payload });
   return data;
 };
 
-export const apiSignUp = async (payload: any) => {
-  const {data} = await $host.post('auth/register', payload);
+export const apiSignUp = async (payload: IUser) => {
+  const { data } = await $host.post('auth/register', payload);
   return data;
 };
 
 export const apiLogout = async () => {
-  useStore.setState({user: null});
+  const { data } = await $host.get('auth/logout');
+  useStore.setState({ user: null });
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
-  const {data} = await $host.get('auth/logout');
   return data;
 };
 
 export const apiForgotPassword = async (email: string) => {
-  const {data} = await $host.post(`auth/forgot-password`, {email: email});
+  const { data } = await $host.post(`auth/forgot-password`, { email: email });
   return data;
 };
 
-export const apiResetPassword = async ({password, resetToken}: any) => {
-  const {data} = await $host.post(`auth/reset-password`, {password: password, resetToken: resetToken});
+export const apiResetPassword = async ({
+  password,
+  resetToken,
+}: {
+  password: string;
+  resetToken: string | undefined;
+}) => {
+  const { data } = await $host.post(`auth/reset-password`, {
+    password: password,
+    resetToken: resetToken,
+  });
   return data;
 };
 
 export const apiUserMe = async () => {
-  const {data} = await $authHost.get('auth/me');
+  const { data } = await $authHost.get('auth/me');
   return data;
 };

@@ -1,21 +1,32 @@
-import React from 'react';
-import {Drawer} from "@mantine/core";
-import MyChat from "./MyChat";
-import chatStore from "../../store/chat.store";
+import React, {Dispatch} from 'react';
+import {Drawer} from '@mantine/core';
+import MyChat from './MyChat';
+import chatStore from '../../store/chat.store';
+import {IChat} from '../../types/IChat';
 
-function ChatDrawer({dataFetchMyChats, isLoadingChats, openedCreateChatGroupModal, handlersCreateChatGroupModal}: any) {
+interface ChatDrawerComponentProps {
+  isLoadingChats: boolean;
+  dataFetchMyChats: IChat[];
+  setOpenedDrawer?: Dispatch<React.SetStateAction<any>>;
+  setIsOpenedCreateChatGroupModal: any
+}
+
+function ChatDrawer({
+                      dataFetchMyChats,
+                      isLoadingChats,
+                      setIsOpenedCreateChatGroupModal,
+                    }: ChatDrawerComponentProps) {
   const {isOpenChatDrawer, setOpenedChatDrawer} = chatStore((state: any) => state);
   return (
     <Drawer
-      padding='xl'
-      size='xl'
+      padding="xl"
+      size="xl"
       opened={isOpenChatDrawer}
-      transitionTimingFunction='ease'
+      transitionTimingFunction="ease"
       onClose={() => setOpenedChatDrawer(false)}
     >
       <MyChat
-        openedCreateChatGroupModal={openedCreateChatGroupModal}
-        handlersCreateChatGroupModal={handlersCreateChatGroupModal}
+        setIsOpenedCreateChatGroupModal={setIsOpenedCreateChatGroupModal}
         setOpenedDrawer={setOpenedChatDrawer}
         isLoadingChats={isLoadingChats}
         isDrawer={true}

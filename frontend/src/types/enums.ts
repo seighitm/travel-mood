@@ -1,6 +1,7 @@
 export enum ROLE {
   ADMIN = 'ADMIN',
-  USER = 'USER'
+  USER = 'USER',
+  MODERATOR = 'MODERATOR',
 }
 
 export enum GENDER {
@@ -11,5 +12,10 @@ export enum GENDER {
 
 export enum RELATIONSHIP_STATUS {
   SINGLE = 'SINGLE',
-  IN_RELATION = 'IN_RELATION'
+  IN_RELATION = 'IN_RELATION',
+}
+
+export enum ACCOUNT_STATUS {
+  ACTIVATED = 'ACTIVATED',
+  BLOCKED = 'BLOCKED',
 }

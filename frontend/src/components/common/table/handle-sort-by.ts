@@ -6,11 +6,11 @@ const handleSortBy = (
   setPageOrder: any
 ) =>
   queryPageSortBy === column.id
-    ? queryPageOrder === "none"
-      ? setPageOrder("asc")
-      : queryPageOrder === "asc"
-      ? setPageOrder("desc")
-      : setPageOrder("none")
-    : (setPageSortBy(column.id), setPageOrder("asc"));
+    ? queryPageOrder === 'none'
+      ? setPageOrder('asc')
+      : queryPageOrder === 'asc'
+      ? setPageOrder('desc')
+      : setPageOrder('none')
+    : (setPageSortBy(column.id), setPageOrder('asc'));
 
 export default handleSortBy;

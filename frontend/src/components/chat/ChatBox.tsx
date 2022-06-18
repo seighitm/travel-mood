@@ -5,30 +5,37 @@ import {useIsFetching, useQueryClient} from 'react-query';
 import {useGetAllChatMessage} from '../../api/chat/messages/queries';
 import MessageItem from './MessageItem';
 import MessageInputField from './MessageInputField';
-import {Check, MessageDots} from "../../assets/Icons";
-import {isEmptyArray, isNullOrUndefined} from "../../utils/primitive-checks";
-import {allMessages} from "../../api/chat/messages/axios";
-import {useMuateteReadMessages} from "../../api/chat/messages/mutations";
+import {CalendarEvent, InfoCircle, MessageDots, Refresh, Settings} from '../common/Icons';
+import {isEmptyArray, isNullOrUndefined} from '../../utils/primitive-checks';
+import {allMessages} from '../../api/chat/messages/axios';
+import ModalChatParticipants from './modals/ModalChatParticipants';
+import ModalAdminGroupChat from './modals/ModalAdminGroupChat';
+import {useGetAllMyChats} from '../../api/chat/queries';
+import useStore from '../../store/user.store';
+import {dateFormattedToIsoString} from '../../utils/utils-func';
+import {IMessage} from "../../types/IMessage";
 
 export const MessageDivider = ({messages, index}: any) => {
-  return <>
-    {index != 0 &&
-      index != messages?.length - 1 &&
-      new Date(messages[index]?.createdAt).toISOString().split('T')[0] !=
-      new Date(messages[index - 1]?.createdAt).toISOString().split('T')[0] && (
-        <Divider
-          label={
-            <Group>
-              <Check size={17}/>
-              {new Date(messages[index]?.createdAt).toISOString().split('T')[0]}
-            </Group>
-          }
-          my={'lg'}
-          labelPosition="center"
-          style={{width: '100%'}}
-        />
-      )}
-  </>
+  return (
+    <>
+      {index != 0 &&
+        // index != messages?.length - 1 &&
+        dateFormattedToIsoString(messages[index]?.createdAt) !=
+        dateFormattedToIsoString(messages[index - 1]?.createdAt) && (
+          <Divider
+            label={
+              <Group>
+                <CalendarEvent size={17}/>
+                {dateFormattedToIsoString(messages[index]?.createdAt)}
+              </Group>
+            }
+            my={'lg'}
+            labelPosition="center"
+            style={{width: '100%'}}
+          />
+        )}
+    </>
+  );
 };
 
 let selChat: any;
@@ -36,61 +43,35 @@ let selChat: any;
 const ChatBox = () => {
   const viewport: any = useRef<HTMLDivElement>();
   const queryClient = useQueryClient();
+  const {user} = useStore((state: any) => state);
   const {selectedChat, notifications, setOpenedChatDrawer} = chatStore((state: any) => state);
 
+  const [isOpenedChatDetailsModal, setIsOpenedChatDetailsModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<any>(-1);
-  const [isVisibleLoadMoreButton, setIsVisibleLoadMoreButton] = useState(false)
+  const [isVisibleLoadMoreButton, setIsVisibleLoadMoreButton] = useState(false);
+  const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState<boolean>(false);
 
   const scrollToBottom = () => viewport?.current?.scrollTo({top: viewport.current.scrollHeight, behavior: 'smooth'});
-  const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState<boolean>(false)
   const {
     data: messages,
     refetch: refetchMessages,
-    isFetching: isFetchingMessages
+    isFetching: isFetchingMessages,
   } = useGetAllChatMessage(selectedChat);
   const isLoading = useIsFetching('fetchMessagesChat');
+  const {data: dataFetchMyChats} = useGetAllMyChats();
 
   const checkIsRead = (notificationDate: any, messageDate: any) => {
     if (!notificationDate) return true;
-    const x = new Date(notificationDate).toISOString().split('T');
-    const y = new Date(messageDate).toISOString().split('T');
-    return x[1] > y[1];
+    return (new Date(notificationDate) > new Date(messageDate))
   };
 
   useEffect(() => {
-    selChat = selectedChat
-  }, [selectedChat])
-
-  // useEffect(() => {
-  //   socket.on('message-received', async (newMessageRecieved: any) => {
-  //     if (selChat.id == newMessageRecieved.chat.id) {
-  //       const prevAllMessages = await queryClient.getQueryData('fetchMessagesChat');
-  //       if (prevAllMessages) {
-  //         await queryClient.cancelQueries('fetchMessagesChat');
-  //         const prevMessages: any = queryClient.getQueryData('fetchMessagesChat');
-  //         prevMessages.push({...newMessageRecieved, readBy: []});
-  //         queryClient.setQueryData('fetchMessagesChat', () => prevMessages);
-  //       }
-  //     }
-  //     setTimeout(() => scrollToBottom(), 10)
-  //
-  //     const prevAllChats: any = queryClient.getQueryData('fetchMyChats');
-  //     if (prevAllChats) {
-  //       await queryClient.cancelQueries('fetchMyChats');
-  //       let foundIndex = prevAllChats.findIndex((chat: any) => chat.id == newMessageRecieved.chat.id);
-  //       prevAllChats[foundIndex].latestMessage = {...newMessageRecieved};
-  //       if (selChat.id != newMessageRecieved.chat.id)
-  //         prevAllChats[foundIndex].countNonReadmessages += 1;
-  //       queryClient.setQueryData('fetchMyChats', () => prevAllChats);
-  //     }
-  //   });
-  // }, [socket]);
+    selChat = selectedChat;
+  }, [selectedChat]);
 
   useEffect(() => {
-    if (!isLoading)
-      setTimeout(() => scrollToBottom(), 10)
-  }, [notifications])
-
+    if (!isLoading) setTimeout(() => scrollToBottom(), 10);
+  }, [notifications]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -101,85 +82,154 @@ const ChatBox = () => {
   useEffect(() => {
     selChat = selectedChat;
     refetchMessages();
-    // console.log(queryClient.getQueryData('fetchMessagesChat').length)
-    // if (queryClient.getQueryData('fetchMessagesChat')?.length >= 10)
-    setIsVisibleLoadMoreButton(true)
   }, [selectedChat, selChat]);
 
-  // console.log(queryClient.getQueryData(['fetchMessagesChat']))
+  useEffect(() => {
+    const cachedMessages: IMessage[] | undefined = queryClient.getQueryData(['fetchMessagesChat', selectedChat.id])
+    if (!isNullOrUndefined(cachedMessages) && cachedMessages?.length >= 10)
+      setIsVisibleLoadMoreButton(true);
+    return () => {
+      setIsVisibleLoadMoreButton(false);
+    }
+  }, [messages]);
+
   const fc = async () => {
-    let prevAllMessages: any = await queryClient.getQueryData(['fetchMessagesChat', selectedChat.id]);
-    setIsLoadingMoreMessages(true)
-    const newLoadMessages = await allMessages(selectedChat.id, prevAllMessages?.length + 15)
-    if (newLoadMessages.length < 15) setIsVisibleLoadMoreButton(false)
+    let prevAllMessages: any = await queryClient.getQueryData([
+      'fetchMessagesChat',
+      selectedChat.id,
+    ]);
+    setIsLoadingMoreMessages(true);
+    const newLoadMessages = await allMessages(selectedChat.id, prevAllMessages?.length + 15);
+    if (newLoadMessages.length < 15) setIsVisibleLoadMoreButton(false);
     if (prevAllMessages) {
       await queryClient.cancelQueries(['fetchMessagesChat', selectedChat.id]);
-      prevAllMessages = [...newLoadMessages, ...prevAllMessages]
+      prevAllMessages = [...newLoadMessages, ...prevAllMessages];
       queryClient.setQueryData(['fetchMessagesChat', selectedChat.id], () => prevAllMessages);
     }
-    setIsLoadingMoreMessages(false)
-  }
+    setIsLoadingMoreMessages(false);
+  };
+  const getChatById = (chatId: number | string) =>
+    dataFetchMyChats?.find((chat: any) => chat.id == chatId);
 
   return (
-    <Group style={{height: '87vh'}} grow direction={'row'}>
-      {selectedChat.id != -1
-        ? <>
-          <ScrollArea
-            viewportRef={viewport}
-            offsetScrollbars
-            pt={'sm'}
-            px={'xl'}
-            sx={(theme: any) => ({
-              border: '2px solid ',
-              width: '100%',
-              height: 'calc(100vh - 190px)',
-              boxShadow: theme.shadows.lg,
-              borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[2],
-              backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
-              borderRadius: theme.radius.md,
-            })}
-          >
-            <LoadingOverlay visible={(isFetchingMessages && isEmptyArray(queryClient.getQueryData(['fetchMessagesChat', selectedChat.id]))) || isLoadingMoreMessages}/>
-            {isVisibleLoadMoreButton && !isEmptyArray(queryClient.getQueryData(['fetchMessagesChat', selectedChat.id])) &&
-              <Group mb={'sm'} position={'center'}>
-                <Button compact disabled={isLoadingMoreMessages} onClick={() => fc()}>
-                  Load more...
+    <>
+      {getChatById(selChat?.id)?.isGroupChat &&
+      getChatById(selChat?.id)?.groupAdmin.id == user.id ? (
+        <ModalAdminGroupChat
+          isOpenedChatDetailsModal={isOpenedChatDetailsModal}
+          setIsOpenedChatDetailsModal={setIsOpenedChatDetailsModal}
+          chat={getChatById(selectedChat.id)}
+        />
+      ) : (
+        <ModalChatParticipants
+          isOpenedChatDetailsModal={isOpenedChatDetailsModal}
+          setIsOpenedChatDetailsModal={setIsOpenedChatDetailsModal}
+          chat={getChatById(selectedChat.id)}
+        />
+      )}
+      <Group style={{height: '86vh'}} grow direction={'row'}>
+        {selectedChat.id != -1 ? (
+          <>
+            <ScrollArea
+              viewportRef={viewport}
+              offsetScrollbars
+              px={'xl'}
+              sx={(theme: any) => ({
+                border: '2px solid ',
+                width: '100%',
+                height: 'calc(100vh - 170px)',
+                boxShadow: theme.shadows.lg,
+                borderColor:
+                  theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[2],
+                backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
+                borderRadius: theme.radius.md,
+              })}
+            >
+              <Group position={'center'}>
+                <Button
+                  style={{
+                    position: 'absolute',
+                    left: '71%',
+                    top: '-3px',
+                    zIndex: '15',
+                    borderRadius: '0 0 20px 20px ',
+                  }}
+                  variant={'filled'}
+                  compact
+                  disabled={isLoadingMoreMessages}
+                  onClick={() => setIsOpenedChatDetailsModal(true)}
+                  size={'sm'}
+                >
+                  {getChatById(selChat?.id)?.isGroupChat &&
+                  getChatById(selChat?.id)?.groupAdmin.id == user.id ? (
+                    <Settings size={15}/>
+                  ) : (
+                    <InfoCircle size={15}/>
+                  )}
                 </Button>
               </Group>
-            }
-            <Box mb={40}>
-              {messages && messages.map((item: any, index: number) => (
-                <Box key={item?.id}>
-                  <MessageDivider messages={messages} index={index}/>
-                  <MessageItem
-                    selectedMessage={selectedMessage}
-                    setSelectedMessage={setSelectedMessage}
-                    key={item?.id}
-                    message={item}
-                    isRead={notifications ? checkIsRead(notifications[0]?.createdAt, item.createdAt) : false}
-                  />
-                </Box>
-              ))}
-            </Box>
-          </ScrollArea>
-          <MessageInputField
-            selectedMessage={selectedMessage}
-            setSelectedMessage={setSelectedMessage}
-            scrollToBottom={scrollToBottom}
-          />
-        </>
-        : !isEmptyArray(queryClient.getQueryData('fetchMyChats'))
-          ? <Group
+              {isVisibleLoadMoreButton &&
+                !isEmptyArray(queryClient.getQueryData(['fetchMessagesChat', selectedChat.id])) && (
+                  <Group position={'center'}>
+                    <Button
+                      compact
+                      disabled={isLoadingMoreMessages}
+                      onClick={() => fc()}
+                      size={'sm'}
+                      style={{borderRadius: '0 0 20px 20px '}}
+                      variant={'filled'}
+                    >
+                      <Refresh/>
+                    </Button>
+                  </Group>
+                )}
+
+              <LoadingOverlay
+                visible={
+                  (isFetchingMessages &&
+                    isEmptyArray(
+                      queryClient.getQueryData(['fetchMessagesChat', selectedChat.id])
+                    )) ||
+                  isLoadingMoreMessages
+                }
+              />
+
+              <Box mt={'md'} mb={40}>
+                {messages &&
+                  messages.map((item: any, index: number) => (
+                    <Box key={item?.id}>
+                      <MessageDivider messages={messages} index={index}/>
+                      <MessageItem
+                        selectedMessage={selectedMessage}
+                        setSelectedMessage={setSelectedMessage}
+                        key={item?.id}
+                        message={item}
+                        isRead={
+                          notifications
+                            ? checkIsRead(notifications[0]?.createdAt, item.createdAt)
+                            : false
+                        }
+                      />
+                    </Box>
+                  ))}
+              </Box>
+            </ScrollArea>
+            <MessageInputField scrollToBottom={scrollToBottom}/>
+          </>
+        ) : !isEmptyArray(queryClient.getQueryData(['chats'])) ? (
+          <Group
             position={'center'}
             pl={'sm'}
             sx={(theme) => ({
               borderRadius: theme.radius.md,
               width: '100%',
-              height: '87vh',
+              height: '86vh',
               border: '2px solid ',
-              borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[2],
+              borderColor:
+                theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[2],
               position: 'relative',
-              backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
+              backgroundColor:
+                theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
             })}
           >
             <Button
@@ -192,7 +242,8 @@ const ChatBox = () => {
               Select chat
             </Button>
           </Group>
-          : <Stack style={{width: '100%', height: '70vh'}} justify={'center'} align={'center'}>
+        ) : (
+          <Stack style={{width: '100%', height: '70vh'}} justify={'center'} align={'center'}>
             <Button
               size={'xl'}
               variant={'subtle'}
@@ -202,9 +253,10 @@ const ChatBox = () => {
               Select chat
             </Button>
           </Stack>
-      }
-    </Group>
+        )}
+      </Group>
+    </>
   );
-}
+};
 
 export default ChatBox;

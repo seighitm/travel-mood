@@ -1,94 +1,176 @@
 import useStore from '../../../store/user.store';
-import {useNavigate} from 'react-router-dom';
-import {Avatar, Button, createStyles, Group, LoadingOverlay, Textarea} from '@mantine/core';
-import {creteAuthorShortName, userPicture} from '../Utils';
-import React, {useState} from 'react';
-import {useMediaQuery} from '@mantine/hooks';
-import {Check, X} from "../../../assets/Icons";
+import { useNavigate } from 'react-router-dom';
+import {
+  ActionIcon,
+  Avatar,
+  Center,
+  createStyles,
+  Group,
+  Progress,
+  RingProgress,
+  Stack,
+  Textarea,
+  ThemeIcon,
+} from '@mantine/core';
+import React, { useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
+import { Check, X } from '../Icons';
+import { useMutateAddComment } from '../../../api/comments/mutations';
+import { creteAuthorShortName, customNavigation, userPicture } from '../../../utils/utils-func';
+import { XL_ICON_SIZE } from '../../../utils/constants';
 
 const useStyles = createStyles((theme) => ({
-  comment: {
+  wrapper: {
     boxShadow: theme.shadows.sm,
     padding: `${theme.spacing.md}px ${theme.spacing.md}px`,
     marginBottom: theme.spacing.lg,
-    marginTop: '15px',
-    paddingLeft: '16px',
-    paddingRight: '16px',
+    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[9] : theme.colors.gray[0],
+  },
+  comment: {
+    boxShadow: theme.shadows.sm,
+    padding: `${theme.spacing.md}px ${theme.spacing.md}px`,
+    marginTop: '10px',
+    paddingLeft: '10px',
+    paddingRight: '10px',
+    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[9] : theme.colors.gray[0],
+    border:
+      '1px solid ' + (theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[4]),
+    borderRadius: '8px',
+    width: '100%',
+    [theme.fn.largerThan(944)]: {
+      width: '80%',
+    },
+  },
+  commentBox: {
+    width: '94%',
+    [theme.fn.smallerThan('md')]: {
+      width: '94%',
+    },
+    [theme.fn.smallerThan('sm')]: {
+      width: '92%',
+    },
+    [theme.fn.smallerThan('xs')]: {
+      width: '87%',
+    },
   },
 }));
 
-export function EditCommentBox({mutateCreateComment, id, isLoading}: any) {
-  const {classes} = useStyles();
+export function EditCommentBox({ id, postType }: any) {
+  const { classes } = useStyles();
   const navigate = useNavigate();
   const [commentField, setCommentField] = useState<string>('');
-  const {user} = useStore((state: any) => state);
-  const matches = useMediaQuery('(min-width: 900px)');
+  const { user } = useStore((state: any) => state);
+  const matchesMin900 = useMediaQuery('(min-width: 944px)');
+  const { mutate: mutateCreateComment, isLoading: isLoadingCreateComment } = useMutateAddComment();
+
+  const MAX_CHARACTER_LENGTH = 500;
 
   const handlerClearCommentEditBox = () => {
     setCommentField('');
   };
 
   const handlerSubmitComment = () => {
-    mutateCreateComment({id: id, comment: commentField,});
+    mutateCreateComment({ id: id, comment: commentField, postType: postType });
     setCommentField('');
   };
 
   return (
     <Group position={'center'}>
-      <Group position={'center'} style={{position: 'relative', width: '100%'}}>
-        <LoadingOverlay visible={isLoading}/>
-        {matches &&
+      <Group
+        mb={'xs'}
+        spacing={0}
+        position={'center'}
+        style={{ position: 'relative', width: '100%' }}
+      >
+        {matchesMin900 && (
           <Group direction={'column'}>
-            <Avatar
-              style={{cursor: 'pointer'}}
-              radius="xl"
-              onClick={() => navigate('/user/' + user?.id)}
-              src={userPicture(user)}
-            >
-              {creteAuthorShortName(`${user.firstName} ${user.lastName}`)}
-            </Avatar>
+            <RingProgress
+              thickness={commentField.length == 0 ? 0 : 6}
+              size={60}
+              roundCaps
+              sections={[
+                {
+                  value: (commentField.length * 100) / MAX_CHARACTER_LENGTH,
+                  color: commentField.length <= MAX_CHARACTER_LENGTH ? 'teal' : 'red',
+                },
+              ]}
+              label={
+                <Center style={{ position: 'relative' }}>
+                  <Avatar
+                    style={{ cursor: 'pointer' }}
+                    radius="xl"
+                    src={userPicture(user)}
+                    onClick={() => customNavigation(user?.role, navigate, '/users/' + user?.id)}
+                  >
+                    {creteAuthorShortName(`${user.firstName} ${user.lastName}`)}
+                  </Avatar>
+                  {commentField.length != 0 && (
+                    <ThemeIcon
+                      style={{ position: 'absolute' }}
+                      color={commentField.length <= MAX_CHARACTER_LENGTH ? 'teal' : 'red'}
+                      variant="light"
+                      radius="xl"
+                      size="xl"
+                    >
+                      {commentField.length <= MAX_CHARACTER_LENGTH ? (
+                        commentField.length
+                      ) : (
+                        <X size={XL_ICON_SIZE} />
+                      )}
+                    </ThemeIcon>
+                  )}
+                </Center>
+              }
+            />
           </Group>
-        }
-        <Group
-          direction={'column'}
-          spacing={5}
-          position={'right'}
-          className={classes.comment}
-          style={{width: matches ? '80%' : '100%'}}
-        >
+        )}
+        <Group direction={'row'} spacing={0} position={'apart'} className={classes.comment}>
           <Textarea
-            style={{width: '100%'}}
-            value={commentField}
+            className={classes.commentBox}
+            value={
+              commentField?.length <= MAX_CHARACTER_LENGTH
+                ? commentField
+                : commentField.slice(0, MAX_CHARACTER_LENGTH)
+            }
             onChange={(event) => setCommentField(event.currentTarget.value)}
             placeholder="Your comment"
             autosize
             minRows={3}
             maxRows={5}
           />
-          <Group spacing={0}>
-            <Button
+          <Stack style={{ height: '100%' }}>
+            <ActionIcon
+              loading={isLoadingCreateComment}
+              style={{ height: '100%' }}
               type={'submit'}
               variant="filled"
-              compact
+              color={'blue'}
               onClick={handlerSubmitComment}
-              style={{borderRadius: '7px 0 0 7px'}}
-              leftIcon={<Check size={17}/>}
-              disabled={commentField == ''}
+              disabled={commentField == '' || isLoadingCreateComment}
             >
-              Send
-            </Button>
-            <Button
+              <Check size={17} />
+            </ActionIcon>
+            <ActionIcon
+              loading={isLoadingCreateComment}
               onClick={handlerClearCommentEditBox}
-              variant="subtle"
               color={'red'}
-              compact
-              leftIcon={<X size={17}/>}
-              style={{borderRadius: '0 7px 7px 0'}}
-              disabled={commentField == ''}
+              variant={'outline'}
+              disabled={commentField == '' || isLoadingCreateComment}
             >
-              Clear
-            </Button>
-          </Group>
+              <X size={17} />
+            </ActionIcon>
+          </Stack>
+          {!matchesMin900 && commentField?.length != 0 && (
+            <Progress
+              size="lg"
+              mt={'xs'}
+              className={classes.commentBox}
+              striped
+              animate
+              value={(commentField.length * 100) / MAX_CHARACTER_LENGTH}
+              color={commentField.length <= MAX_CHARACTER_LENGTH ? 'teal' : 'red'}
+            />
+          )}
         </Group>
       </Group>
     </Group>

@@ -1,7 +1,4 @@
-import {useQuery} from "react-query";
-import {fetchChats} from "./axios";
+import { useQuery } from 'react-query';
+import { apiGetChats } from './axios';
 
-export const useGetAllMyChats = () =>
-  useQuery('fetchMyChats', () => fetchChats());
-
-
+export const useGetAllMyChats = () => useQuery(['chats'], () => apiGetChats());

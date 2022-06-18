@@ -1,7 +1,7 @@
 import React from 'react';
-import {Paper} from "@mantine/core";
+import { Paper } from '@mantine/core';
 
-function CustomPaper({children}: any) {
+function CustomPaper({ children }: any) {
   return (
     <Paper
       pl={'sm'}

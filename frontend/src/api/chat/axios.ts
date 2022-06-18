@@ -1,48 +1,54 @@
-import {$authHost} from "../api";
+import { $authHost } from '../api';
 
-export const fetchChats = async () => {
-  const {data} = await $authHost.get('/chat');
+export const apiGetChats = async () => {
+  const { data } = await $authHost.get('/chat');
   return data;
 };
 
-export const accessChat = async (userId: any) => {
-  const {data} = await $authHost.post('/chat', {userId});
+export const apiCreatePrivateChat = async (userId: any) => {
+  const { data } = await $authHost.post('/chat', { userId });
   return data;
 };
 
-export const createNewGroup = async ({users, chatName}: { users: any; chatName: string } | any) => {
-  const {data} = await $authHost.post('/chat/group', {users: users, chatName: chatName});
+export const apiCreateGroupChat = async ({
+  users,
+  chatName,
+}: { users: any; chatName: string } | any) => {
+  const { data } = await $authHost.post('/chat/group', { users: users, chatName: chatName });
   return data;
 };
 
-export const addUsersToGroup = async ({chatId, usersId}: {
+export const apiAddUsersToGroupChat = async ({
+  chatId,
+  usersId,
+}: {
   chatId: string | number;
   usersId: string[] | number[];
 }) => {
-  const {data} = await $authHost.put('/chat/group/users', {chatId: chatId, usersId: usersId});
+  const { data } = await $authHost.put('/chat/group/users', { chatId: chatId, usersId: usersId });
   return data;
 };
 
-export const removeUsersFromGroup = async ({chatId, usersId}: {
+export const apiRemoveUsersFromGroup = async ({
+  chatId,
+  usersId,
+}: {
   chatId: string | number;
   usersId: string[] | number[];
 }) => {
-  const {data} = await $authHost.delete('/chat/group/users', {data: {chatId: chatId, usersId: usersId}});
+  const { data } = await $authHost.delete('/chat/group/users', {
+    data: { chatId: chatId, usersId: usersId },
+  });
   return data;
 };
 
-export const renameGroup = async ({chatId, chatName}: {
+export const apiRenameChatGroup = async ({
+  chatId,
+  chatName,
+}: {
   chatId: string | number;
   chatName: string;
 }) => {
-  const {data} = await $authHost.put('/chat/group', {chatId: chatId, chatName: chatName});
-  return data;
-};
-
-export const removeUserFromGroup = async ({chatId, userId,}: {
-  chatId: string | number;
-  userId: string | number;
-}) => {
-  const {data} = await $authHost.delete('/chat/group', {data: {chatId: chatId, userId: userId}});
+  const { data } = await $authHost.put('/chat/group', { chatId: chatId, chatName: chatName });
   return data;
 };

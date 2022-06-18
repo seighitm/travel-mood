@@ -1,41 +1,43 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   ActionIcon,
   Badge,
   Button,
   createStyles,
+  Divider,
   Grid,
   Group,
   Image,
   Paper,
   Popover,
   SimpleGrid,
+  Spoiler,
   Switch,
   Text,
-  TypographyStylesProvider,
   useMantineTheme,
 } from '@mantine/core';
-import {Pencil1Icon, QuestionMarkCircledIcon,} from '@modulz/radix-icons';
-import {Link, useNavigate, useParams} from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 import useStore from '../../../store/user.store';
 import {
-  useMutateChangeJoinRequestStatus,
   useMutateFavoriteTrip,
-  useMutateLeaveFromTrip,
   useMutateSwitchTripHiddenStatus,
   useMutateUnFavoriteTrip,
   useMutationDeleteTrip,
 } from '../../../api/trips/mutations';
-import {dateFormatedToIsoString, userPicture} from "../../common/Utils";
-import {useDisclosure} from "@mantine/hooks";
-import {BrandFacebook, BrandTwitter, ChevronDown, Pencil, Send, Star, Trash} from "../../../assets/Icons";
-import {useGetUserById} from "../../../api/users/queries";
-import JoinTripModal from "./JoinTripModal";
-import SendJoinTripRequest from "./SendJoinTripRequest";
-import {getFullUserName} from "../../../utils/utils-func";
-import {isEmptyArray, isNullOrUndefined} from "../../../utils/primitive-checks";
-import {ROLE} from "../../../types/enums";
-import SocialSharButtons from "../../common/socialShare/SocialSharButtons";
+import {useMediaQuery} from '@mantine/hooks';
+import {InfoCircle, Pencil, Send, Stars, Trash, Users} from '../../common/Icons';
+import {useGetUserById} from '../../../api/users/queries';
+import JoinTripModal from './JoinTripModal';
+import SendJoinTripRequest from './SendJoinTripRequest';
+import {customNavigation, dateFormattedToIsoString, getFullUserName, userPicture,} from '../../../utils/utils-func';
+import {isEmptyArray, isNullOrUndefined} from '../../../utils/primitive-checks';
+import {ROLE} from '../../../types/enums';
+import SocialSharButtons from '../../common/social-share/SocialSharButtons';
+import {ITrip} from '../../../types/ITrip';
+import PostFavoriteBy from '../../common/PostFavoriteBy';
+import {useMutateChangeJoinRequestStatus, useMutateLeaveFromTrip,} from '../../../api/trips/join-requests/mutations';
+import FavoriteStarButton from '../../common/FavoriteStarButton';
+import ConfirmationModal from "../../common/ConfirmationModal";
 
 const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -50,7 +52,7 @@ const useStyles = createStyles((theme) => ({
   image: {
     cursor: 'pointer',
     marginTop: '12px',
-    marginRight: '12px'
+    marginRight: '12px',
   },
   imageCaption: {
     caption: {
@@ -63,53 +65,53 @@ const useStyles = createStyles((theme) => ({
   },
   icon: {
     width: '18px',
-    height: '18px'
+    height: '18px',
   },
-  favoriteComponent: {
-    padding: 0,
-    width: '18px',
-    height: '30px',
-    textAlign: 'center',
-  }
 }));
 
-function TripPageHeader({trips}: any) {
+interface TripPageHeaderComponentProps {
+  trip: ITrip;
+}
+
+function TripPageHeader({trip}: TripPageHeaderComponentProps) {
   const {id} = useParams();
   const navigate = useNavigate();
   const theme = useMantineTheme();
   const {classes} = useStyles();
   const {user} = useStore((state: any) => state);
-  const faceboocRef: any = useRef<any>();
-  const twitterRef: any = useRef<any>();
+  const mobile = useMediaQuery('(min-width: 530px)');
 
   const [hiddenStatus, setHiddenStatus] = useState(false);
-  const [openedJoinModal, handlersJoinModal] = useDisclosure(false);
-  const [openedInviteModal, handlersInviteModal] = useDisclosure(false);
+  const [isOpenedJoinModal, setIsOpenedJoinModal] = useState(false);
+  const [isOpenedInviteModal, setIsOpenedInviteModal] = useState(false);
   const [openedPopover, setOpenedPopover] = useState(false);
-  const [openedLikesCountPopup, setOpenedLikesCountPopup] = useState(false);
-
-  const onSuccessDeleteEvent = () => navigate('/trips');
+  const [openedConfirmationModal, setOpenedConfirmationModal] = useState(false);
 
   const {data} = useGetUserById({id: user?.id, isEnabled: true});
-  const {mutate: mutateDeleteTrip} = useMutationDeleteTrip(onSuccessDeleteEvent);
-  const {mutate: mutateUnFavorite} = useMutateUnFavoriteTrip();
-  const {mutate: mutateFavorite} = useMutateFavoriteTrip();
+  const {mutate: mutateDeleteTrip} = useMutationDeleteTrip();
+  const {mutate: mutateUnFavorite, isLoading: isLoadingUF} = useMutateUnFavoriteTrip();
+  const {mutate: mutateFavorite, isLoading: isLoadingFF} = useMutateFavoriteTrip();
   const {mutate: mutateLeaveFromTrip} = useMutateLeaveFromTrip();
-  const {mutate: mutateSwitchHiddenStatus} = useMutateSwitchTripHiddenStatus();
+  const {mutate: mutateSwitchHiddenStatus, isLoading: isLoadingHide} = useMutateSwitchTripHiddenStatus();
   const {mutate: mutateChangeRequestStatus} = useMutateChangeJoinRequestStatus();
 
   const statusCheck = (status: string) => {
-    if (!isNullOrUndefined(user))
-      return trips.usersJoinToTrip.find((request: any) => request.status == status && request.userId == user.id) != undefined
-    return false
-  }
+    if (!isNullOrUndefined(user)) {
+      return (
+        trip?.usersJoinToTrip.find(
+          (request: any) => request.status == status && request.userId == user.id
+        ) != undefined
+      );
+    }
+    return false;
+  };
 
   const handlerLeaveFromTrip = () => {
-    mutateLeaveFromTrip({tripId: trips.id})
-  }
+    mutateLeaveFromTrip({tripId: trip?.id});
+  };
 
   const handlerFavorite = () => {
-    if (trips.tripFavoritedBy?.find((item: any) => item.id == user?.id) === undefined) {
+    if (trip?.favoritedBy?.find((item: any) => item.id == user?.id) === undefined) {
       mutateFavorite({id});
     } else {
       mutateUnFavorite({id});
@@ -117,38 +119,46 @@ function TripPageHeader({trips}: any) {
   };
 
   useEffect(() => {
-    setHiddenStatus(trips.isHidden)
-  }, [trips])
+    setHiddenStatus(trip?.isHidden);
+  }, [trip]);
+
+  const isFavoriteTrip =
+    trip.favoritedBy?.find((item: { id: string }) => item.id == user?.id) !== undefined;
 
   return (
     <Paper className={classes.wrapper}>
-      {!isNullOrUndefined(user) &&
+      <ConfirmationModal
+        openedConfirmationModal={openedConfirmationModal}
+        setOpenedConfirmationModal={setOpenedConfirmationModal}
+        handlerSubmit={() => mutateDeleteTrip(id)}
+      />
+      {!isNullOrUndefined(user) && (
         <>
           <JoinTripModal
-            openedJoinModal={openedJoinModal}
-            handlersJoinModal={handlersJoinModal}
-            tripId={trips?.id}
+            isOpenedJoinModal={isOpenedJoinModal}
+            setIsOpenedJoinModal={setIsOpenedJoinModal}
+            tripId={trip?.id}
             userId={user?.id}
-            receiveUserId={trips?.user.id}
+            receiveUserId={trip?.user.id}
           />
 
           <SendJoinTripRequest
-            openedInviteModal={openedInviteModal}
-            handlersInviteModal={handlersInviteModal}
+            isOpenedInviteModal={isOpenedInviteModal}
+            setIsOpenedInviteModal={setIsOpenedInviteModal}
             following={data?.following}
-            tripId={trips?.id}
+            tripId={trip?.id}
           />
         </>
-      }
+      )}
 
       <Grid columns={24}>
         <Grid.Col lg={5} xl={5} md={7} sm={8}>
           <Image
-            height={200}
+            height={!isNullOrUndefined(user) ? 220 : 180}
             radius="md"
-            src={userPicture(trips?.user?.picture)}
-            caption={getFullUserName(trips?.user)}
-            onClick={() => navigate(`/user/${trips?.user?.id}`)}
+            src={userPicture(trip?.user)}
+            caption={getFullUserName(trip?.user)}
+            onClick={() => customNavigation(user?.role, navigate, `/users/${trip.user.id}`)}
             classNames={{
               root: classes.image,
               caption: classes.imageCaption,
@@ -156,7 +166,7 @@ function TripPageHeader({trips}: any) {
           />
         </Grid.Col>
         <Grid.Col lg={19} xl={19} md={17} sm={16}>
-          <Group position={'apart'}>
+          <Group position={mobile ? 'apart' : 'center'}>
             <Text
               mb={0}
               weight={'bold'}
@@ -164,195 +174,217 @@ function TripPageHeader({trips}: any) {
               style={{fontSize: '30px'}}
               gradient={{from: 'indigo', to: 'orange', deg: 15}}
             >
-              {trips.title?.toUpperCase()}
+              {trip?.title?.toUpperCase()}
             </Text>
-            <Group>
-              <Badge variant={'outline'}>
-                {dateFormatedToIsoString(trips.updatedAt)}
-              </Badge>
-              {!isNullOrUndefined(trips) && !isEmptyArray(trips.tripFavoritedBy) &&
-                <Popover
-                  opened={openedLikesCountPopup}
-                  onClose={() => setOpenedLikesCountPopup(false)}
-                  target={
-                    <ActionIcon
-                      size={'md'}
-                      color={'pink'}
-                      variant={'default'}
-                      radius={'xl'}
-                      style={{height: '15px'}}
-                      onClick={() => setOpenedLikesCountPopup((o) => !o)}
-                      className={classes.favoriteComponent}
-                    >
-                      <ChevronDown/>
-                    </ActionIcon>
-                  }
-                  width={260}
-                  position="bottom"
-                  withArrow
-                >
-                  <TypographyStylesProvider>
-                    {trips.tripFavoritedBy.map((item: any) =>
-                      <Badge fullWidth style={{cursor: 'pointer'}} onClick={() => navigate('/user/' + item.id)}>
-                        {getFullUserName(item)}
-                      </Badge>
-                    )}
-                  </TypographyStylesProvider>
-                </Popover>
-              }
+            <Group position={mobile ? 'apart' : 'center'}>
               <Badge
-                style={{cursor: 'pointer'}}
-                variant={"light"}
-                color={"gray"}
-                px={'xs'}
-                size="lg"
-                leftSection={
-                  !isNullOrUndefined(user) &&
-                  <ActionIcon
-                    onClick={() => handlerFavorite()}
-                    disabled={!user}
-                    size={'md'}
-                    style={{color: theme.colors.red[7]}}
-                    variant={'transparent'}
-                  >
-                    <Star
-                      size={17}
-                      color={theme.colors.red[6]}
-                      fill={trips.tripFavoritedBy?.find((item: any) => item.id == user?.id) !== undefined
-                        ? theme.colors.red[6]
-                        : 'none'
-                      }
-                    />
-                  </ActionIcon>
+                variant={
+                  trip?.usersJoinToTrip?.filter((item: any) => item.status == 'APPROVED').length ==
+                  trip?.maxNrOfPersons
+                    ? 'filled'
+                    : 'light'
+                }
+                color={
+                  trip?.usersJoinToTrip.filter((item: any) => item.status == 'APPROVED').length ==
+                  trip?.maxNrOfPersons
+                    ? 'pink'
+                    : 'green'
                 }
               >
-                <Group
-                  className={classes.favoriteComponent}
-                  position={'center'}
-                >
-                  <Text color={'gray'}>
-                    {!isEmptyArray(trips.tripFavoritedBy) ? trips.tripFavoritedBy.length : '0'}
-                  </Text>
-                </Group>
+                {trip?.usersJoinToTrip.filter((item: any) => item.status == 'APPROVED').length ==
+                trip?.maxNrOfPersons
+                  ? 'Full'
+                  : 'Available'}
               </Badge>
+              <Badge color={'gray'} variant={'light'}>
+                {dateFormattedToIsoString(trip?.updatedAt)}
+              </Badge>
+              {!isNullOrUndefined(trip) && !isEmptyArray(trip?.favoritedBy) && (
+                <PostFavoriteBy favoriteList={trip?.favoritedBy}/>
+              )}
+
+              <SocialSharButtons url={'/trips/' + id}/>
+
+              <FavoriteStarButton
+                isLoadingUF={isLoadingUF}
+                isLoadingFF={isLoadingFF}
+                isFavorite={isFavoriteTrip}
+                favoriteByList={trip.favoritedBy}
+                handlerFavoriteArticle={handlerFavorite}
+              />
+
               <Popover
                 opened={openedPopover}
                 onClose={() => setOpenedPopover(false)}
                 position="bottom"
-                placement="center"
-                withArrow
+                placement="start"
                 trapFocus={false}
                 closeOnEscape={false}
                 transition="pop-top-left"
                 spacing="xs"
                 shadow="lg"
-                width={150}
-                styles={{body: {pointerEvents: 'none'}}}
+                width={100}
+                styles={{body: {pointerEvents: 'none', borderColor: theme.colors.gray[6]}}}
                 target={
                   <ActionIcon
+                    size={25}
                     radius={'xl'}
                     variant={'light'}
                     color="primary"
                     onMouseEnter={() => setOpenedPopover(true)}
-                    onMouseLeave={() => setOpenedPopover(false)}>
-                    <QuestionMarkCircledIcon style={{width: '15px', height: '15px'}}/>
+                    onMouseLeave={() => setOpenedPopover(false)}
+                  >
+                    <Users size={17}/>
                   </ActionIcon>
                 }
               >
                 <Group spacing={0} align={'center'} direction={'column'}>
                   <Text color="orange" size={'xs'}>
-                    PENDING: {trips.usersJoinToTrip.filter((item: any) => item.status == 'PENDING' || item.status == 'RECEIVED').length}
+                    PENDING:{' '}
+                    {
+                      trip?.usersJoinToTrip.filter(
+                        (item: any) => item.status == 'PENDING' || item.status == 'RECEIVED'
+                      ).length
+                    }
                   </Text>
                   <Text color="green" size={'xs'}>
-                    JOINING: {trips.usersJoinToTrip.filter((item: any) => item.status != 'PENDING' && item.status !== 'RECEIVED').length}
+                    JOINING:{' '}
+                    {
+                      trip?.usersJoinToTrip.filter(
+                        (item: any) =>
+                          item.status != 'PENDING' &&
+                          item.status !== 'RECEIVED' &&
+                          item.status !== 'CANCELED'
+                      ).length
+                    }
                   </Text>
                 </Group>
               </Popover>
-              {!isNullOrUndefined(user) && user?.id == trips?.user.id &&
+
+              {statusCheck('APPROVED') ? (
+                <Badge color={'pink'} variant={'outline'}>
+                  APPROVED
+                </Badge>
+              ) : statusCheck('CANCELED') ? (
+                <Badge color={'pink'} variant={'outline'}>
+                  CANCELED
+                </Badge>
+              ) : statusCheck('PENDING') ? (
+                <Badge color={'pink'} variant={'outline'}>
+                  PENDING
+                </Badge>
+              ) : statusCheck('RECEIVED') ? (
+                <Badge color={'pink'} variant={'outline'}>
+                  RECEIVED
+                </Badge>
+              ) : (
+                <></>
+              )}
+
+              {!isNullOrUndefined(user) && user?.id == trip?.user.id && (
                 <Switch
-                  onLabel="ON" offLabel="OFF"
+                  disabled={isLoadingHide}
+                  size={'md'}
+                  onLabel="ON"
+                  offLabel="HIDE"
                   checked={hiddenStatus}
                   onChange={(event) => {
-                    mutateSwitchHiddenStatus(trips.id)
-                    setHiddenStatus(event.currentTarget.checked)
-                  }}/>
-              }
+                    mutateSwitchHiddenStatus(trip?.id);
+                    setHiddenStatus(event.currentTarget.checked);
+                  }}
+                />
+              )}
             </Group>
           </Group>
 
           <Group mt={'lg'} position="center" direction="column">
-            {statusCheck('APPROVED')
-              ? <Badge color={'pink'} variant={'outline'}>APPROVED</Badge>
-              : statusCheck('CANCELED')
-                ? <Badge color={'pink'} variant={'outline'}>CANCELED</Badge>
-                : statusCheck('PENDING')
-                  ? <Badge color={'pink'} variant={'outline'}>PENDING</Badge>
-                  : statusCheck('RECEIVED')
-                    ? <Badge color={'pink'} variant={'outline'}>RECEIVED</Badge>
-                    : <></>
-            }
+            {!isNullOrUndefined(user) &&
+              trip?.usersJoinToTrip.find(
+                (request: any) => request.userId == user.id && request.status == 'RECEIVED'
+              ) !== undefined && (
+                <Button
+                  fullWidth
+                  color="pink"
+                  variant={'light'}
+                  onClick={() =>
+                    mutateChangeRequestStatus({
+                      tripRequestId: trip?.usersJoinToTrip?.find(
+                        (request: any) =>
+                          request?.userId == user?.id && request?.status == 'RECEIVED'
+                      )?.id,
+                      status: 'APPROVED',
+                    })
+                  }
+                  leftIcon={<Send size={17}/>}
+                >
+                  Accept
+                </Button>
+              )}
 
-            {!isNullOrUndefined(user) && trips.usersJoinToTrip.find((request: any) => request.userId == user.id && request.status == 'RECEIVED') !== undefined &&
-              <Button
-                fullWidth
-                color="pink"
-                variant={'light'}
-                onClick={() => mutateChangeRequestStatus({
-                  tripRequestId: trips.usersJoinToTrip.find((request: any) => request.userId == user.id && request.status == 'RECEIVED').id,
-                  status: 'APPROVED'
-                })}
-                leftIcon={<Send size={17}/>}
-              >
-                Accept
-              </Button>
-            }
+            {!isNullOrUndefined(user) &&
+              !isNullOrUndefined(trip) &&
+              !isEmptyArray(trip?.usersJoinToTrip) &&
+              trip?.usersJoinToTrip.find(
+                (request: any) =>
+                  request.userId == user.id &&
+                  ['PENDING', 'APPROVED', 'RECEIVED'].includes(request.status)
+              ) !== undefined && (
+                <Button
+                  variant={'outline'}
+                  fullWidth
+                  color="red"
+                  onClick={handlerLeaveFromTrip}
+                  leftIcon={<Send size={17}/>}
+                >
+                  Leave
+                </Button>
+              )}
 
-            {!isNullOrUndefined(user) && !isNullOrUndefined(trips) && !isEmptyArray(trips.usersJoinToTrip) &&
-              trips.usersJoinToTrip.find((request: any) => request.userId == user.id &&
-                (["PENDING", 'APPROVED', 'RECEIVED'].includes(request.status))) !== undefined &&
-              <Button
-                variant={'outline'}
-                fullWidth
-                color="red"
-                onClick={handlerLeaveFromTrip}
-                leftIcon={<Pencil1Icon style={{width: '18px', height: '18px'}}/>}
-              >
-                Leave
-              </Button>
-            }
+            {!isNullOrUndefined(user) &&
+              trip?.usersJoinToTrip.find((request: any) => request.userId == user.id) ==
+              undefined &&
+              user &&
+              user?.id != trip?.user.id &&
+              trip?.usersJoinToTrip?.filter((item: any) => item.status == 'APPROVED').length <
+              Number(trip?.maxNrOfPersons) && (
+                <Button
+                  fullWidth
+                  color="pink"
+                  variant={'light'}
+                  onClick={() => setIsOpenedJoinModal(true)}
+                  leftIcon={<Send size={17}/>}
+                >
+                  Join
+                </Button>
+              )}
 
-            {!isNullOrUndefined(user) && trips.usersJoinToTrip.find((request: any) => request.userId == user.id) == undefined && (user && user?.id != trips.user.id) &&
-              <Button
-                fullWidth
-                color="pink"
-                variant={'light'}
-                onClick={() => handlersJoinModal.open()}
-                leftIcon={<Send size={17}/>}
-              >
-                Join
-              </Button>
-            }
+            {!isNullOrUndefined(user) &&
+              user?.id == trip?.user.id &&
+              trip?.usersJoinToTrip?.filter((item: any) => item.status == 'APPROVED').length <
+              Number(trip?.maxNrOfPersons) && (
+                <Button
+                  fullWidth
+                  color="pink"
+                  variant={'light'}
+                  onClick={() => setIsOpenedInviteModal(true)}
+                  leftIcon={<Send size={17}/>}
+                >
+                  Send
+                </Button>
+              )}
 
-            {(!isNullOrUndefined(user) && user?.id == trips.user.id) &&
-              <Button
-                fullWidth
-                color="pink"
-                variant={'light'}
-                onClick={() => handlersInviteModal.open()}
-                leftIcon={<Send size={17}/>}
-              >
-                Send
-              </Button>
-            }
-
-            {(!isNullOrUndefined(user) && user?.id == trips.user.id) &&
+            {((!isNullOrUndefined(user) && user?.id == trip?.user.id) ||
+              user?.role == ROLE.ADMIN ||
+              user?.role == ROLE.MODERATOR) && (
               <SimpleGrid style={{width: '100%'}} cols={2}>
                 <Button
                   fullWidth
                   color="teal"
                   variant={'light'}
                   leftIcon={<Pencil size={17}/>}
-                  onClick={() => navigate(`${user?.role == ROLE.ADMIN ? '/admin' : ''}/trip/edit/${id}`)}
+                  onClick={() =>
+                    navigate(`${user?.role == ROLE.ADMIN ? '/admin' : ''}/trips/${id}/edit`)
+                  }
                 >
                   Edit
                 </Button>
@@ -361,30 +393,34 @@ function TripPageHeader({trips}: any) {
                   color="red"
                   variant={'light'}
                   leftIcon={<Trash size={17}/>}
-                  onClick={() => mutateDeleteTrip(id)}
+                  onClick={() => setOpenedConfirmationModal(true)}
                 >
                   Delete
                 </Button>
               </SimpleGrid>
-            }
-            <SocialSharButtons faceboocRef={faceboocRef} twitterRef={twitterRef}/>
-            <Group style={{width: '100%'}} grow direction={isNullOrUndefined(user) ? 'column' : 'row'}>
-              <Button
-                variant={'light'}
-                onClick={() => faceboocRef.current.click()}
-                leftIcon={<BrandTwitter size={17}/>}
-              >
-                Facebook
-              </Button>
-              <Button
-                variant={'light'}
-                onClick={() => twitterRef.current.click()}
-                leftIcon={<BrandFacebook size={17}/>}
-              >
-                twitter
-              </Button>
-            </Group>
+            )}
           </Group>
+
+          {!isEmptyArray(trip?.description) && (
+            <>
+              <Divider
+                mt={'md'}
+                label={
+                  <Group>
+                    <InfoCircle size={20}/>
+                    Description
+                  </Group>
+                }
+                labelPosition="left"
+                style={{width: '100%'}}
+              />
+              <Group mx={'xl'}>
+                <Spoiler maxHeight={50} showLabel="Show more" hideLabel="Hide">
+                  <Text size="md">{trip?.description}</Text>
+                </Spoiler>
+              </Group>
+            </>
+          )}
         </Grid.Col>
       </Grid>
     </Paper>

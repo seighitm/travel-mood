@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Accordion,
   Autocomplete,
@@ -10,16 +10,18 @@ import {
   MultiSelect,
   Select,
 } from '@mantine/core';
-import {useFilterUser, useGetUsersByNameOrEmail} from '../../api/users/queries';
+import { useGetUsers, useGetUsersByNameOrEmail } from '../../api/users/queries';
 import useStore from '../../store/user.store';
-import {useGetLanguages} from '../../api/languages/queries';
-import {useGetLocations} from '../../api/countries/queries';
-import {UserCard} from './UserCart';
+import { useGetCountries, useGetLanguages } from '../../api/info/queries';
+import { UserCard } from './UserCart';
 import chatStore from '../../store/chat.store';
-import {useDebouncedValue} from "@mantine/hooks";
-import {ArrowBackUp, ChevronDown, Search} from "../../assets/Icons";
-import {getFullUserName} from "../../utils/utils-func";
-import { isNullOrUndefined } from '../../utils/primitive-checks';
+import { useDebouncedValue } from '@mantine/hooks';
+import { ArrowBackUp, ChevronDown, Search } from '../common/Icons';
+import { getFullUserName } from '../../utils/utils-func';
+import { isEmptyArray, isEmptyString, isNullOrUndefined } from '../../utils/primitive-checks';
+import { USER_GENDER } from '../../utils/constants';
+import { useQueryClient } from 'react-query';
+import UserCardSkeleton from './UserCardSkeleton';
 
 const useStyles = createStyles((theme, _params, getRef) => {
   const icon = getRef('control');
@@ -62,31 +64,35 @@ const useStyles = createStyles((theme, _params, getRef) => {
 });
 
 function UsersList() {
-  const {classes} = useStyles();
-  const {socket} = chatStore((state: any) => state);
-  const {user, onlineUsers} = useStore((state: any) => state);
+  const { classes } = useStyles();
+  const { socket } = chatStore((state: any) => state);
+  const { user, onlineUsers } = useStore((state: any) => state);
   const [location, setLocation] = useState<any>([]);
   const [tripTo, setTripTo] = useState<any>([]);
   const [languages, setLanguages] = useState<any>([]);
   const [gender, setGender] = useState<any>('');
-  const [age, setAge] = useState<any>('');
+  const [age, setAge] = useState<string | null>('');
   const [name, setName] = useState<string>('');
-  const [isOnline, setIsOnline] = useState<boolean>(false);
+  const [isOnline, setIsOnline] = useState<boolean | undefined>(undefined);
 
-  const {data: dataLanguages} = useGetLanguages({});
-  const {data: dataLocations} = useGetLocations({});
+  const { data: dataLanguages } = useGetLanguages({});
+  const { data: dataLocations } = useGetCountries({});
+  const queryClient = useQueryClient();
 
   const [debouncedFirstName] = useDebouncedValue(name, 300);
-  const {data: dbUsers} = useGetUsersByNameOrEmail(debouncedFirstName);
+  const { data: dbUsers, isFetching: isFetchingDbTrips } =
+    useGetUsersByNameOrEmail(debouncedFirstName);
 
   useEffect(() => {
-    if (!!user && socket) socket.emit('get-online-users');
+    if (!isNullOrUndefined(user) && socket) {
+      socket.emit('get-online-users');
+    }
   }, [user, socket]);
 
-  const {data: users, refetch: refetchUsers} = useFilterUser({
+  const { data: users, refetch: refetchUsers } = useGetUsers({
     age: age,
     name: name,
-    sex: gender,
+    gender: gender,
     tripTo: tripTo,
     languages: languages,
     countries: location,
@@ -95,7 +101,9 @@ function UsersList() {
 
   const handlerFilter = async () => {
     await refetchUsers();
-    if (!!user && socket) socket.emit('get-online-users');
+    if (!isNullOrUndefined(user) && socket) {
+      socket.emit('get-online-users');
+    }
   };
 
   const handlerResetFilter = async () => {
@@ -105,7 +113,8 @@ function UsersList() {
     setLanguages([]);
     setLocation([]);
     setTripTo([]);
-    await refetchUsers();
+    setIsOnline(false);
+    setTimeout(() => refetchUsers(), 4);
   };
 
   return (
@@ -114,7 +123,7 @@ function UsersList() {
         iconPosition="right"
         initialItem={-1}
         mb={'md'}
-        icon={<ChevronDown size={17}/>}
+        icon={<ChevronDown size={17} />}
         classNames={{
           item: classes.item,
           control: classes.control,
@@ -123,43 +132,55 @@ function UsersList() {
         }}
       >
         <Accordion.Item label="Filter">
+          {!isNullOrUndefined(user) && (
+            <Group position={'center'} style={{ width: '100%' }}>
+              <Checkbox
+                mb={'lg'}
+                label="Online"
+                checked={isOnline}
+                onChange={(event) => setIsOnline(event.currentTarget.checked)}
+              />
+            </Group>
+          )}
           <Grid>
             <Grid.Col md={6} lg={4}>
               <MultiSelect
                 searchable
+                clearable
                 placeholder="Countries"
                 value={location}
                 onChange={setLocation}
-                data={dataLocations && dataLocations?.length > 0
-                  ? dataLocations.map((item: any) => item.name)
-                  : []
+                data={
+                  dataLocations && dataLocations?.length > 0
+                    ? dataLocations.map((item: any) => item.name)
+                    : []
                 }
               />
             </Grid.Col>
 
             <Grid.Col md={6} lg={4}>
               <MultiSelect
+                clearable
                 placeholder="Travel to..."
                 value={tripTo}
                 searchable
                 onChange={setTripTo}
-                data={dataLocations && dataLocations?.length > 0
-                  ? dataLocations.map((item: any) => item.name)
-                  : []
+                data={
+                  dataLocations && dataLocations?.length > 0
+                    ? dataLocations.map((item: any) => item.name)
+                    : []
                 }
               />
             </Grid.Col>
 
             <Grid.Col md={6} lg={4}>
               <MultiSelect
+                clearable
                 searchable
                 placeholder="Languages"
                 value={languages}
                 onChange={setLanguages}
-                data={dataLanguages?.length > 0
-                  ? dataLanguages.map((item: any) => item.name)
-                  : []
-                }
+                data={dataLanguages?.length > 0 ? dataLanguages.map((item: any) => item.name) : []}
               />
             </Grid.Col>
 
@@ -169,11 +190,7 @@ function UsersList() {
                 placeholder="Gender"
                 value={gender}
                 onChange={setGender}
-                data={[
-                  {value: 'MALE', label: 'Male'},
-                  {value: 'FEMALE', label: 'Female'},
-                  {value: 'OTHER', label: 'Other'},
-                ]}
+                data={USER_GENDER}
               />
             </Grid.Col>
 
@@ -184,11 +201,11 @@ function UsersList() {
                 value={age}
                 onChange={setAge}
                 data={[
-                  {value: '18-24', label: '18-24'},
-                  {value: '25-34', label: '25-34'},
-                  {value: '35-44', label: '35-44'},
-                  {value: '45-54', label: '45-54'},
-                  {value: '55-100', label: '55-100'},
+                  { value: '18-24', label: '18-24' },
+                  { value: '25-34', label: '25-34' },
+                  { value: '35-44', label: '35-44' },
+                  { value: '45-54', label: '45-54' },
+                  { value: '55-100', label: '55-100' },
                 ]}
               />
             </Grid.Col>
@@ -198,54 +215,60 @@ function UsersList() {
                 placeholder="Users"
                 value={name}
                 onChange={setName}
-                data={name && dbUsers ? dbUsers.map((us: any) => (getFullUserName(us))) : []}
+                data={
+                  !isEmptyString(name) && !isNullOrUndefined(dbUsers)
+                    ? dbUsers.map((us: any) => getFullUserName(us))
+                    : []
+                }
               />
             </Grid.Col>
+            <Grid.Col md={6} lg={4}>
+              <Group grow position={'right'}>
+                <Button leftIcon={<Search size={17} />} onClick={() => handlerFilter()}>
+                  Filter
+                </Button>
+
+                <Button
+                  leftIcon={<ArrowBackUp size={17} />}
+                  onClick={() => handlerResetFilter()}
+                  variant={'light'}
+                  color="red"
+                >
+                  Reset
+                </Button>
+              </Group>
+            </Grid.Col>
           </Grid>
-          {!isNullOrUndefined(user) &&
-            <Group mt={'md'} position={'center'} style={{width: '100%'}}>
-              <Checkbox
-                mb={'lg'}
-                label="Online"
-                checked={isOnline}
-                onChange={(event) => setIsOnline(event.currentTarget.checked)}
-              />
-            </Group>
-          }
-
-          <Group position={'right'}>
-            <Button
-              leftIcon={<Search size={17}/>}
-              onClick={() => handlerFilter()}
-            >
-              Filter
-            </Button>
-
-            <Button
-              leftIcon={<ArrowBackUp size={17}/>}
-              onClick={() => handlerResetFilter()}
-              color="red"
-            >
-              Reset
-            </Button>
-          </Group>
         </Accordion.Item>
       </Accordion>
-      <Grid>
-        {users?.filter((item: any) => item.id != user?.id)?.map((item: any) => (
-          <Grid.Col xs={12} sm={6} md={4} lg={3} key={item.id}>
-            <UserCard
-              role={item.role.role}
-              key={item.email}
-              name={`${item.firstName} - ${item.lastName}`}
-              onlineUsers={onlineUsers}
-              id={item.id}
-              picture={item.picture}
-              isFollowedByUser={item?.followedBy?.find((us: any) => us.id == user?.id)}
-            />
-          </Grid.Col>
-        ))}
-      </Grid>
+
+      {isFetchingDbTrips && isNullOrUndefined(queryClient.getQueryData(['users', 'all'])) ? (
+        <UserCardSkeleton />
+      ) : (
+        <>
+          {!isNullOrUndefined(users) && !isEmptyArray(users) && (
+            <Grid>
+              {users
+                ?.filter((item: any) => item.id != user?.id)
+                ?.map((item: any) => (
+                  <Grid.Col xs={12} sm={6} md={4} lg={3} key={item.id}>
+                    <UserCard
+                      folloers={item.followedBy}
+                      role={item.role.role}
+                      key={item.email}
+                      gender={item?.gender}
+                      name={getFullUserName(item)}
+                      onlineUsers={onlineUsers}
+                      id={item.id}
+                      picture={item.picture}
+                      isFollowedByUser={item?.followedBy?.find((us: any) => us.id == user?.id)}
+                    />
+                  </Grid.Col>
+                ))}
+            </Grid>
+          )}
+        </>
+      )}
     </div>
   );
 }

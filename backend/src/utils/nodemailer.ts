@@ -1,22 +1,34 @@
 import nodemailer from 'nodemailer'
+import { google } from 'googleapis'
 
-export const sendEmail = (options) => {
+require('dotenv').config()
+
+export const sendEmail = async (options: any) => {
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.CLIENT_ID,
+    process.env.CLIENT_SECRET,
+    process.env.REDIRECT_URL
+  )
+  oauth2Client.setCredentials({ refresh_token: process.env.REFRESH_TOKEN_OAUTH })
+
+  const accessToken = await oauth2Client.getAccessToken()
+  const myEmail = process.env.SMTP_USER
+
   const smtpTransparent = nodemailer.createTransport({
-    // host: process.env.SMTP_HOST,
-    // port: process.env.SMTP_PORT,
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true ,
+    // @ts-ignore
+    service: 'gmail',
     auth: {
-      // user: process.env.SMTP_USER,
-      // pass: process.env.SMTP_PASS,
-      user: 'avia.trans.info@gmail.com',
-      pass: 'Trans.Avia_2020',
+      type: 'OAuth2',
+      user: myEmail,
+      clientId: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
+      refreshToken: process.env.REFRESH_TOKEN_OAUTH,
+      accessToken,
     },
   })
 
   const mailOptions = {
-    from: `"Websom Team " <${process.env.SMTP_USER}>`,
+    from: `"travel mood " <${process.env.SMTP_USER}>`,
     to: options.to,
     subject: options.subject,
     html: options.text,

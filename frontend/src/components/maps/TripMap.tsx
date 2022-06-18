@@ -1,20 +1,26 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {FeatureGroup, GeoJSON, LayersControl, MapContainer, Marker, Polyline, Popup} from 'react-leaflet';
-import L,{GeoJSON as LeafletGeoJSON, Icon} from 'leaflet';
+import React, { useEffect, useRef, useState } from 'react';
+import { GeoJSON as LeafletGeoJSON, Icon } from 'leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
-import redIcon from '../../assets/svg-map-markers/img/marker-icon-2x-red.png';
-import blueIcon from '../../assets/svg-map-markers/img/marker-icon-2x-blue.png';
-import blueIconShadow from '../../assets/svg-map-markers/img/marker-shadow.png';
-import {Group, LoadingOverlay, Text} from '@mantine/core';
-import {fetchGeoJsonData} from '../../api/map/axios';
-import CustomTileLayer from "./UtilsComponent/CustomTileLayer";
-import {SearchField} from "./MapObjects";
-import {isEmptyArray, isNullOrUndefined} from "../../utils/primitive-checks";
-// import {SearchField.tsx} from "./UtilsComponent/SearchComponent";
+import { FeatureGroup, GeoJSON, LayersControl, Marker, Polyline, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
+import 'react-leaflet-markercluster/dist/styles.min.css';
+import { apiFetchGeoJsonData } from '../../api/map/axios';
+import CustomTileLayer from './UtilsComponent/CustomTileLayer';
+import { Group, LoadingOverlay, Text } from '@mantine/core';
+import { isEmptyArray } from '../../utils/primitive-checks';
+import redIcon from './UtilsComponent/svg-map-markers/img/marker-icon-2x-red.png';
+import blueIcon from './UtilsComponent/svg-map-markers/img/marker-icon-2x-blue.png';
+import blueIconShadow from './UtilsComponent/svg-map-markers/img/marker-shadow.png';
+import greenIcon from './UtilsComponent/svg-map-markers/img/marker-icon-2x-green.png';
+import './UtilsComponent/LeafletFullscreen/Leaflet.fullscreen.min';
+import CustomMapContainer from './UtilsComponent/CustomMapContainer';
+import './MapStyles.css';
+import LeafletControlGeocoder from './UtilsComponent/LeafletControlGeocoder';
 
 const GeoJSONWithLayer = (props: any) => {
   const geoJsonLayerRef = useRef<LeafletGeoJSON | null>(null);
-  const {destinations} = props;
+  const { destinations } = props;
 
   useEffect(() => {
     const layer = geoJsonLayerRef.current;
@@ -27,7 +33,7 @@ const GeoJSONWithLayer = (props: any) => {
     let popupContent = '';
     let countryCode = '';
     if (feature.properties && feature.properties.admin) popupContent = feature.properties.admin;
-    if (feature.properties && feature.properties.iso_a2) countryCode = feature.properties.iso_a2
+    if (feature.properties && feature.properties.iso_a2) countryCode = feature.properties.iso_a2;
 
     if (destinations.includes(countryCode)) {
       layer.setStyle({
@@ -57,72 +63,74 @@ const GeoJSONWithLayer = (props: any) => {
       },
     });
   };
-  return <GeoJSON {...props} ref={geoJsonLayerRef} onEachFeature={handleOnEachFeature}/>;
+  return <GeoJSON {...props} ref={geoJsonLayerRef} onEachFeature={handleOnEachFeature} />;
 };
 
-const MyMarkers = ({markers}: any) => {
+const MyMarkers = ({ markers }: any) => {
   const popupRef = useRef<any>(null);
-
-
   return markers.length > 0
     ? markers.map((marker: any, index: number) => {
-
-
-      return (
-        <Marker
-          // @ts-ignore
-          uniceid={index}
-          key={index}
-          position={marker.place}
-          draggable={false}
-          icon={
-            new Icon({
-              iconUrl: index == 0 ? redIcon : blueIcon,
-              shadowUrl: blueIconShadow,
-              iconSize: [25, 41],
-              iconAnchor: [12, 41],
-              popupAnchor: [1, -34],
-              shadowSize: [41, 41],
-            })
-          }
-        >
-          <Popup ref={popupRef}>
-            <Group position={'center'}>
-              <Text size={'sm'}>{marker.description}</Text>
-            </Group>
-          </Popup>
-        </Marker>
-      );
-    })
+        return (
+          <Marker
+            // @ts-ignore
+            uniceid={index}
+            key={index}
+            position={marker.place}
+            draggable={false}
+            icon={
+              new Icon({
+                iconUrl: index == 0 ? redIcon : index == markers.length - 1 ? greenIcon : blueIcon,
+                shadowUrl: blueIconShadow,
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41],
+              })
+            }
+          >
+            <Popup ref={popupRef}>
+              <Group position={'center'}>
+                <Text size={'sm'}>{marker.description}</Text>
+              </Group>
+            </Popup>
+          </Marker>
+        );
+      })
     : null;
 };
 
-const TripMap = React.memo(({dbCountries, dbMarkers}: any) => {
+interface TripMapComponentProps {
+  dbCountries: {
+    code: string;
+    name: string;
+  }[];
+  dbMarkers: {
+    description: string;
+    lon: string;
+    lat: string;
+    id: number;
+  }[];
+}
+
+const TripMap = React.memo(({ dbCountries, dbMarkers }: TripMapComponentProps) => {
   const [geoDate, setGeoDate] = useState<any>(null);
+  const [map, setMap] = useState<any>(null);
 
   useEffect(() => {
-    if (geoDate == null) fetchGeoJsonData(setGeoDate);
+    const fetchGeo = async () => {
+      await apiFetchGeoJsonData(setGeoDate);
+    };
+    if (geoDate == null) {
+      fetchGeo();
+    }
   }, []);
 
   return (
-    <div className="map" style={{borderRadius: '10px'}}>
-      <MapContainer
-        style={{borderRadius: '10px', width: '100%'}}
-        // @ts-ignore
-        fullscreenControl={true}
-        defaultPosition={[38.82259, -2.8125]}
-        center={[38.82259, -2.8125]}
-        zoom={3}
-        zoomControl={false}
-        minZoom={2}
-        maxBounds={[
-          [84.67351256610522, -174.0234375],
-          [-58.995311187950925, 174],
-        ]}
-      >
-        {/*<SearchField.tsx/>*/}
-        <LoadingOverlay visible={!geoDate}/>
-        <CustomTileLayer/>
+    <div className="map" style={{ borderRadius: '10px' }}>
+      <CustomMapContainer setMap={setMap}>
+        <LoadingOverlay visible={!geoDate} />
+        <CustomTileLayer />
+        <LeafletControlGeocoder position={'topleft'} />
         <LayersControl position="bottomleft">
           <LayersControl.Overlay checked name="Places">
             <FeatureGroup>
@@ -132,7 +140,7 @@ const TripMap = React.memo(({dbCountries, dbMarkers}: any) => {
                 weight={5}
                 positions={dbMarkers.map((item: any) => [item.lon, item.lat])}
               />
-              {!isEmptyArray(dbMarkers) &&
+              {!isEmptyArray(dbMarkers) && (
                 // @ts-ignore
                 <MarkerClusterGroup>
                   <MyMarkers
@@ -143,7 +151,7 @@ const TripMap = React.memo(({dbCountries, dbMarkers}: any) => {
                     }))}
                   />
                 </MarkerClusterGroup>
-              }
+              )}
             </FeatureGroup>
           </LayersControl.Overlay>
           <LayersControl.Overlay checked name="Countries">
@@ -152,13 +160,13 @@ const TripMap = React.memo(({dbCountries, dbMarkers}: any) => {
                 <GeoJSONWithLayer
                   destinations={dbCountries?.map((item: any) => item.code)}
                   data={geoDate}
-                  style={{weight: 0.01, fillColor: 'rgba(255,255,255,0)'}}
+                  style={{ weight: 0.01, fillColor: 'rgba(255,255,255,0)' }}
                 />
               )}
             </FeatureGroup>
           </LayersControl.Overlay>
         </LayersControl>
-      </MapContainer>
+      </CustomMapContainer>
     </div>
   );
 });

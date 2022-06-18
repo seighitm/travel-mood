@@ -1,5 +1,6 @@
-import {TileLayer} from "react-leaflet";
-import React from "react";
+import { TileLayer } from 'react-leaflet';
+import React from 'react';
+import '../MapStyles.css';
 
 const layers = [
   {
@@ -31,4 +32,4 @@ export const CustomTileLayer = () => {
   );
 };
 
-export default CustomTileLayer
+export default CustomTileLayer;

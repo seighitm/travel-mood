@@ -1,24 +1,37 @@
-import {Button, Group, Indicator} from '@mantine/core';
-import {ReaderIcon} from '@modulz/radix-icons';
-import React, {memo} from 'react';
+import { Button, Group } from '@mantine/core';
+import React, { Dispatch, memo } from 'react';
+import { customNavigation } from '../../utils/utils-func';
+import useStore from '../../store/user.store';
+import { useNavigate } from 'react-router-dom';
 
-const TabItemComponent = memo(({setTypeOfFavoriteItems, item, typeOfFavoriteItems}: any) => {
-  return (
-      <Group style={{position: 'relative'}}>
+interface TabItemComponentComponentProps {
+  item: string;
+  typeOfFavoriteItems: string | undefined;
+  icon: any;
+}
+
+const TabItemComponent = memo(
+  ({ item, icon, typeOfFavoriteItems }: TabItemComponentComponentProps) => {
+    const { user } = useStore((state: any) => state);
+    const navigate = useNavigate();
+
+    return (
+      <Group style={{ position: 'relative' }}>
         <Button
-          leftIcon={<ReaderIcon/>}
-          onClick={() => setTypeOfFavoriteItems(item)}
+          leftIcon={icon}
+          onClick={() => customNavigation(user?.role, navigate, `/favorites/${item}`)}
           variant="gradient"
           gradient={
             typeOfFavoriteItems?.toLowerCase() == item.toLowerCase()
-              ? {from: 'indigo', to: 'orange'}
+              ? { from: 'indigo', to: 'orange' }
               : undefined
           }
         >
           {item}
         </Button>
       </Group>
-  );
-});
+    );
+  }
+);
 
 export default TabItemComponent;

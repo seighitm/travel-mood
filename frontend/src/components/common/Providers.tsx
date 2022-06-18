@@ -1,10 +1,10 @@
-import {ColorScheme, ColorSchemeProvider, MantineProvider} from '@mantine/core';
-import {NotificationsProvider, showNotification} from '@mantine/notifications';
-import {useHotkeys, useLocalStorageValue} from '@mantine/hooks';
+import { ColorScheme, ColorSchemeProvider, MantineProvider } from '@mantine/core';
+import { NotificationsProvider, showNotification } from '@mantine/notifications';
+import { useHotkeys, useLocalStorageValue } from '@mantine/hooks';
 import React from 'react';
-import {QueryCache, QueryClient, QueryClientProvider} from 'react-query';
-import {apiLogout} from "../../api/auth/axios";
-import {ReactQueryDevtools} from "react-query/devtools";
+import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
+import { apiLogout } from '../../api/auth/axios';
+import { ReactQueryDevtools } from 'react-query/devtools';
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -15,7 +15,7 @@ const queryClient = new QueryClient({
           message: err.response?.data?.message,
           color: 'red',
         });
-        await apiLogout()
+        await apiLogout();
       }
     },
   }),
@@ -30,17 +30,17 @@ const queryClient = new QueryClient({
             message: err.response?.data?.message,
             color: 'red',
           });
-          await apiLogout()
+          await apiLogout();
         }
       },
     },
     mutations: {
       retry: 0,
-    }
-  }
+    },
+  },
 });
 
-export default function Providers({children}: any) {
+export default function Providers({ children }: any) {
   const [colorScheme, setColorScheme] = useLocalStorageValue<ColorScheme>({
     key: 'mantine-color-scheme',
     defaultValue: 'light',
@@ -54,31 +54,32 @@ export default function Providers({children}: any) {
   return (
     <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
       <MantineProvider
-        theme={{colorScheme}}
+        theme={{ colorScheme }}
         styles={{
           Indicator: () => ({
             indicator: {
-              zIndex: 5
-            }
+              zIndex: 5,
+              padding: '0',
+            },
           }),
           // @ts-ignore
           LoadingOverlay: () => ({
             root: {
-              zIndex: '5!important'
-            }
+              zIndex: '5!important',
+            },
           }),
           // @ts-ignore
           Skeleton: () => ({
             root: {
-              zIndex: '5!important'
-            }
+              zIndex: '5!important',
+            },
           }),
         }}
       >
         <NotificationsProvider>
           <QueryClientProvider client={queryClient}>
             {children}
-            <ReactQueryDevtools initialIsOpen={false}/>
+            {/*<ReactQueryDevtools initialIsOpen={false}/>*/}
           </QueryClientProvider>
         </NotificationsProvider>
       </MantineProvider>

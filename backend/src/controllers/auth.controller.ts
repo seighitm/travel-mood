@@ -1,115 +1,101 @@
-import {NextFunction, Request, Response, Router} from 'express';
-import {createUser, forgotPassword, getCurrentUser, login, resetPassword,} from '../services/auth.service';
-import {IGetUserAuthInfoRequest} from "../utils/interfaces";
-import {authMiddleware} from "../middlewares/auth.middleware";
-import {asyncHandler} from "../utils/asyncHandler";
-import {refreshTokenService} from "../services/token.service";
+import { NextFunction, Request, Response, Router } from 'express'
+import { createUser, forgotPassword, getCurrentUser, login, resetPassword } from '../services/auth.service'
+import { IGetUserAuthInfoRequest } from '../types/interfaces'
+import { authMiddleware } from '../middlewares/auth.middleware'
+import { asyncHandler } from '../utils/asyncHandler'
+import { refreshTokenService } from '../services/token.service'
+import upload from '../middlewares/fileUpload.middleware'
 
-const router = Router();
-const upload = require("../middlewares/fileUpload.middleware");
+const router = Router()
 
 /**
- * @desc Register a new user and return its data
- * @route POST /api/auth/register
- * @access Public
- * @param {*} req.body
- * @param {*} req.file
- * @returns {Promise} Promise
+ * Register
+ * @returns User
  */
-router.post('/auth/register',
-  [authMiddleware.optional, upload.single("image")],
+router.post(
+  '/auth/register',
+  [authMiddleware.optional, upload.single('image')],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const user = await createUser(req.body, req.file);
-    res.json(user);
-  }));
+    const user = await createUser(req.body, req.file)
+    res.json(user)
+  })
+)
 
 /**
- * @desc Login user and return its data.
- * @route POST /api/auth/login
- * @access Public
- * @param {*} req.body
- * @returns {Promise} Promise
+ * Login
+ * @returns User
  */
-router.post('/auth/login',
+router.post(
+  '/auth/login',
   [authMiddleware.optional],
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const user = await login(req.body.user);
-    res.json(user);
-  }));
+    const user = await login(req.body.user)
+    res.json(user)
+  })
+)
 
 /**
- * @desc Create new refresh token
- * @access PRIVATE
- * @route {POST} api/refresh
- * @body-param localRefreshToken
- * @returns {accessToken, refreshToken, user}
+ * Update refresh token
+ * @returns User
  */
-router.post('/refresh-token',
+router.post(
+  '/refresh-token',
   [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    const userData = await refreshTokenService(req?.body?.localRefreshToken);
-    return res.json(userData);
-  }));
+    const userData = await refreshTokenService(req?.body?.localRefreshToken)
+    return res.json(userData)
+  })
+)
 
 /**
- * @desc Decode and send user info from token
- * @access PRIVATE
- * @route {POST} api/auth/me
- * @returns {Promise} Promise
+ * Get current users info
+ * @returns User
  */
-router.get('/auth/me',
+router.get(
+  '/auth/me',
   [authMiddleware.required],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    console.log('%%%%%%%%%%%%%%%%%%%')
-    console.log(req.user)
-    console.log('%%%%%%%%%%%%%%%%%%%')
     const user = await getCurrentUser(req.user?.id)
-    res.json(user);
-  }));
-
+    res.json(user)
+  })
+)
 
 /**
- * @desc Logout user from account
- * @access PUBLIC
- * @route {GET} api/auth/logout
- * @returns {Promise} Promise
+ * Logout
+ * @returns User
  */
-router.get('/auth/logout',
+router.get(
+  '/auth/logout',
   [authMiddleware.optional],
   asyncHandler((req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-    res.json(req.user);
-  }));
+    res.json(req.user)
+  })
+)
 
 /**
- * @desc Forgot user password
- * @access PUBLIC
- * @route {POST} api/auth/forgot-password
- * @param {*} req.body
- * @returns {Promise} Promise
+ * Forgot password
+ * @returns User
  */
-router.post('/auth/forgot-password',
+router.post(
+  '/auth/forgot-password',
   [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await forgotPassword(req.body?.email)
     res.json(user)
   })
-);
+)
 
 /**
- * @desc Reset user password
- * @access PUBLIC
- * @route {POST} api/auth/reset-password
- * @param {*} req.body
- * @returns {Promise} Promise
+ * Reset password
+ * @returns User
  */
-router.post('/auth/reset-password',
+router.post(
+  '/auth/reset-password',
   [authMiddleware.optional],
   asyncHandler(async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
     const user = await resetPassword(req.body?.password, req.body?.resetToken)
-    res.status(200).json({
-      message: `An email has been sent to ${user.email} with further instructions.`,
-    })
+    res.status(200).json({ message: `An email has been sent to ${user.email} with further instructions.` })
   })
-);
+)
 
-export default router;
+export default router

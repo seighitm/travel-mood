@@ -1,63 +1,22 @@
-import {useQuery} from "react-query";
-import {getOneTrip, getTrips, getTripsFiltering, getUserTrips} from "./axios";
-import useStore from "../../store/user.store";
-import {useAsyncDebounce} from "react-table";
-import {useNavigate} from "react-router-dom";
-import {apiLogout} from "../auth/axios";
+import { useQuery } from 'react-query';
+import { apiGetOneTrip, apiGetTrips } from './axios';
+import { customNavigation } from '../../utils/utils-func';
+import { useNavigate } from 'react-router-dom';
+import useStore from '../../store/user.store';
 
-//############################################################################################
-//############################################################################################
-export const useOneTripsQuery = ({id, onErrorEvent}: { id: string | number | any } | any) => {
-  return useQuery(['trips', 'one'], () => getOneTrip(id), {
+export const useOneTripsQuery = ({ id }: { id: string | number | any } | any) => {
+  const navigate = useNavigate();
+  const { user } = useStore((state: any) => state);
+  return useQuery(['trips', 'one'], () => apiGetOneTrip(id), {
     onError: async (err: any) => {
-      if (err?.response.data.message == 'Trip not found!') onErrorEvent()
+      if (err?.response.data.message == 'Trip not found!') {
+        customNavigation(user?.role, navigate, `/trips`);
+      }
     },
   });
 };
 
-//############################################################################################
-//############################################################################################
-export const useTripsQuery = ({filterFields, page, isEnabled = true}: any) =>
-  useQuery(['trips', 'all'], () => getTrips({...filterFields, page}), {
-    enabled: isEnabled
+export const useTripsQuery = ({ filterFields, page, isEnabled = true }: any) =>
+  useQuery(['trips', 'all'], () => apiGetTrips({ ...filterFields, page }), {
+    enabled: isEnabled,
   });
-
-//############################################################################################
-//############################################################################################
-export const useGetUserTrips = (status: any) => {
-  const {user} = useStore((state: any) => state);
-  return useQuery(['userTrips', status], () => getUserTrips(status), {enabled: !!user});
-}
-
-
-export const useTripsFiltering = (
-  queryPageIndex: any,
-  queryPageSize: any,
-  queryPageFilter: any,
-  queryPageSortBy: any,
-  queryPageOrder: any,
-) => {
-  const debouncedFetchPaginatedUsers: any = useAsyncDebounce(
-    getTripsFiltering,
-    300,
-  );
-
-  return useQuery(
-    [
-      'filtering',
-      queryPageIndex,
-      queryPageSize,
-      queryPageFilter,
-      queryPageSortBy,
-      queryPageOrder,
-    ],
-    () =>
-      debouncedFetchPaginatedUsers(queryPageIndex, queryPageSize, queryPageFilter, queryPageSortBy, queryPageOrder,),
-    {
-      keepPreviousData: true,
-      staleTime: Infinity,
-      suspense: true,
-      cacheTime: 0,
-    },
-  );
-}

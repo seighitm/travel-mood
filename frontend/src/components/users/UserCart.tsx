@@ -3,30 +3,29 @@ import {Avatar, Badge, Button, Group, Indicator, Paper, SimpleGrid, Text, Unstyl
 import {useMutateAccessChat} from '../../api/chat/mutations';
 import useStore from '../../store/user.store';
 import {useNavigate} from 'react-router-dom';
-import {userPicture} from "../common/Utils";
-import {useFollowMutate, useUnFollowMutate} from "../../api/users/mutations";
-import {MessageDots, Star} from "../../assets/Icons";
-import {isNullOrUndefined} from "../../utils/primitive-checks";
+import {useFollowMutate, useUnFollowMutate} from '../../api/users/mutations';
+import {MessageDots, Star} from '../common/Icons';
+import {isNullOrUndefined} from '../../utils/primitive-checks';
+import {IUser} from '../../types/IUser';
+import {customNavigation, userPicture} from '../../utils/utils-func';
 
-interface UserCardComponentProps {
-  picture: string;
-  name: string;
-  id: number;
-  onlineUsers: any
-  isFollowedByUser: boolean;
-  role: string;
-}
-
-export function UserCard({role, picture, name, id, isFollowedByUser, onlineUsers}: UserCardComponentProps) {
+export function UserCard({
+                           role,
+                           picture,
+                           name,
+                           id,
+                           isFollowedByUser,
+                           onlineUsers,
+                           folloers,
+                           gender,
+                         }: IUser | any) {
   const navigate = useNavigate();
-
-  console.log(role)
 
   const {user} = useStore((state: any) => state);
   const {mutate: mutateAccessChat} = useMutateAccessChat();
 
-  const {mutate: mutateFollow} = useFollowMutate('follow');
-  const {mutate: mutateUnFollow} = useUnFollowMutate('unFollow');
+  const {mutate: mutateFollow, isLoading: isLoadingFollow} = useFollowMutate();
+  const {mutate: mutateUnFollow, isLoading: isLoadingUnFollow} = useUnFollowMutate();
 
   const handlerFollower = (id: number) => {
     if (isFollowedByUser) {
@@ -37,36 +36,47 @@ export function UserCard({role, picture, name, id, isFollowedByUser, onlineUsers
   };
 
   const handlerAccessChat = () => {
-    navigate('/chat/' + id)
-    mutateAccessChat(id)
-  }
+    customNavigation(user?.role, navigate, '/chat/' + id);
+    mutateAccessChat(id);
+  };
 
   return (
     <Paper
       radius="md"
       withBorder
+      shadow={'sm'}
       p="lg"
       sx={(theme) => ({
+        border:
+          '1px solid ' +
+          (theme.colorScheme === 'light' ? theme.colors.gray[4] : theme.colors.gray[7]),
         position: 'relative',
         backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
       })}
     >
-      {!isNullOrUndefined(role) && role == 'ADMIN' &&
-        <Badge style={{position: 'absolute'}} size={'lg'} color="pink">
+      {!isNullOrUndefined(role) && role == 'ADMIN' && (
+        <Badge style={{position: 'absolute'}} size={'lg'} color="blue">
           {role}
         </Badge>
-      }
+      )}
       <Group position="center">
         <Indicator
           size={20}
           disabled={!user}
           withBorder
+          styles={{
+            indicator: {
+              padding: '0px 5px',
+            },
+          }}
           position="bottom-center"
-          color={(onlineUsers[id] && onlineUsers[id] != undefined) ? 'green' : 'pink'}
-          label={(onlineUsers[id] && onlineUsers[id] != undefined) ? 'online' : 'offline'}
+          color={onlineUsers[id] && onlineUsers[id] != undefined ? 'green' : 'pink'}
+          label={onlineUsers[id] && onlineUsers[id] != undefined ? 'online' : 'offline'}
         >
           <Avatar
-            src={userPicture({picture})}
+            src={userPicture({gender, picture})}
+            onClick={() => customNavigation(user?.role, navigate, '/users/' + id)}
+            style={{cursor: 'pointer'}}
             size={100}
             radius={120}
             mx="auto"
@@ -76,7 +86,7 @@ export function UserCard({role, picture, name, id, isFollowedByUser, onlineUsers
       <Group position={'center'}>
         <UnstyledButton>
           <Text
-            onClick={() => navigate('/user/' + id)}
+            onClick={() => customNavigation(user?.role, navigate, '/users/' + id)}
             align="center"
             size="lg"
             weight={500}
@@ -88,8 +98,8 @@ export function UserCard({role, picture, name, id, isFollowedByUser, onlineUsers
         </UnstyledButton>
       </Group>
 
-      {user &&
-        <SimpleGrid mt={'sm'} cols={2}>
+      {user && (
+        <SimpleGrid spacing={'xs'} mt={'sm'} cols={2}>
           <Button
             compact
             variant={'subtle'}
@@ -100,17 +110,18 @@ export function UserCard({role, picture, name, id, isFollowedByUser, onlineUsers
           </Button>
 
           <Button
+            loading={isLoadingFollow || isLoadingUnFollow}
             color={'pink'}
             compact
             variant={isFollowedByUser ? 'outline' : 'subtle'}
             onClick={() => handlerFollower(id)}
             leftIcon={<Star size={15} fill={isFollowedByUser ? 'red' : 'none'}/>}
           >
-            {isFollowedByUser ? 'UnFollow' : 'Follow'}
+            {isFollowedByUser ? 'UnFollow' : 'Follow'}{' '}
+            {folloers.length != 0 ? '(' + folloers.length + ')' : ''}
           </Button>
         </SimpleGrid>
-      }
+      )}
     </Paper>
   );
 }
-

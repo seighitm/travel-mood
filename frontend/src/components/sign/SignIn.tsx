@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Anchor,
   Box,
   Button,
   createStyles,
@@ -12,11 +11,11 @@ import {
   TextInput,
   TypographyStylesProvider,
 } from '@mantine/core';
-import {useForm} from '@mantine/form';
-import {useNavigate} from 'react-router-dom';
-import {useMutateSignIn} from '../../api/auth/mutations';
-import {At, Key, Lock} from '../../assets/Icons';
-import {isValidEmail} from "../../utils/utils-func";
+import { useForm } from '@mantine/form';
+import { Link } from 'react-router-dom';
+import { useMutateSignIn } from '../../api/auth/mutations';
+import { At, Lock } from '../common/Icons';
+import { isValidEmail } from '../../utils/utils-func';
 
 const useStyles = createStyles((theme) => ({
   container: {
@@ -24,19 +23,20 @@ const useStyles = createStyles((theme) => ({
   },
   body: {
     position: 'relative',
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
+    border: '2px solid ',
+    borderColor: theme.colorScheme === 'dark' ? theme.colors.gray[8] : theme.colors.gray[2],
+    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
   },
   themeIcon: {
     position: 'absolute',
     top: 0,
-    right: 0
+    right: 0,
   },
 }));
 
 const SignIn = () => {
-  const navigate = useNavigate();
-  const {mutate: mutateLogin, isLoading: isLoadingLoginMutation} = useMutateSignIn();
-  const {classes, theme} = useStyles();
+  const { mutate: mutateLogin, isLoading: isLoadingLoginMutation } = useMutateSignIn();
+  const { classes, theme } = useStyles();
 
   const form = useForm({
     initialValues: {
@@ -45,12 +45,12 @@ const SignIn = () => {
     },
     validate: {
       password: (value) => {
-        if (value?.trim().length <= 8) return 'Password should have at least 8 letters!'
+        if (value?.trim().length < 8) return 'Password should have at least 8 letters!';
       },
       email: (value) => {
-        if (!isValidEmail(value)) return 'Invalid email!'
+        if (!isValidEmail(value.trim())) return 'Invalid email!';
       },
-    }
+    },
   });
 
   const handleSubmit = async (data: any) => {
@@ -58,79 +58,56 @@ const SignIn = () => {
   };
 
   return (
-    <Group position={'center'}
-           className={classes.container}
-    >
-      <Box style={{width: '360px'}}>
+    <Group position={'center'}>
+      <Box style={{ width: '360px' }}>
         <TypographyStylesProvider>
           <Text
             weight={900}
+            color={'gray'}
             align="center"
-            style={{fontSize: theme.fontSizes.xl * 2}}
+            style={{ fontSize: theme.fontSizes.xl * 2 }}
           >
             Welcome back!
           </Text>
         </TypographyStylesProvider>
-        <Text
-          color="dimmed"
-          size="sm"
-          align="center"
-          mt={5}
-        >
+        <Text color="dimmed" size="md" align="center" mt={'xs'}>
           Do not have an account yet?{' '}
-          <Anchor<'a'>
-            href="#"
-            size="sm"
-            onClick={() => navigate('/auth/signup')}
-          >
+          <Text weight={500} color={'blue'} component={Link} to={'/auth/signup'} size="md">
             Create account
-          </Anchor>
+          </Text>
         </Text>
 
-        <Paper
-          withBorder
-          shadow="md"
-          p={'md'}
-          m={'sm'}
-          radius="md"
-          className={classes.body}
-        >
-          <LoadingOverlay visible={isLoadingLoginMutation}/>
+        <Paper withBorder shadow="md" p={'md'} m={'sm'} radius="md" className={classes.body}>
+          <LoadingOverlay visible={isLoadingLoginMutation} />
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <TextInput
-              mt="md"
+              mt="xs"
               required
-              placeholder="Your email"
+              placeholder="Enter email"
               label="Email"
-              icon={<At size={17}/>}
+              icon={<At size={17} />}
               {...form.getInputProps('email')}
             />
             <PasswordInput
-              mt="md"
+              mt="xs"
               required
-              placeholder="Password"
+              placeholder="Enter password"
               label="Password"
-              icon={<Lock size={17}/>}
+              icon={<Lock size={17} />}
               {...form.getInputProps('password')}
             />
             <Group position="right" mt="md">
-              <Anchor<'a'>
-                href="#"
+              <Text
+                weight={500}
+                color={'blue'}
+                component={Link}
+                to={'/auth/forgot-password'}
                 size="sm"
-                onClick={(event) => {
-                  navigate('/auth/forgot-password')
-                  event.preventDefault()
-                }}
               >
                 Forgot password?
-              </Anchor>
+              </Text>
             </Group>
-            <Button
-              leftIcon={<Key/>}
-              fullWidth
-              mt="xl"
-              type="submit"
-            >
+            <Button fullWidth mt="xs" type="submit">
               Sign in
             </Button>
           </form>
